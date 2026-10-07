@@ -105,3 +105,74 @@ class DDPM:
             if t > 0:
                 x = x + torch.sqrt(self.betas[t]) * torch.randn_like(x)
         return x
+
+    @torch.no_grad()
+    def sample_ddim(self, shape, num_steps=None, eta=0.0, device="cpu", rng=None):
+        """Reverse process (DDIM, Song et al. 2021): deterministic denoising along a
+        SUBSAMPLED trajectory of the T diffusion timesteps.
+
+        DDIM trains with the exact same objective as DDPM (epsilon prediction on the
+        same UNet backbone), so it needs NO retraining - this method consumes the
+        already-trained DDPM weights directly. The only difference is the decoder:
+        instead of walking every timestep t = T-1 .. 0 as `sample` does, we pick
+        `num_steps` evenly-spaced timesteps tau across the full ladder and run a
+        deterministic epsilon-prediction update in fewer passes. That is the DDIM
+        few-step speedup.
+
+        The update (epsilon parametrization). From the current noisy x at alpha_bar_t,
+        predict eps_theta, estimate the clean image
+            x0_hat = (x - sqrt(1 - alpha_bar_t) * eps_theta) / sqrt(alpha_bar_t),
+        then recombine along the (subsampled) next timestep tau_next:
+            sigma_t        = eta * sqrt(1 - alpha_bar_{t1}) / sqrt(1 - alpha_bar_t)
+                                 * sqrt(1 - alpha_bar_t / alpha_bar_{t1})
+            x_{t1}         = sqrt(alpha_bar_{t1}) * x0_hat
+                             + sqrt((1 - alpha_bar_{t1}) - sigma_t^2) * eps_theta
+                             + sigma_t * z
+        where alpha_bar_{t1} is the NEXT subsampled index (strictly smaller so the
+        walk descends the ladder to t=0).
+
+        Args:
+            shape:      output shape, e.g. (B, 2, H, W).
+            num_steps:  number of subsampled reverse timesteps (default self.T).
+                        Fewer = faster; e.g. 25-50 already decode a clean image.
+            eta:        stochasticity of the sampler, 0..1.
+                        eta=0 -> fully deterministic (classic DDIM).
+                        eta=1 + num_steps=T -> recovers the DDPM reverse posterior.
+            device:     device to create x on.
+            rng:        optional RandomGenerator for the initial noise (and, if
+                        eta>0, the per-step stochastic correction).
+        """
+        num_steps = num_steps or self.T
+        x = torch.randn(shape, device=device, generator=rng)
+
+        # Evenly-spaced subset of the T schedule, ending at tau=0 (t=T-1? the top,
+        # tau=0 -> the clean image). Flip so we walk from the top of the ladder down.
+        if num_steps >= self.T:
+            timesteps = torch.arange(self.T, dtype=torch.long, device=device)
+        else:
+            timesteps = torch.linspace(0, self.T - 1, num_steps, device=device)
+            timesteps = timesteps.round().long()
+        timesteps = timesteps.flip(0)
+
+        for i in range(num_steps):
+            t_cur = timesteps[i].item()
+            t_next = timesteps[i + 1].item() if i + 1 < num_steps else 0
+            ts = torch.full((shape[0],), t_cur, device=device, dtype=torch.long)
+            eps_pred = self.net(x, ts)                      # shared epsilon-predictor
+
+            ab_t    = self.alpha_bar[t_cur]                 # alpha_bar_t
+            ab_t1   = self.alpha_bar[t_next]                # alpha_bar_{t1} (smaller)
+            sab_t   = self.sqrt_alpha_bar[t_cur]
+            s1ma_t  = self.sqrt_one_minus_alpha_bar[t_cur]
+            s1ma_t1 = self.sqrt_one_minus_alpha_bar[t_next]
+
+            # Tweedie / epsilon-form clean estimate, then deterministic recombination.
+            x0_hat = (x - s1ma_t * eps_pred) / sab_t
+            sigma_t = eta * s1ma_t1 / (s1ma_t + 1e-8) * torch.sqrt(
+                torch.clamp(1 - ab_t / (ab_t1 + 1e-8), min=0.0))
+            coef = s1ma_t1 ** 2 - sigma_t ** 2
+            x = sab_t * x0_hat + torch.sqrt(coef.clamp(min=0.0)) * eps_pred
+            if eta > 1e-12:
+                # DDPM-style stochastic correction, zeroed out when eta=0.
+                x = x + sigma_t * torch.randn_like(x)
+        return x
