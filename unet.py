@@ -3,7 +3,7 @@
 
 Design:
   - Assumes input is a 2D image with 2 channels (Real / Imag).
-  - Encoder/decoder are simple double (conv+GroupNorm+SiLU) blocks, down/up by 2.
+  - Encoder/decoder are double (conv+GroupNorm+SiLU) blocks, down/up by 2.
        enc1: H     enc2: H/2   enc3: H/4   enc4: H/8   bottleneck: H/16
   - Each level carries a Fourier time embedding so the network is
     conditioned on the diffusion time step t (used by both DDPM and DSM);
@@ -17,7 +17,7 @@ import torch.nn as nn
 
 
 def timestep_embedding(t, dim, max_period=10000):
-    """Standard sinusoidal time embedding used in DDPM / score models."""
+    """Sinusoidal time embedding used in DDPM / score models."""
     half = dim // 2
     freqs = torch.exp(-math.log(max_period) * torch.arange(half, dtype=torch.float32, device=t.device) / half)
     args = t[:, None].float() * freqs[None, :]
@@ -25,7 +25,7 @@ def timestep_embedding(t, dim, max_period=10000):
 
 
 class TimeEmbed(nn.Module):
-    """MLP that maps a sinusoidal t-embedding onto a hidden feature vector."""
+    """MLP mapping a sinusoidal t-embedding onto a hidden feature vector."""
 
     def __init__(self, emb_dim):
         super().__init__()

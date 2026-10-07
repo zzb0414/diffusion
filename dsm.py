@@ -32,17 +32,13 @@ class DSM:
     def __init__(self, L=10, sigma_min=0.01, sigma_max=50.0, backbone=UNet()):
         self.net = backbone
         self.L = L
-        # Keep the sigma schedule on the same device as the net (which follows
-        # whatever DEVICE the model is built/moved to). It is indexed by i_vec,
-        # and i_vec is sent to DEVICE by the trainer, so device-matching here
-        # avoids a CPU-index / GPU-tensor (or vice-versa) gather mismatch.
+        # Keep the sigma schedule on the same device as the net.
         self.sigmas = geometric_sigma_schedule(L, sigma_min, sigma_max).to(next(backbone.parameters()).device)
 
     def perturb(self, x, i_vec, rng=None):
         """Perturb x at per-sample noise levels i_vec (shape (B,), long).
 
-        Each batch element gets its own sigma = sigmas[i_vec[k]]. Returns
-        (x_tilde, eps, sigma) where sigma is a per-sample vector.
+        Returns (x_tilde, eps, sigma) where sigma is a per-sample vector.
         """
         sigma = self.sigmas[i_vec]                      # (B,) on the same device as sigmas
         eps = torch.randn_like(x) if rng is None else rng.randn_like(x)
@@ -53,8 +49,7 @@ class DSM:
         """SMLD objective with one (possibly different) noise level per batch element.
 
         i_vec: shape (B,) of per-sample levels; if None, one random level is drawn
-        and shared across the batch (previous behaviour). Net is conditioned on
-        i_vec so each element's sigma drives its own score estimate.
+        and shared across the batch.
         """
         if i_vec is None:
             i_vec = torch.randint(0, self.L, (x.shape[0],), device=x.device)
@@ -68,24 +63,15 @@ class DSM:
                rng=None, corrector_steps=5):
         """SMLD Algorithm 2 predictor-corrector sampler (Song & Ermon 2019).
 
-        Each noise level first runs a *predictor* step that anneals the walk to
-        the next (finer) sigma, then a *corrector* block of `corrector_steps`
-        overdamped Langevin iterations at FIXED sigma. The corrector settles the
-        walk onto the sigma_i + quantization manifold before the next descent,
-        which is exactly what prevents the finest levels from collapsing the
-        already-generated image (see dsm.py header / Session notes).
+        We do the anneal as an explicit coarse->fine loop over the L levels: each
+        level first runs one *predictor* step that anneals the walk to the next
+        (finer) sigma, then a *corrector* block of `corrector_steps` overdamped
+        Langevin iterations at FIXED sigma. This guarantees at least one corrector
+        block per level. The seed is drawn at sigma_max.
 
-        Level order DESCENDS from coarse (sigma_max) to fine (sigma_min): we
-        start at the highest noise to discover global structure, then anneal
-        down to low noise for detail refinement. The seed is drawn at sigma_max
-        (i = i_max, the physical image scale).
-
-        Overdamped Langevin corrector step (SMLD Alg 2):
+        Overdamped Langevin step:
             x = x + eps_l * s_theta(x, sigma) + sqrt(2*eps_l) * z
-        with eps_l = 2*(sigma/sigma_max)^2 * eps. NOTE the 'eps_l' here is the
-        SINGLE-step noise magnitude for this level — it is independent of the
-        (contiguous) predictor step, so the fine-level run stays pinned instead
-        of accumulating sqrt(time) * sqrt(alpha) ~ O(sigma_max) random noise.
+        with eps_l = 2*(sigma/sigma_max)^2 * eps.
         """
 
         def langevin_step(x, i, s):
@@ -96,13 +82,9 @@ class DSM:
             return x + 0.5 * alpha * grad + (alpha ** 0.5) * z, alpha, ts
 
         sigmas = self.sigmas
-        # To guarantee at least one corrector block per level, do the anneal as
-        # an explicit coarse->fine loop over the L levels rather than a
-        # contiguous step budget. See dsm.sample_for_traj for the level index.
         steps = steps or T_anneal * self.L
         x = torch.randn(shape, device=device) * sigmas[-1]  # start from highest noise
-        i_max = self.L - 1
-        for i in range(i_max, -1, -1):
+        for i in range(self.L - 1, -1, -1):
             s = sigmas[i].item()
             # ---- predictor: one anneal step from coarse sigma_(i) to fine sigma_(i-1) ----
             x, alpha, ts = langevin_step(x, i, s)
@@ -120,10 +102,8 @@ class DSM:
 class DSMTrainer:
     """Bespoke DSM training loop, separated from DiffusionTrainer.
 
-    Trains with the multi-level batch regime (Option A): each batch element
-    carries its own noise level via i_vec (shape (B,)), so a single training
-    image pre-augmented into a minibatch sweeps fine..coarse sigmas each step.
-    Does NOT reuse DiffusionTrainer, leaving the DDPM pipeline untouched.
+    Trains with the multi-level batch regime: each batch element carries its own
+    noise level via i_vec (shape (B,)).
     """
 
     def __init__(self, model, lr=3e-4, device="cpu", grad_clip=1.0):

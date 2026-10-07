@@ -62,10 +62,7 @@ class NpyStackDataset(ChannelImageDataset):
 
 
 class PairedComplexDataset(ChannelImageDataset):
-    """
-    If your data is stored as complex (H, W) 64, split into real/imag channels:
-        return torch.cat([x.real[None], x.imag[None]], dim=0)
-    """
+    """Complex (H, W) 64 -> split into real/imag channels (2, H, W)."""
 
     def _load(self, path):
         import numpy as np
@@ -81,8 +78,8 @@ def build_dataloader(dataset, batch_size=16, shuffle=True, num_workers=0, pin_me
                       num_workers=num_workers, pin_memory=pin_memory)
 
 
-# Convenience: point at a directory of stack-like .npy/.npz files.
 def dataloader_from_dir(dir_path, batch_size=16, shuffle=True):
+    """Point at a directory of stack-like .npy/.npz files."""
     exts = (".npy", ".npz")
     files = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f.endswith(exts)]
     return build_dataloader(NpyStackDataset(files), batch_size=batch_size, shuffle=shuffle)

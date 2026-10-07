@@ -4,7 +4,7 @@ Fréchet Inception Distance (FID) for the diffussion folder.
 Setup:
   - We work with 2-channel (B, 2, H, W) Real/Imag images in [-1, 1].
   - Inception-v3 needs RGB, so `to_rgb` maps (Re, Im, Re) -> (B, 3, H, W)
-    and rescales to [0, 255]. Replace `to_rgb` with your own convention.
+    and rescales to [0, 255].
   - FID between two Gaussian statistics on feature activations.
 
 If torchvision (Inception-v3) is missing, the FID object degrades gracefully:

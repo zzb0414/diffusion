@@ -1,5 +1,5 @@
 """
-Small shared training helper for the DDPM and DSM models in this folder.
+Shared training helper for the DDPM and DSM models in this folder.
 
 Both models expose `.loss(x)` over a mini-batch x of shape (B, 2, H, W),
 so a single loop trains either one.
@@ -21,11 +21,7 @@ class DiffusionTrainer:
         loss = self.model.loss(x0, rng=rng)
         loss.backward()
         if self.grad_clip > 0:
-            # Cap the total gradient norm before the step. Guards against the
-            # occasional huge-gradient timestep that otherwise ejects the model
-            # from a sharp low-t basin (a probabilistic, RNG-triggered event,
-            # seen ~4500 in the iteration sweep). Default 0.0 = disabled, so a
-            # plain DiffusionTrainer is unchanged. Toy value: 1.0.
+            # Cap the total gradient norm before the step.
             torch.nn.utils.clip_grad_norm_(self.model.net.parameters(),
                                            self.grad_clip)
         self.opt.step()
