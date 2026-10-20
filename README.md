@@ -12,15 +12,19 @@ This folder implements three generative/denoising backbones — DDPM, DDIM, and 
 | [`ddpm.py`](ddpm.py) | `DDPM` — Ho et al. 2020: linear beta schedule, epsilon prediction, `perturb`/`loss`/`sample` (reverse diffusion) and `sample_ddim` (deterministic DDIM, Song et al. 2021). |
 | [`dsm.py`](dsm.py) | `DSM` — Song & Ermon 2019: geometric sigma schedule, score matching, annealed predictor-corrector Langevin sampling. `DSMTrainer` for the multi-level batch regime. |
 | [`train.py`](train.py) | `DiffusionTrainer` — shared `loss(x)`-driven loop that trains either a DDPM or DSM model. |
-| [`n2n.py`](n2n.py) | `N2N_DDPM` / `N2N_DSM` — Tweedie Noise2Noise objectives on each backbone, plus `pack_pair`, `draw_pair_batch`, and conditional/unconditional denoise samplers. |
+| [`n2n.py`](n2n.py) | `N2N_DDPM` / `N2N_DSM` — Tweedie Noise2Noise objectives on each backbone (total-noise labels, multi-realization and subset-averaging losses), plus `pack_pair`, `draw_pair_batch`, and denoise samplers (`denoise_to`, conditional/unconditional). |
 | [`fid.py`](fid.py) | FID metric via Inception-v3, with a symmetric square-root form for the covariance product. |
 | [`data_loader.py`](data_loader.py) | `ChannelImageDataset` template (subclass for your storage format) + DataLoader helpers. |
 | [`demo.py`](demo.py) | Standalone smoke test: trains DDPM & DSM on toy blobs, samples, reports FID. `python demo.py`. |
 | [`demo.ipynb`](demo.ipynb) | Notebook showcase of DDPM / DDIM / DSM on a Shepp-Logan phantom. |
 | [`n2n.ipynb`](n2n.ipynb) | Notebook for the Noise2Noise denoising pipeline. |
 | [`CHANGELOG.md`](CHANGELOG.md) | Design rationale and change history grouped per source function. |
-| [`saved_models/`](saved_models/) | Pretrained checkpoints (DDPM/DSM, and the N2N variants). |
+| [`saved_models/`](saved_models/) | Pretrained checkpoints (DDPM/DSM, and the N2N variants) from the phantom notebooks. |
 | `shepp_logan_*.png` | Sample outputs / loss plots from the notebooks. |
+| [`experiments/`](experiments/) | Scripts for the real-ASL N2N experiments (R3, R4, cross-validated proof, loss ablation) — see its [README](experiments/README.md). |
+| [`docs/ARGUMENT_N2N_vs_averaging.md`](docs/ARGUMENT_N2N_vs_averaging.md) | Evidence summary: averaging N2N-denoised acquisitions vs plain averaging, generated from the results. |
+| [`WEEKEND_ITERATIONS.md`](WEEKEND_ITERATIONS.md) | Experiment log (append-only; sections generated from result files). Entries before R3 used flawed training — see *Known limits*. |
+| `runs/`, `checkpoints/`, `Archive/` | Per-run configs, logs and stdout; checkpoint manifests with sha256; pre-registrations and verbatim stdout. Weights, CSVs and figures stay local (see `.gitignore`). |
 
 ## Quick start
 
@@ -50,6 +54,26 @@ The motivating setup for this folder: **only noisy images are available** — no
 - **Anchored target**: regress the decode onto the symmetric mean `(y1+y2)/2` (whose conditional mean is the clean image), with a random half-shuffle of which realization is the decode input.
 - `conditional_denoise(..., sigma_task, ...)` recovers a clean map from one held-out noisy image (diffuse-then-reverse / diffuse-then-anneal). `unconditional(...)` is reverse generation from pure noise.
 
+#### Noise labels: condition on TOTAL noise
+A training input is already noisy (σ_y), so perturbing it by σ_add leaves **total** noise √(σ_y² + σ_add²). The original losses labelled the sample by σ_add only, while the samplers read the label as total noise — a train/test mismatch that also made the label mean something different for every noise level. Pass the acquisition noise `sigma_y` (per Re/Im channel, estimated once per slice from the spread of its realizations) and the net is conditioned on, and Tweedie-decoded with, the total level; only √(σ_tot² − σ_y²) is ever added, and a raw map sits exactly at its own level (fractional levels via `N2N_DSM.level_coord` / `N2N_DDPM.t_of_lambda`, no rounding).
+
+- `N2N_DSM.loss_multireal(x, sigma_y=...)` — one realization in, leave-one-out mean of the others as target.
+- `N2N_DSM.loss_subset(x, sigma_y, ...)` — denoise the mean of a random m-subset; target = mean of the rest.
+- `noise_norm=True, sigma_ref=...` — per-sample weight (σ_ref/σ_tot)^p (p = 1 L1, 2 MSE) so errors at every noise level count equally.
+- `N2N_DDPM.loss(pair, sigma_y=...)` — the same fix for the DDPM backbone, in the VE-equivalent coordinate λ = √(1−ᾱ)/√ᾱ.
+- `denoise_to(y, sigma_task, target_ratio)` (both backbones) — evaluate at the map's own noise, nothing injected, and take one deterministic DDIM step to `target_ratio × sigma_task`: `out = x0_hat + target_ratio·(y − x0_hat)`. `target_ratio = 1/3` matches the noise floor of a leave-one-out mean of 9; `0` is the full Tweedie estimate.
+
+Without `sigma_y` every loss falls back to the legacy behaviour (kept bit-identical so logged runs reproduce); legacy samplers are marked as such.
+
+## Results on real ASL data
+Ten mandated repetitions per slice, 34 slices. Denoising each repetition with the N2N model and then averaging beats plain averaging of the same repetitions on every slice, in a pre-registered 5-fold cross-validation where each slice is scored only by a model that never saw it; most of that gain is also available to an idealised Gaussian smoother, and the network's own edge comes from removing coarse-scale noise. Numbers, method, limits and reproduction: [`docs/ARGUMENT_N2N_vs_averaging.md`](docs/ARGUMENT_N2N_vs_averaging.md).
+
+```bash
+python experiments/_cv_train.py --fold K      # K = 0..4, the fixed R3 recipe
+python experiments/_cv_eval.py                # pre-registered endpoints, figures, maps
+python experiments/_cv_report.py              # log section + argument document
+```
+
 ## Data
 `data_loader.py` is a template for 2-channel images. Subclass `ChannelImageDataset` and implement `_load` to wire your own storage (npz, nifti, h5, folder of `.npy`); `build_dataloader` / `dataloader_from_dir` wrap it.
 
@@ -57,3 +81,9 @@ The motivating setup for this folder: **only noisy images are available** — no
 - Complex images are stored as two real channels (Real, Imag) in `[-1, 1]`.
 - FID maps `(Re, Im, Re)` to RGB for Inception-v3; if `torchvision` is unavailable, FID degrades to `float('nan')`.
 - Run any notebook in this folder as its working directory so the modules import.
+
+## Known limits
+- **Superseded runs.** Log entries before R3 (R0–R2, SR_SWEEP, FRONTIER, SRSTR_01) trained with legacy added-noise labels **and** a channel layout that paired Re/Re and Im/Im instead of Re/Im (`pack_joint` / `pack` built `[Re1..ReN, Im1..ImN]` where `loss_multireal` expects `[Re1, Im1, Re2, Im2, ...]`). Their conclusions do not carry over; the ASL notebooks still contain that `pack_joint`.
+- **DDPM total-noise path** is implemented and unit-tested (rung mapping, forward-marginal lifting, decoders) but not yet trained or validated on data.
+- **Experiment scripts** hardcode the repo root as an absolute Windows path (`DIFF = r"..."` near the top) — edit it for your clone. The ASL data is not included.
+- **Not committed:** model weights (sha256 in `checkpoints/*/MANIFEST.md`), per-slice CSVs and figures — the latter are stored encrypted at rest on the originating workstation.

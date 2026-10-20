@@ -1,3 +1,17 @@
 __pycache__
 .ipynb_checkpoints
 *.pyc
+
+# Experiment outputs that stay local:
+#  - model weights (large; sha256 recorded in checkpoints/*/MANIFEST.md)
+#  - CSV / PNG written by Python, which this workstation's endpoint encryption
+#    stores encrypted at rest (unreadable outside Python)
+*.pkl
+runs/**/*.csv
+runs/**/*.png
+checkpoints/**/*.csv
+checkpoints/**/*.png
+
+# scratch
+_dev/
+runs/_*/
