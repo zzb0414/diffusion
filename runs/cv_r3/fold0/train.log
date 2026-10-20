@@ -1,0 +1,7 @@
+[13:53:58] fold 0/5 held-out=[6, 9, 11, 13, 20, 27, 29] (sigma 0.1258, 0.1398, 0.0830, 0.1046, 0.0580, 0.0635, 0.0368) train=27 device=cuda
+[13:53:59] NOTE held-out slice 29 sigma 0.0368 is quieter than every training slice of this fold (min 0.0425); its level is extrapolated slightly.
+[13:57:29] iter   500 train=0.02802 heldout_l1(monitor)=0.02764
+[14:00:14] iter  1000 train=0.02820 heldout_l1(monitor)=0.02684
+[14:02:57] iter  1500 train=0.02552 heldout_l1(monitor)=0.02658
+[14:05:41] iter  2000 train=0.02664 heldout_l1(monitor)=0.02674
+[14:05:41] DONE fold 0: elapsed 11.7 min (evaluated weights: iteration 2000, fixed in advance)

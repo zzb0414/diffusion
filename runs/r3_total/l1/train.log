@@ -1,0 +1,14 @@
+[11:30:36] loss=l1 device=cuda train=28 val=[16, 11, 1] test=[25, 22, 8]
+[11:30:36] ladder L=40 sigma 0.0368..0.4000 (min = smallest train sigma_hat) p_raw=0.5
+[11:30:39] init val_l1=0.07689 val_mse=0.010658 noise13=1.000 gain13=1.007
+[11:31:26] iter   200 train=0.03277 val_l1=0.03130 val_mse=0.001652 noise13=0.494 gain13=0.591
+[11:32:14] iter   400 train=0.02853 val_l1=0.02781 val_mse=0.001340 noise13=0.397 gain13=0.556
+[11:33:03] iter   600 train=0.02802 val_l1=0.02702 val_mse=0.001272 noise13=0.374 gain13=0.550
+[11:33:52] iter   800 train=0.02782 val_l1=0.02669 val_mse=0.001246 noise13=0.368 gain13=0.563
+[11:34:41] iter  1000 train=0.02693 val_l1=0.02656 val_mse=0.001237 noise13=0.377 gain13=0.571
+[11:35:30] iter  1200 train=0.02696 val_l1=0.02642 val_mse=0.001226 noise13=0.343 gain13=0.554
+[11:36:19] iter  1400 train=0.02676 val_l1=0.02639 val_mse=0.001225 noise13=0.357 gain13=0.557
+[11:37:09] iter  1600 train=0.02615 val_l1=0.02646 val_mse=0.001232 noise13=0.346 gain13=0.562
+[11:37:58] iter  1800 train=0.02519 val_l1=0.02665 val_mse=0.001247 noise13=0.360 gain13=0.577
+[11:38:47] iter  2000 train=0.02571 val_l1=0.02670 val_mse=0.001255 noise13=0.353 gain13=0.574
+[11:38:47] DONE l1: iters=2000 val_l1=0.02670 val_mse=0.001255 elapsed=8.1 min

@@ -1,0 +1,32 @@
+[13:22:17] R4b tag=bal aug=False loss=l1 device=cuda train=28 val=[16, 11, 1] test=[25, 22, 8]
+[13:22:17] ladder L=40 sigma 0.0123..0.4000 p_raw=0.5
+[13:22:17] log-sigma bin  lower-edge sigma  share(R4 uniform m)  share(balanced)
+[13:22:17]   bin  0  0.0123  0.024  0.083
+[13:22:17]   bin  1  0.0152  0.016  0.083
+[13:22:17]   bin  2  0.0187  0.087  0.083
+[13:22:17]   bin  3  0.0231  0.107  0.083
+[13:22:17]   bin  4  0.0286  0.111  0.083
+[13:22:17]   bin  5  0.0353  0.167  0.083
+[13:22:17]   bin  6  0.0436  0.167  0.083
+[13:22:17]   bin  7  0.0539  0.143  0.083
+[13:22:17]   bin  8  0.0666  0.075  0.083
+[13:22:17]   bin  9  0.0823  0.048  0.083
+[13:22:17]   bin 10  0.1017  0.028  0.083
+[13:22:17]   bin 11  0.1256  0.028  0.083
+[13:22:19] init neff_a1=1.00 neff_a5=4.91 neff_a9=9.00 gmean=3.53
+[13:23:20] iter   200 train=0.04090 neff_a1=13.97 neff_a5=13.83 neff_a9=18.15 gmean=15.19
+[13:24:22] iter   400 train=0.03765 neff_a1=31.64 neff_a5=24.42 neff_a9=26.83 gmean=27.47
+[13:25:27] iter   600 train=0.03716 neff_a1=39.30 neff_a5=32.94 neff_a9=34.63 gmean=35.52
+[13:26:31] iter   800 train=0.03668 neff_a1=47.72 neff_a5=42.70 neff_a9=44.43 gmean=44.90
+[13:27:35] iter  1000 train=0.03461 neff_a1=50.12 neff_a5=48.71 neff_a9=51.48 gmean=50.09
+[13:28:40] iter  1200 train=0.03692 neff_a1=53.36 neff_a5=56.66 neff_a9=58.66 gmean=56.18
+[13:29:45] iter  1400 train=0.03530 neff_a1=54.46 neff_a5=59.72 neff_a9=64.97 gmean=59.56
+[13:30:49] iter  1600 train=0.03575 neff_a1=55.62 neff_a5=63.68 neff_a9=69.21 gmean=62.58
+[13:31:54] iter  1800 train=0.03592 neff_a1=44.59 neff_a5=61.62 neff_a9=72.28 gmean=58.34
+[13:32:59] iter  2000 train=0.03674 neff_a1=49.87 neff_a5=65.42 neff_a9=73.66 gmean=62.17
+[13:34:03] iter  2200 train=0.03499 neff_a1=50.14 neff_a5=60.07 neff_a9=70.35 gmean=59.62
+[13:35:08] iter  2400 train=0.03470 neff_a1=39.36 neff_a5=53.05 neff_a9=63.71 gmean=51.05
+[13:36:12] iter  2600 train=0.03382 neff_a1=44.82 neff_a5=56.05 neff_a9=63.34 gmean=54.19
+[13:37:17] iter  2800 train=0.03443 neff_a1=38.78 neff_a5=46.78 neff_a9=57.46 gmean=47.06
+[13:38:16] iter  3000 train=0.03345 neff_a1=39.35 neff_a5=50.03 neff_a9=58.66 gmean=48.70
+[13:38:17] DONE bal: iters=3000 neff_a1=39.35 neff_a5=50.03 neff_a9=58.66 gmean=48.70 elapsed=16.0 min
