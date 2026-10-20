@@ -12,6 +12,12 @@ runs/**/*.png
 checkpoints/**/*.csv
 checkpoints/**/*.png
 
+# ...except the R3 / R4 figures, committed as-is (still encrypted: they open
+# only on machines with the company encryption client)
+!runs/r3_total/**/*.png
+!runs/r4_subset/**/*.png
+!runs/r4b_subset/**/*.png
+
 # scratch
 _dev/
 runs/_*/

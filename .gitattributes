@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# never let EOL normalization touch image bytes (R3/R4 figures are encrypted at rest)
+*.png binary
