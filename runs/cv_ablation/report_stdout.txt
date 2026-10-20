@@ -1,0 +1,42 @@
+
+---
+
+## RUN 2026-10-20 — CV_ABLATION results
+
+Pre-registered (`Archive/CV_ABLATION/PREREGISTRATION.md`). Paired over the 34 held-out slices; plain and oracle-blur numbers verified identical across arms (only the model changed).
+
+**PRIMARY (signal, a = 5, n_eff ratio vs A = L1 unweighted):**
+
+- B (MSE, unweighted): 1.035× (95% CI 0.996–1.073; higher on 21/34 slices; p = 0.078, Holm 0.078) → **no significant difference**
+- C (MSE, noise-normalized): 1.042× (95% CI 1.004–1.079; higher on 23/34 slices; p = 0.0096, Holm 0.019) → **better than A**
+- D (L1, noise-normalized): 0.926× (95% CI 0.892–0.961; higher on 6/34 slices; p = 0.00029, Holm 0.00087) → **worse than A**
+
+**Each arm against the baselines (signal, a = 5; geometric mean, slices won):**
+
+| arm | vs plain averaging | vs oracle blur | a where significantly better than oracle blur (p<0.01) |
+|---|---|---|---|
+| A L1, unweighted (CV_R3) | 5.96× (34/34) | 1.132× (22/34) | 1, 2, 3, 5 |
+| B MSE, unweighted | 6.16× (34/34) | 1.172× (29/34) | 1, 2, 3, 5, 7 |
+| C MSE, noise-normalized | 6.21× (34/34) | 1.180× (27/34) | 1, 2, 3, 5 |
+| D L1, noise-normalized | 5.51× (34/34) | 1.048× (17/34) | 1, 2, 3 |
+
+**Secondary — ratio vs A at every a (signal; unadjusted p):**
+
+| a | B MSE | C MSE norm | D L1 norm |
+|---:|---|---|---|
+| 1 | 1.047× [0.983–1.107], 23/34, p=0.02 | 0.963× [0.907–1.020], 16/34, p=0.3 | 0.887× [0.849–0.930], 3/34, p=8.8e-07 |
+| 2 | 1.037× [0.989–1.084], 23/34, p=0.062 | 1.005× [0.957–1.050], 20/34, p=0.54 | 0.908× [0.873–0.946], 3/34, p=9.1e-06 |
+| 3 | 1.035× [0.991–1.078], 21/34, p=0.087 | 1.024× [0.981–1.064], 21/34, p=0.11 | 0.917× [0.883–0.954], 5/34, p=4.2e-05 |
+| 5 | 1.035× [0.996–1.074], 21/34, p=0.078 | 1.042× [1.004–1.080], 23/34, p=0.0096 | 0.926× [0.892–0.962], 6/34, p=0.00029 |
+| 7 | 1.036× [0.998–1.074], 22/34, p=0.059 | 1.052× [1.015–1.087], 23/34, p=0.0019 | 0.930× [0.896–0.966], 7/34, p=0.00063 |
+| 9 | 1.037× [1.001–1.075], 22/34, p=0.05 | 1.057× [1.021–1.093], 25/34, p=0.00058 | 0.933× [0.899–0.969], 7/34, p=0.00097 |
+
+- **H1 (MSE ≥ L1):** B/A = 1.035×, Holm p = 0.078 → not supported (no significant difference).
+- **H2 (normalization helps quiet slices most):** Spearman of per-slice ratio vs σ̂ — C/B: rho = -0.50 (p = 0.0024); D/A: rho = -0.30 (p = 0.088) → partly supported.
+- C vs D (MSE vs L1, both normalized): 1.126× [1.092–1.160], 31/34, p = 2e-08.
+- Per frequency band, lowest to highest (a = 5; median ratio vs A over slices where both are measurable; slices where the arm beats A out of 34; slices with an unmeasurably small error in either arm): B: 1.13 (19/34, 6 unmeas.), 1.38 (23/34, 0 unmeas.), 1.41 (24/34, 0 unmeas.), 1.00 (17/34, 0 unmeas.); C: 1.46 (25/34, 13 unmeas.), 1.20 (25/34, 1 unmeas.), 1.02 (20/34, 0 unmeas.), 1.04 (21/34, 0 unmeas.); D: 1.16 (19/34, 8 unmeas.), 0.82 (8/34, 0 unmeas.), 0.75 (4/34, 0 unmeas.), 0.91 (5/34, 0 unmeas.).
+- Slice 29 (out-of-range quiet slice), n_eff vs oracle blur at a = 1 / 5 / 9: A 4.1 vs 24.9 / 18.1 vs 31.9 / 29.2 vs 35.6; B 3.4 vs 24.9 / 15.6 vs 31.9 / 26.2 vs 35.6; C 3.7 vs 24.9 / 17.1 vs 31.9 / 28.9 vs 35.6; D 3.7 vs 24.9 / 17.2 vs 31.9 / 28.8 vs 35.6.
+- Caveat (pre-registered): the best of four arms on the same 34 slices is mildly optimistic; it is the best of this ablation, not a second confirmed claim. CV_R3 (arm A) stays the headline.
+
+**Figures:** `runs/cv_ablation/report/abl_neff_vs_a.png`, `abl_paired_ratio_vs_sigma.png`, `abl_bands_a5.png`; per-arm maps and figures under `runs/cv_ablation/<arm>/eval/`. **Data:** `runs/cv_ablation/report/paired.csv`, `summary.json`. **Commands:** `python experiments/_cv_train.py --fold K --loss {mse,l1} [--noise-norm] --outdir runs/cv_ablation/<arm>`; `python experiments/_cv_eval.py --cv runs/cv_ablation/<arm>`; `python experiments/_cv_ablation_report.py`. Weights: `checkpoints/CV_ABLATION/MANIFEST.md`. Stdout: `Archive/CV_ABLATION/*_raw.html`.
+

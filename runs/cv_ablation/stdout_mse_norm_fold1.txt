@@ -1,0 +1,7 @@
+[16:28:30] fold 1/5 held-out=[3, 4, 10, 16, 17, 23, 26] (sigma 0.1055, 0.1275, 0.1417, 0.0591, 0.0836, 0.0425, 0.0638) train=27 device=cuda
+[16:28:30] loss=mse noise_norm=True sigma_ref=0.0868 (geometric mean of training sigma_hat)
+[16:30:33] iter   500 train=0.00076 heldout_l1(monitor)=0.02642
+[16:32:34] iter  1000 train=0.00068 heldout_l1(monitor)=0.02595
+[16:34:35] iter  1500 train=0.00063 heldout_l1(monitor)=0.02557
+[16:36:36] iter  2000 train=0.00058 heldout_l1(monitor)=0.02600
+[16:36:36] DONE fold 1: elapsed 8.1 min (evaluated weights: iteration 2000, fixed in advance)

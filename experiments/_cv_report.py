@@ -260,8 +260,54 @@ D += ["",
       "improved substantially once its training covered low noise levels evenly and used flip/rotation "
       "augmentation, but on this dataset it still trails the per-repetition approach on quiet slices. "
       "It is a candidate for larger training sets.",
-      "",
-      "## Reproduction",
+      ""]
+ABL = "runs/cv_ablation/report/summary.json"
+if os.path.exists(ABL):
+    ab = json.load(open(ABL, encoding="utf-8"))
+    pr, b5 = ab["prim"], ab["base5"]
+    D += ["## Ablation — does the training loss matter?",
+          "",
+          "The recipe above trains with an unweighted L1 loss. A second pre-registered experiment "
+          "(`Archive/CV_ABLATION/PREREGISTRATION.md`) retrained the identical cross-validation with three "
+          "alternatives — same folds, batches and noise draws, only the loss changed — and compared every "
+          "slice against the L1 model (5 repetitions, signal region; Holm-corrected over the three):",
+          "",
+          "| training loss | vs the L1 recipe | slices better | Holm p | vs plain averaging | vs best-case blur |",
+          "|---|---|---:|---:|---:|---:|",
+          "| L1, unweighted (the recipe above) | — | — | — | %.2f× | %.3f× |"
+          % (b5["A"]["plain"][0], b5["A"]["blur_oracle"][0])]
+    for k in "BCD":
+        D.append("| %s | %.3f× (95%% CI %.3f–%.3f) | %d/34 | %.2g | %.2f× | %.3f× |" % (
+            ab["labels"][k], pr[k]["gmean"], pr[k]["ci_lo"], pr[k]["ci_hi"], pr[k]["wins"],
+            pr[k]["p_holm"], b5[k]["plain"][0], b5[k]["blur_oracle"][0]))
+    best = max("BCD", key=lambda k: pr[k]["gmean"])
+    assert best == "C" and pr["C"]["verdict"] == "better than A"
+    pa = list(csv.DictReader(open("runs/cv_ablation/report/paired.csv", encoding="utf-8")))
+    cr = {int(r["a"]): float(r["gmean"]) for r in pa if r["num"] == "C" and r["region"] == "signal"}
+    br = {int(r["a"]): float(r["gmean"]) for r in pa if r["num"] == "B" and r["region"] == "signal"}
+    bp1 = next(float(r["p"]) for r in pa if r["num"] == "B" and r["region"] == "signal" and int(r["a"]) == 1)
+    assert br[1] > 1 and br[1] == max(br[1], cr[1])
+    aa = sorted(cr)
+    assert all(cr[x] < cr[y] for x, y in zip(aa, aa[1:])) and cr[1] < 1 < cr[5]
+    cd = ab["c_vs_d"]
+    D += ["",
+          "- Every loss keeps the headline: all four beat plain averaging on all 34 slices.",
+          "- **The norm matters most.** Under the same noise weighting, MSE beats L1 by %.3f× "
+          "(%d/34 slices, p = %.1e) — as expected, since MSE learns exactly the posterior mean that "
+          "n_eff scores. Noise-normalized L1 is significantly worse than the plain L1 recipe."
+          % (cd["gmean"], cd["wins"], cd["p"]),
+          "- **Noise-normalized MSE is the only significant improvement** over the recipe above "
+          "(Holm p = %.2g). Its edge grows steadily with the number of repetitions averaged — from "
+          "%.3f× with one repetition to %.3f× with %d — so for single-map use it is *not* better. "
+          "With one repetition unweighted MSE does best (%.3f×; unadjusted p = %.2g, a secondary "
+          "endpoint, so suggestive only)."
+          % (pr["C"]["p_holm"], cr[aa[0]], cr[aa[-1]], aa[-1], br[1], bp1),
+          "- Weighting by noise level changes MSE little on average but shifts its benefit toward the "
+          "quieter slices (rank correlation with slice noise %.2f)." % ab["rho_c"][0],
+          "- These are the best of four variants scored on the same slices, so the winning margin is "
+          "mildly optimistic; the recipe above remains the pre-registered result.",
+          ""]
+D += ["## Reproduction",
       "",
       "Pre-registration: `Archive/CV_R3/PREREGISTRATION.md` (sha256 `%s`). Training: "
       "`python experiments/_cv_train.py --fold K` for K = 0–4. Evaluation: `python experiments/_cv_eval.py`. "

@@ -59,6 +59,23 @@ The network's advantage is concentrated at the **coarsest** scale, on every slic
 
 Denoising the average of the repetitions once (instead of averaging per-repetition outputs) is optimal in theory, since the average carries all the information. A model trained for it improved substantially once its training covered low noise levels evenly and used flip/rotation augmentation, but on this dataset it still trails the per-repetition approach on quiet slices. It is a candidate for larger training sets.
 
+## Ablation — does the training loss matter?
+
+The recipe above trains with an unweighted L1 loss. A second pre-registered experiment (`Archive/CV_ABLATION/PREREGISTRATION.md`) retrained the identical cross-validation with three alternatives — same folds, batches and noise draws, only the loss changed — and compared every slice against the L1 model (5 repetitions, signal region; Holm-corrected over the three):
+
+| training loss | vs the L1 recipe | slices better | Holm p | vs plain averaging | vs best-case blur |
+|---|---|---:|---:|---:|---:|
+| L1, unweighted (the recipe above) | — | — | — | 5.96× | 1.132× |
+| MSE, unweighted | 1.035× (95% CI 0.996–1.073) | 21/34 | 0.078 | 6.16× | 1.172× |
+| MSE, noise-normalized | 1.042× (95% CI 1.004–1.079) | 23/34 | 0.019 | 6.21× | 1.180× |
+| L1, noise-normalized | 0.926× (95% CI 0.892–0.961) | 6/34 | 0.00087 | 5.51× | 1.048× |
+
+- Every loss keeps the headline: all four beat plain averaging on all 34 slices.
+- **The norm matters most.** Under the same noise weighting, MSE beats L1 by 1.126× (31/34 slices, p = 2.0e-08) — as expected, since MSE learns exactly the posterior mean that n_eff scores. Noise-normalized L1 is significantly worse than the plain L1 recipe.
+- **Noise-normalized MSE is the only significant improvement** over the recipe above (Holm p = 0.019). Its edge grows steadily with the number of repetitions averaged — from 0.963× with one repetition to 1.057× with 9 — so for single-map use it is *not* better. With one repetition unweighted MSE does best (1.047×; unadjusted p = 0.02, a secondary endpoint, so suggestive only).
+- Weighting by noise level changes MSE little on average but shifts its benefit toward the quieter slices (rank correlation with slice noise -0.50).
+- These are the best of four variants scored on the same slices, so the winning margin is mildly optimistic; the recipe above remains the pre-registered result.
+
 ## Reproduction
 
 Pre-registration: `Archive/CV_R3/PREREGISTRATION.md` (sha256 `230c76431ae08029`). Training: `python experiments/_cv_train.py --fold K` for K = 0–4. Evaluation: `python experiments/_cv_eval.py`. This document: `python experiments/_cv_report.py`. Model weights and hashes: `checkpoints/CV_R3/MANIFEST.md`. Per-slice numbers: `runs/cv_r3/eval/per_slice.csv`.

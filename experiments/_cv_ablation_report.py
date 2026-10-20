@@ -127,8 +127,13 @@ band = {}
 for arm in "BCD":
     band[arm] = []
     for b in range(4):
-        r = np.array([data[arm][1][s][f"r3_band{b}"] / data["A"][1][s][f"r3_band{b}"] for s in slices])
-        band[arm].append((float(np.median(r)), int((r > 1).sum())))
+        # n_eff is inf where the band's estimated error is <= 0 ("below measurable"):
+        # the median uses pairs where both are finite; an inf counts as the better one.
+        x = np.array([data[arm][1][s][f"r3_band{b}"] for s in slices])
+        y = np.array([data["A"][1][s][f"r3_band{b}"] for s in slices])
+        fin = np.isfinite(x) & np.isfinite(y)
+        better = int(((x > y) & ~(np.isinf(x) & np.isinf(y))).sum())
+        band[arm].append((float(np.median(x[fin] / y[fin])), better, int((~fin).sum())))
 s29 = {arm: {a: (data[arm][0][(29, a, "signal")]["r3"], data[arm][0][(29, a, "signal")]["blur_oracle"])
              for a in (1, 5, 9)} for arm in ARMS}
 
@@ -158,7 +163,7 @@ fig.tight_layout(); fig.savefig(os.path.join(OUT, "abl_paired_ratio_vs_sigma.png
 
 fig, ax = plt.subplots(figsize=(7, 4))
 for i, (arm, c) in enumerate(zip("BCD", ("C1", "C2", "C4"))):
-    ax.bar(np.arange(4) + (i - 1) * 0.25, [m for m, _ in band[arm]], width=0.25, color=c,
+    ax.bar(np.arange(4) + (i - 1) * 0.25, [m for m, _, _ in band[arm]], width=0.25, color=c,
            label=f"{arm}: {ARMS[arm][1]}")
 ax.axhline(1, color="k", lw=0.8)
 ax.set_xticks(range(4)); ax.set_xticklabels(["0-0.0625", "0.0625-0.125", "0.125-0.25", "0.25-0.75"])
@@ -237,8 +242,10 @@ L += ["",
       "- C vs D (MSE vs L1, both normalized): %.3f× [%.3f–%.3f], %d/34, p = %.2g." % (
           mse_vs_l1_norm["gmean"], mse_vs_l1_norm["ci_lo"], mse_vs_l1_norm["ci_hi"],
           mse_vs_l1_norm["wins"], mse_vs_l1_norm["p"]),
-      "- Per frequency band (a = 5, median ratio vs A; slices above 1): " + "; ".join(
-          "%s: %s" % (arm, ", ".join("%.2f (%d)" % mb for mb in band[arm])) for arm in "BCD") + ".",
+      "- Per frequency band, lowest to highest (a = 5; median ratio vs A over slices where both are "
+      "measurable; slices where the arm beats A out of 34; slices with an unmeasurably small error in "
+      "either arm): " + "; ".join(
+          "%s: %s" % (arm, ", ".join("%.2f (%d/34, %d unmeas.)" % mb for mb in band[arm])) for arm in "BCD") + ".",
       "- Slice 29 (out-of-range quiet slice), n_eff vs oracle blur at a = 1 / 5 / 9: " + "; ".join(
           "%s %s" % (arm, " / ".join("%.1f vs %.1f" % s29[arm][a] for a in (1, 5, 9))) for arm in ARMS) + ".",
       "- Caveat (pre-registered): the best of four arms on the same 34 slices is mildly optimistic; it is "
