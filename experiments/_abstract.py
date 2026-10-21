@@ -62,6 +62,16 @@ assert sf("A", 1 / 3, 9) > sf("A", 0.0, 9) and sf("A", 0.0, 1) > sf("A", 1 / 3, 
 assert best_r("A", 1) == 0.0 and best_r("A", 9) > best_r("A", 1)
 assert all(rt["bandA"]["%s|1" % OLD[k]][b][1] == 34 for k in "ABCD" for b in range(3))
 assert set(outl) == {29, 23} and all(SIG[s] < 0.045 for s in outl)
+# the display slices are decoded only by models that never saw them (held out by that fold)
+FOLD = {}
+for kk, _, d in ARMS:
+    for f in range(5):
+        cfg = json.load(open(os.path.join(d, f"fold{f}", "config.json"), encoding="utf-8"))
+        for s in cfg["held_out"]:
+            assert s not in cfg["train_slices"]
+            FOLD.setdefault(s, set()).add(f)
+assert all(len(FOLD[s]) == 1 for s in (8, 16, 17))       # same held-out fold for every loss
+FOLD = {s: FOLD[s].pop() for s in (8, 16, 17)}
 
 s1, s9 = bs("A", 1, "plain"), bs("A", 9, "plain")
 m1, m9 = bs("A", 1, "blur_matched"), bs("A", 9, "blur_matched")
@@ -162,22 +172,25 @@ T = [
     "## Candidate figures — draft captions",
     "",
     "**Figure 1** (`fig1_maps_matched_noise.png`). Magnitude maps at the locked target ratio $r = 1/3$ for "
-    "three slices (rows; $\\hat\\sigma$ = %.3f, %.3f, %.3f). Columns: one noisy repetition; the plain mean "
-    "of all 10; then losses (A)–(D). For each loss, the top sub-row is one denoised repetition and the "
-    "bottom sub-row the mean of the 10 independently denoised repetitions. Every slice is decoded by the "
-    "cross-validation model that never saw it; *train / val / test* give the slices' roles in the earlier "
-    "single-split experiment only. Grey scale per slice: 0 to the 99.5th percentile of the plain mean. "
-    "At $r = 1/3$ each denoised repetition keeps the noise of a 9-repetition reference "
-    "($\\hat\\sigma_{\\mathrm{out}}/\\hat\\sigma$ median %.3f, %.3f, %.3f, %.3f for A–D)."
-    % (SIG[17], SIG[16], SIG[8], med("A", 1 / 3), med("B", 1 / 3), med("C", 1 / 3), med("D", 1 / 3)),
+    "slices 8, 16 and 17 (rows; $\\hat\\sigma$ = %.3f, %.3f, %.3f). **All denoised maps are produced by "
+    "models blind to the slice shown:** each slice is decoded by the cross-validation model whose training "
+    "set excluded every repetition of that slice (folds %d, %d and %d). Columns: one noisy repetition; the "
+    "plain mean of all 10; then losses (A)–(D). For each loss, the top sub-row is one denoised repetition "
+    "and the bottom sub-row the mean of the 10 independently denoised repetitions. Grey scale per slice: "
+    "0 to the 99.5th percentile of the plain mean. At $r = 1/3$ each denoised repetition keeps the noise "
+    "of a 9-repetition reference ($\\hat\\sigma_{\\mathrm{out}}/\\hat\\sigma$ median %.3f, %.3f, %.3f, "
+    "%.3f for A–D)."
+    % (SIG[8], SIG[16], SIG[17], FOLD[8], FOLD[16], FOLD[17],
+       med("A", 1 / 3), med("B", 1 / 3), med("C", 1 / 3), med("D", 1 / 3)),
     "",
     "**Figure 2** (`fig2_ratio_sweep_s16.png`). Effect of the target ratio on slice 16 "
-    "($\\hat\\sigma$ = %.3f). Columns: $r$ from 1 (no denoising: the noisy repetition / plain mean of 10) "
+    "($\\hat\\sigma$ = %.3f), **decoded by models blind to it** (each loss's fold-%d model, trained without "
+    "any repetition of this slice). Columns: $r$ from 1 (no denoising: the noisy repetition / plain mean of 10) "
     "to 0 (full network estimate). For each loss (A)–(D), the top row is one denoised repetition and the "
     "bottom row the mean of the 10 denoised repetitions. Decreasing $r$ removes noise "
     "($\\hat\\sigma_{\\mathrm{out}}/\\hat\\sigma$ for loss A on this slice: %s) but progressively smooths "
     "fine structure; averaging does not restore structure removed in every repetition."
-    % (SIG[16], ", ".join("%s at $r = %s$" % (("%.2f" % NZ["A"][(16, round(r, 4))]), RTXT[r])
+    % (SIG[16], FOLD[16], ", ".join("%s at $r = %s$" % (("%.2f" % NZ["A"][(16, round(r, 4))]), RTXT[r])
                          for r in (1.0, 1 / 3, 0.0))),
     "",
     "**Figure 3** (`fig3_neff_r_a.png`). Accuracy as a function of the number of repetitions averaged $a$ "

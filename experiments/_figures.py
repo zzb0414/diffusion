@@ -66,7 +66,7 @@ def off(ax):
 
 
 # ---- Fig 1: maps at r = 1/3 for slices 17 / 16 / 8 ------------------------------------------
-SL = [(17, "train"), (16, "val"), (8, "test")]
+SL = [8, 16, 17]                                      # increasing slice index; all decoded blind
 nrow = 3 * len(SL) - 1                                # two sub-rows per slice + spacer rows
 hr = []
 for i in range(len(SL)):
@@ -74,7 +74,7 @@ for i in range(len(SL)):
 fig = plt.figure(figsize=(16.5, 3.0 * 2 * len(SL) + 0.6))
 gs = GridSpec(nrow, 6, figure=fig, height_ratios=hr, hspace=0.06, wspace=0.04)
 heads = ["Noisy", "Mean of 10"] + [f"({k}) {n}" for k, _, n in ARMS]
-for i, (s, role) in enumerate(SL):
+for i, s in enumerate(SL):
     r0 = 3 * i
     ens = x[s]; mean10 = ens.mean(0); vmax = float(np.percentile(mag(mean10), 99.5))
     for j, img in enumerate((mag(ens[0]), mag(mean10))):
@@ -82,7 +82,7 @@ for i, (s, role) in enumerate(SL):
         if i == 0:
             ax.set_title(heads[j], fontsize=15)
         if j == 0:
-            ax.set_ylabel(f"Slice {s} ({role})\n" + r"$\hat\sigma = %.3f$" % sig[s], fontsize=15)
+            ax.set_ylabel(f"Slice {s}\n" + r"$\hat\sigma = %.3f$" % sig[s], fontsize=15)
     for j, (k, d, _) in enumerate(ARMS):
         out = x0(d, s) + LOCK * (ens - x0(d, s))
         for sub, img in enumerate((mag(out[0]), mag(out.mean(0)))):
