@@ -71,8 +71,10 @@ nrow = 3 * len(SL) - 1                                # two sub-rows per slice +
 hr = []
 for i in range(len(SL)):
     hr += [1, 1] + ([0.18] if i < len(SL) - 1 else [])
-fig = plt.figure(figsize=(16.5, 3.0 * 2 * len(SL) + 0.6))
-gs = GridSpec(nrow, 6, figure=fig, height_ratios=hr, hspace=0.06, wspace=0.04)
+fig = plt.figure(figsize=(17.3, 3.0 * 2 * len(SL) + 0.6))
+# spacer column between "Mean of 10" and the model columns leaves room for the sub-row labels
+gs = GridSpec(nrow, 7, figure=fig, height_ratios=hr, width_ratios=[1, 1, 0.2, 1, 1, 1, 1],
+              hspace=0.06, wspace=0.04)
 heads = ["Noisy", "Mean of 10"] + [f"({k}) {n}" for k, _, n in ARMS]
 for i, s in enumerate(SL):
     r0 = 3 * i
@@ -86,7 +88,7 @@ for i, s in enumerate(SL):
     for j, (k, d, _) in enumerate(ARMS):
         out = x0(d, s) + LOCK * (ens - x0(d, s))
         for sub, img in enumerate((mag(out[0]), mag(out.mean(0)))):
-            ax = fig.add_subplot(gs[r0 + sub, 2 + j]); ax.imshow(img, cmap="gray", vmin=0, vmax=vmax); off(ax)
+            ax = fig.add_subplot(gs[r0 + sub, 3 + j]); ax.imshow(img, cmap="gray", vmin=0, vmax=vmax); off(ax)
             if i == 0 and sub == 0:
                 ax.set_title(heads[2 + j].replace(", noise-normalized", ",\nnoise-normalized"), fontsize=14)
             if j == 0:
@@ -97,23 +99,26 @@ fig.savefig(os.path.join(OUT, "fig1_maps_matched_noise.png"), dpi=200, bbox_inch
 S2 = 16
 order_r = (1.0, 0.5, 1 / 3, 0.25, 1 / 6, 1 / 12, 0.0)
 ens = x[S2]; vmax = float(np.percentile(mag(ens.mean(0)), 99.5))
-hr = []
+GAP = 0.2                                             # spacer row: fits one header line
+hr = [GAP]
 for i in range(len(ARMS)):
-    hr += [1, 1] + ([0.32] if i < len(ARMS) - 1 else [])
-fig = plt.figure(figsize=(17, 2.55 * 2 * len(ARMS) + 1.0))
-gs = GridSpec(len(hr), len(order_r), figure=fig, height_ratios=hr, hspace=0.06, wspace=0.04)
+    hr += [1, 1] + ([GAP] if i < len(ARMS) - 1 else [])
+fig = plt.figure(figsize=(17, 2.55 * 2 * len(ARMS) + 1.2))
+gs = GridSpec(len(hr), len(order_r), figure=fig, height_ratios=hr, hspace=0.05, wspace=0.04)
 for i, (k, d, name) in enumerate(ARMS):
-    r0 = 3 * i
+    r0 = 1 + 3 * i
     X0 = x0(d, S2)
     for j, r in enumerate(order_r):
         out = X0 + r * (ens - X0)
         for sub, img in enumerate((mag(out[0]), mag(out.mean(0)))):
             ax = fig.add_subplot(gs[r0 + sub, j]); ax.imshow(img, cmap="gray", vmin=0, vmax=vmax); off(ax)
-            if i == 0 and sub == 0:
-                ax.set_title(r"$r = %s$" % RTEX[r], fontsize=17, pad=8)
+            if j == 0 and sub == 0:              # block header, top-left of each major panel
+                ax.text(0.0, 1.04, f"({k}) {name}", transform=ax.transAxes, ha="left", va="bottom",
+                        fontsize=16, fontweight="bold")
+            if i == len(ARMS) - 1 and sub == 1:  # r labels under the bottom row
+                ax.set_xlabel(r"$r = %s$" % RTEX[r], fontsize=17, labelpad=6)
             if j == 0:
-                ax.set_ylabel((f"({k}) {name}\n".replace(", noise-normalized", ",\nnoise-norm.") if sub == 0 else "")
-                              + ("Single" if sub == 0 else "Mean of 10"), fontsize=13)
+                ax.set_ylabel("Single" if sub == 0 else "Mean of 10", fontsize=14)
 fig.savefig(os.path.join(OUT, "fig2_ratio_sweep_s16.png"), dpi=200, bbox_inches="tight"); plt.close(fig)
 
 # ---- Fig 3: n_eff surface over (r, a), one panel per arm ---------------------------------------
@@ -134,12 +139,15 @@ fig.tight_layout(); fig.savefig(os.path.join(OUT, "fig3_neff_r_a.png"), dpi=200)
 
 # ---- Fig 4: achieved residual noise vs r ------------------------------------------------------------
 fig, ax = plt.subplots(figsize=(7.2, 6.0))
-ax.plot([0, 1], [0, 1], "k:", lw=1.2, label=r"$\hat\sigma_{\mathrm{out}} = r\,\hat\sigma$")
+ax.plot([0, 1], [0, 1], "k:", lw=0.9, label=r"$\hat\sigma_{\mathrm{out}} = r\,\hat\sigma$")
+STY = {"A": ("o", "-"), "B": ("s", "--"), "C": ("^", "-."), "D": ("D", (0, (5, 1, 1, 1)))}
 for k, d, name in ARMS:
     pr = DATA[k][1]
     v = np.array([[pr[(s, round(r, 4))] for s in slices] for r in RATIOS])
-    ax.plot(RATIOS, np.median(v, 1), "o-", lw=2, ms=5, color=COL[k], label=f"({k}) {name}")
-    ax.fill_between(RATIOS, np.percentile(v, 25, 1), np.percentile(v, 75, 1), color=COL[k], alpha=0.15)
+    mk, ls = STY[k]
+    ax.plot(RATIOS, np.median(v, 1), marker=mk, ls=ls, lw=0.9, ms=4.5, mfc="none", mew=1.0,
+            color=COL[k], label=f"({k}) {name}")
+    ax.fill_between(RATIOS, np.percentile(v, 25, 1), np.percentile(v, 75, 1), color=COL[k], alpha=0.07, lw=0)
 ax.set_xlabel(r"Target ratio, $r$")
 ax.set_ylabel(r"Residual noise, $\hat\sigma_{\mathrm{out}} / \hat\sigma$")
 ax.set_xlim(-0.02, 1.02); ax.set_ylim(-0.02, 1.05); ax.grid(alpha=0.3)
