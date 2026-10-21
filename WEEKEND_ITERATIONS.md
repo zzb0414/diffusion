@@ -1040,3 +1040,116 @@ Pre-registered (`Archive/CV_ABLATION/PREREGISTRATION.md`). Paired over the 34 he
 - Caveat (pre-registered): the best of four arms on the same 34 slices is mildly optimistic; it is the best of this ablation, not a second confirmed claim. CV_R3 (arm A) stays the headline.
 
 **Figures:** `runs/cv_ablation/report/abl_neff_vs_a.png`, `abl_paired_ratio_vs_sigma.png`, `abl_bands_a5.png`; per-arm maps and figures under `runs/cv_ablation/<arm>/eval/`. **Data:** `runs/cv_ablation/report/paired.csv`, `summary.json`. **Commands:** `python experiments/_cv_train.py --fold K --loss {mse,l1} [--noise-norm] --outdir runs/cv_ablation/<arm>`; `python experiments/_cv_eval.py --cv runs/cv_ablation/<arm>`; `python experiments/_cv_ablation_report.py`. Weights: `checkpoints/CV_ABLATION/MANIFEST.md`. Stdout: `Archive/CV_ABLATION/*_raw.html`.
+
+---
+
+## PLAN 2026-10-21 — CV_RATIO: matched-noise loss comparison (A) and ratio × split sweep (B)
+
+Decouples the loss comparison from the decoding ratio. The CV_R3 proof and CV_ABLATION decoded at target_ratio 0 (full posterior mean), whose n_eff gain is partly blur. (A) compares the four loss arms at the locked theoretical ratio r = 1/3 (noise of the LOO-of-9 training target), primary at a = 1, vs plain averaging and a noise-matched blur; (B) sweeps r × a descriptively for all arms. Evaluation-only on the existing 20 fold models. Spatial-map figures for slices 17, 16, 11, 1, 25, 22, 8. Pre-registration `Archive/CV_RATIO/PREREGISTRATION.md` (sha256 `b2e606c6bbeee98e`). The older SR_SWEEP (sigma_ratio noise injection on legacy models) is excluded from the abstract. Protected artifacts hashed: `Archive/CV_RATIO/protected_before.sha256`.
+
+---
+
+## RUN 2026-10-21 — CV_RATIO results
+
+Pre-registered (`Archive/CV_RATIO/PREREGISTRATION.md`); evaluation-only on the 20 existing fold models; every slice scored by its held-out model. Self-checks passed for every arm: r = 0 reproduces the CV_R3/CV_ABLATION n_eff, r = 1 equals plain averaging, oracle blur identical, noise-matched blur within 3% of the target noise.
+
+### Set A — losses at the locked ratio r = 1/3
+
+Achieved residual noise of one output at r = 1/3 (median, range over slices): L1 0.348 (0.324–0.652); MSE 0.353 (0.328–0.689); MSE, noise-norm. 0.348 (0.339–0.674); L1, noise-norm. 0.345 (0.329–0.673).
+
+**PRIMARY (a = 1, signal, n_eff ratio vs L1):**
+
+- MSE: 0.951× (95% CI 0.919–0.981; 11/34), p = 0.0065, Holm 0.02 → **worse than L1**
+- MSE, noise-norm.: 1.010× (95% CI 0.986–1.044; 17/34), p = 0.77, Holm 1 → **no significant difference**
+- L1, noise-norm.: 1.003× (95% CI 0.980–1.030; 14/34), p = 0.6, Holm 1 → **no significant difference**
+
+Each arm at r = 1/3 against the baselines (signal; geometric mean, slices won, one-sided p):
+
+| arm | a | vs plain averaging | vs noise-matched blur | vs oracle-MSE blur |
+|---|---:|---|---|---|
+| L1 | 1 | 6.843× (34/34, p=6e-11) | 1.062× (32/34, p=3e-09) | 0.372× (0/34, p=1) |
+| L1 | 5 | 4.911× (34/34, p=6e-11) | 1.143× (33/34, p=1e-10) | 0.934× (22/34, p=0.4) |
+| L1 | 9 | 3.850× (34/34, p=6e-11) | 1.187× (33/34, p=1e-10) | 1.087× (26/34, p=0.003) |
+| MSE | 1 | 6.506× (34/34, p=6e-11) | 1.053× (32/34, p=1e-09) | 0.354× (0/34, p=1) |
+| MSE | 5 | 4.784× (34/34, p=6e-11) | 1.130× (34/34, p=6e-11) | 0.909× (21/34, p=0.7) |
+| MSE | 9 | 3.803× (34/34, p=6e-11) | 1.172× (34/34, p=6e-11) | 1.074× (26/34, p=0.002) |
+| MSE, noise-norm. | 1 | 6.911× (34/34, p=6e-11) | 1.070× (33/34, p=1e-09) | 0.376× (0/34, p=1) |
+| MSE, noise-norm. | 5 | 5.052× (34/34, p=6e-11) | 1.178× (34/34, p=6e-11) | 0.961× (22/34, p=0.3) |
+| MSE, noise-norm. | 9 | 4.002× (34/34, p=6e-11) | 1.238× (34/34, p=6e-11) | 1.130× (26/34, p=0.002) |
+| L1, noise-norm. | 1 | 6.865× (34/34, p=6e-11) | 1.058× (28/34, p=8e-07) | 0.373× (0/34, p=1) |
+| L1, noise-norm. | 5 | 4.840× (34/34, p=6e-11) | 1.125× (33/34, p=1e-09) | 0.920× (19/34, p=0.7) |
+| L1, noise-norm. | 9 | 3.759× (34/34, p=6e-11) | 1.161× (31/34, p=1e-08) | 1.062× (25/34, p=0.03) |
+
+Secondary, ratio vs L1 at r = 1/3 (signal; unadjusted p):
+
+| a | MSE | MSE, noise-norm. | L1, noise-norm. |
+|---:|---|---|---|
+| 1 | 0.951× [0.918–0.981], 11/34, p=0.0065 | 1.010× [0.986–1.043], 17/34, p=0.77 | 1.003× [0.981–1.030], 14/34, p=0.6 |
+| 2 | 0.958× [0.929–0.985], 10/34, p=0.0091 | 1.016× [0.993–1.048], 18/34, p=0.58 | 0.997× [0.975–1.024], 13/34, p=0.31 |
+| 3 | 0.964× [0.936–0.990], 10/34, p=0.015 | 1.021× [0.999–1.051], 20/34, p=0.19 | 0.993× [0.971–1.019], 13/34, p=0.13 |
+| 5 | 0.974× [0.949–0.998], 14/34, p=0.12 | 1.029× [1.008–1.056], 25/34, p=0.0086 | 0.986× [0.963–1.012], 12/34, p=0.034 |
+| 7 | 0.982× [0.958–1.004], 18/34, p=0.33 | 1.035× [1.014–1.061], 26/34, p=0.00058 | 0.980× [0.958–1.008], 10/34, p=0.026 |
+| 9 | 0.988× [0.965–1.010], 18/34, p=0.6 | 1.040× [1.019–1.065], 26/34, p=6.2e-05 | 0.976× [0.953–1.004], 10/34, p=0.016 |
+
+Per band vs the noise-matched blur at r = 1/3 (median ratio; slices where the arm wins):
+
+- L1: a=1: 6.06 (34), 5.34 (34), 2.61 (34), 0.34 (0); a=5: 4.04 (34), 3.35 (34), 1.92 (34), 0.64 (0); a=9: 3.18 (34), 2.48 (34), 1.66 (34), 0.83 (0)
+- MSE: a=1: 5.55 (34), 4.99 (34), 2.57 (34), 0.35 (0); a=5: 4.04 (34), 3.53 (34), 2.05 (34), 0.62 (0); a=9: 3.22 (33), 2.80 (34), 1.73 (34), 0.79 (0)
+- MSE, noise-norm.: a=1: 6.42 (34), 5.31 (34), 2.57 (34), 0.33 (0); a=5: 5.09 (34), 3.55 (34), 1.99 (34), 0.65 (0); a=9: 3.51 (34), 2.62 (34), 1.73 (34), 0.85 (2)
+- L1, noise-norm.: a=1: 6.34 (34), 5.23 (34), 2.53 (34), 0.32 (0); a=5: 4.03 (34), 2.97 (34), 1.70 (34), 0.63 (0); a=9: 2.93 (33), 2.07 (34), 1.39 (34), 0.80 (0)
+
+### Set B — ratio × split size (descriptive)
+
+Geometric-mean n_eff (signal) by r and a; r = 1 is plain averaging (= a):
+
+**L1**
+
+| r | a=1 | a=2 | a=3 | a=5 | a=7 | a=9 | noise of one output |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 22.80 | 26.52 | 28.18 | 29.78 | 30.60 | 31.11 | 0.090 |
+| 1/12 | 20.77 | 26.67 | 29.60 | 32.60 | 34.16 | 35.14 | 0.125 |
+| 1/6 | 14.92 | 22.36 | 26.91 | 32.28 | 35.38 | 37.43 | 0.193 |
+| 1/4 | 10.02 | 16.93 | 22.03 | 29.10 | 33.82 | 37.21 | 0.269 |
+| 1/3 | 6.84 | 12.45 | 17.13 | 24.55 | 30.20 | 34.65 | 0.348 |
+| 1/2 | 3.58 | 6.95 | 10.14 | 16.02 | 21.33 | 26.14 | 0.509 |
+| 1 | 1.00 | 2.00 | 3.00 | 5.00 | 7.00 | 9.00 | 1.000 |
+
+**MSE**
+
+| r | a=1 | a=2 | a=3 | a=5 | a=7 | a=9 | noise of one output |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 23.88 | 27.50 | 29.16 | 30.82 | 31.70 | 32.26 | 0.077 |
+| 1/12 | 20.54 | 26.69 | 29.83 | 33.12 | 34.89 | 36.02 | 0.122 |
+| 1/6 | 14.24 | 21.73 | 26.46 | 32.18 | 35.57 | 37.84 | 0.196 |
+| 1/4 | 9.49 | 16.24 | 21.34 | 28.58 | 33.52 | 37.13 | 0.274 |
+| 1/3 | 6.51 | 11.92 | 16.52 | 23.92 | 29.65 | 34.23 | 0.353 |
+| 1/2 | 3.46 | 6.74 | 9.84 | 15.61 | 20.84 | 25.62 | 0.513 |
+| 1 | 1.00 | 2.00 | 3.00 | 5.00 | 7.00 | 9.00 | 1.000 |
+
+**MSE, noise-norm.**
+
+| r | a=1 | a=2 | a=3 | a=5 | a=7 | a=9 | noise of one output |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 21.97 | 26.65 | 28.85 | 31.04 | 32.18 | 32.89 | 0.103 |
+| 1/12 | 20.38 | 27.04 | 30.47 | 34.07 | 35.99 | 37.20 | 0.136 |
+| 1/6 | 14.90 | 22.77 | 27.72 | 33.68 | 37.19 | 39.52 | 0.195 |
+| 1/4 | 10.10 | 17.24 | 22.61 | 30.18 | 35.31 | 39.04 | 0.270 |
+| 1/3 | 6.91 | 12.64 | 17.49 | 25.26 | 31.25 | 36.02 | 0.348 |
+| 1/2 | 3.61 | 7.02 | 10.26 | 16.27 | 21.71 | 26.69 | 0.509 |
+| 1 | 1.00 | 2.00 | 3.00 | 5.00 | 7.00 | 9.00 | 1.000 |
+
+**L1, noise-norm.**
+
+| r | a=1 | a=2 | a=3 | a=5 | a=7 | a=9 | noise of one output |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 20.22 | 24.08 | 25.84 | 27.57 | 28.46 | 29.02 | 0.106 |
+| 1/12 | 19.24 | 24.86 | 27.66 | 30.54 | 32.05 | 33.01 | 0.132 |
+| 1/6 | 14.46 | 21.52 | 25.79 | 30.79 | 33.67 | 35.56 | 0.194 |
+| 1/4 | 9.95 | 16.68 | 21.57 | 28.28 | 32.70 | 35.85 | 0.268 |
+| 1/3 | 6.86 | 12.41 | 17.00 | 24.20 | 29.60 | 33.83 | 0.345 |
+| 1/2 | 3.60 | 6.99 | 10.18 | 16.02 | 21.26 | 25.99 | 0.506 |
+| 1 | 1.00 | 2.00 | 3.00 | 5.00 | 7.00 | 9.00 | 1.000 |
+
+Highest-n_eff ratio per a (descriptive, not a selection): L1: a=1→0, a=2→1/12, a=3→1/12, a=5→1/12, a=7→1/6, a=9→1/6; MSE: a=1→0, a=2→0, a=3→1/12, a=5→1/12, a=7→1/6, a=9→1/6; MSE, noise-norm.: a=1→0, a=2→1/12, a=3→1/12, a=5→1/12, a=7→1/6, a=9→1/6; L1, noise-norm.: a=1→0, a=2→1/12, a=3→1/12, a=5→1/6, a=7→1/6, a=9→1/4.
+
+**Figures** (`runs/cv_ratio/report/`): `maps_A_trainval.png`, `maps_A_test.png` (set A maps), `maps_B_<arm>_s<NN>.png` (set B maps), `B_neff_surface.png`, `B_noise_vs_r.png`, `B_frontier.png`, `B_bands_vs_r.png`. **Data:** `<arm>/ratio_eval/*.csv`, `runs/cv_ratio/report/summary.json`. **Commands:** `python experiments/_cv_ratio_eval.py --cv <arm dir>`; `python experiments/_ratio_report.py`. Stdout: `Archive/CV_RATIO/*_raw.html`.

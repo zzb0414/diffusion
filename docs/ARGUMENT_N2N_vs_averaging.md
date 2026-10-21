@@ -76,6 +76,22 @@ The recipe above trains with an unweighted L1 loss. A second pre-registered expe
 - Weighting by noise level changes MSE little on average but shifts its benefit toward the quieter slices (rank correlation with slice noise -0.50).
 - These are the best of four variants scored on the same slices, so the winning margin is mildly optimistic; the recipe above remains the pre-registered result.
 
+## At matched noise — decoupling the loss from the decoding ratio
+
+The results above decode every repetition with `target_ratio = 0` (the full posterior mean), whose error advantage is partly blur. A third pre-registered evaluation (`Archive/CV_RATIO/PREREGISTRATION.md`, no retraining) instead locks each denoised repetition to the noise of its own training target, the leave-one-out mean of 9: r = 1/3 of the input noise. The achieved residual noise was 0.348 (median over slices; the one-step rule holds), except on the quietest slices, which lie below most training data of their fold.
+
+| training loss | 1 repetition: vs plain | vs noise-matched blur | 9 repetitions: vs plain | vs noise-matched blur |
+|---|---:|---:|---:|---:|
+| L1 | 6.84× | 1.062× (32/34) | 3.85× | 1.187× (33/34) |
+| MSE | 6.51× | 1.053× (32/34) | 3.80× | 1.172× (34/34) |
+| MSE, noise-norm. | 6.91× | 1.070× (33/34) | 4.00× | 1.238× (34/34) |
+| L1, noise-norm. | 6.86× | 1.058× (28/34) | 3.76× | 1.161× (31/34) |
+
+- **At equal residual noise every loss still beats both plain averaging (all 34 slices) and a Gaussian blur tuned to the same noise** (p < 0.01 at 1, 5 and 9 repetitions).
+- **Where the gain sits.** For single maps, against the noise-matched blur, every loss wins the three lower frequency bands on every slice and loses the finest band on every slice. The finest-band loss is the deliberately kept noise, not lost detail: there the network's error equals its residual noise (n_eff × noise² = 0.95–0.96, median; 1 = pure retained noise). At equal total noise the network keeps the reference's fine-grained noise texture, while blur trades it for blotchy coarse-scale noise.
+- **The loss ranking depends on the ratio.** At r = 1/3, unweighted MSE is significantly worse than L1 for single maps (0.951×, Holm p = 0.02), the reverse of the r = 0 ranking. Both noise-normalized losses are on par with plain L1 for single maps; noise-normalized MSE pulls ahead when 5 or more repetitions are averaged (1.040× at 9; secondary endpoint, p = 6e-05 unadjusted). Losses must therefore be compared at a stated ratio.
+- **Ratio and averaging interact.** The ratio with the lowest error grows with the number of repetitions averaged; with 9 repetitions, r = 1/3 (34.7) beats the full posterior mean (31.1), which over-smooths when many outputs are averaged — while for a single map r = 0 has the lowest error (22.8 vs 6.8) at the price of visible blur.
+
 ## Reproduction
 
 Pre-registration: `Archive/CV_R3/PREREGISTRATION.md` (sha256 `230c76431ae08029`). Training: `python experiments/_cv_train.py --fold K` for K = 0–4. Evaluation: `python experiments/_cv_eval.py`. This document: `python experiments/_cv_report.py`. Model weights and hashes: `checkpoints/CV_R3/MANIFEST.md`. Per-slice numbers: `runs/cv_r3/eval/per_slice.csv`.

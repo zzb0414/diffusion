@@ -307,6 +307,68 @@ if os.path.exists(ABL):
           "- These are the best of four variants scored on the same slices, so the winning margin is "
           "mildly optimistic; the recipe above remains the pre-registered result.",
           ""]
+RAT = "runs/cv_ratio/report/summary.json"
+if os.path.exists(RAT):
+    rt = json.load(open(RAT, encoding="utf-8"))
+    lab = rt["labels"]
+    bs = lambda arm, a, b: rt["base"]["%s|%d|%s" % (arm, a, b)]
+    sf = lambda arm, r, a: rt["surf"]["%s|%.4f|%d" % (arm, r, a)]
+    # claims below, asserted
+    assert all(bs(k, a, "plain")["wins"] == 34 for k in "ABCD" for a in (1, 5, 9))
+    mb = {k: [bs(k, a, "blur_matched") for a in (1, 5, 9)] for k in "ABCD"}
+    assert all(r["gmean"] > 1 and r["p"] < 0.01 for k in "ABCD" for r in mb[k])
+    assert rt["prim"]["B"]["verdict"] == "worse than L1"
+    assert sf("A", 1 / 3, 9) > sf("A", 0.0, 9) and sf("A", 0.0, 1) > sf("A", 1 / 3, 1)
+    floor = []
+    for k, d in (("A", "runs/cv_r3"), ("C", "runs/cv_ablation/mse_norm")):
+        Bn = [r for r in csv.DictReader(open(d + "/ratio_eval/bands_ratio.csv", encoding="utf-8")) if r["a"] == "1"]
+        Nz = {r["slice"]: float(r["noise"]) for r in csv.DictReader(open(d + "/ratio_eval/per_slice_ratio.csv",
+              encoding="utf-8")) if r["region"] == "per_r" and abs(float(r["ratio"]) - 1 / 3) < 1e-6}
+        floor.append(float(np.median([float(r["r0.3333_band3"]) * Nz[r["slice"]] ** 2 for r in Bn])))
+    assert all(0.85 < f <= 1.0 for f in floor)
+    hb = [rt["bandA"]["%s|1" % k][3][1] for k in "ABCD"]
+    lb = [min(rt["bandA"]["%s|1" % k][b][1] for b in range(3)) for k in "ABCD"]
+    D += ["## At matched noise — decoupling the loss from the decoding ratio",
+          "",
+          "The results above decode every repetition with `target_ratio = 0` (the full posterior mean), "
+          "whose error advantage is partly blur. A third pre-registered evaluation "
+          "(`Archive/CV_RATIO/PREREGISTRATION.md`, no retraining) instead locks each denoised repetition "
+          "to the noise of its own training target, the leave-one-out mean of 9: r = 1/3 of the input "
+          "noise. The achieved residual noise was %.3f (median over slices; the one-step rule holds), "
+          "except on the quietest slices, which lie below most training data of their fold."
+          % rt["noise3"]["A"][0],
+          "",
+          "| training loss | 1 repetition: vs plain | vs noise-matched blur | 9 repetitions: vs plain | vs noise-matched blur |",
+          "|---|---:|---:|---:|---:|"]
+    for k in "ABCD":
+        D.append("| %s | %.2f× | %.3f× (%d/34) | %.2f× | %.3f× (%d/34) |" % (
+            lab[k], bs(k, 1, "plain")["gmean"], bs(k, 1, "blur_matched")["gmean"], bs(k, 1, "blur_matched")["wins"],
+            bs(k, 9, "plain")["gmean"], bs(k, 9, "blur_matched")["gmean"], bs(k, 9, "blur_matched")["wins"]))
+    D += ["",
+          "- **At equal residual noise every loss still beats both plain averaging (all 34 slices) and a "
+          "Gaussian blur tuned to the same noise** (p < 0.01 at 1, 5 and 9 repetitions).",
+          "- **Where the gain sits.** For single maps, against the noise-matched blur, every loss wins the "
+          "three lower frequency bands on %s and loses the finest band on %s. The finest-"
+          "band loss is the deliberately kept noise, not lost detail: there the network's error equals its "
+          "residual noise (n_eff × noise² = %.2f–%.2f, median; 1 = pure retained noise). At equal total "
+          "noise the network keeps the reference's fine-grained noise texture, while blur trades it for "
+          "blotchy coarse-scale noise."
+          % ("every slice" if min(lb) == 34 else "at least %d of 34 slices" % min(lb),
+             "every slice" if max(hb) == 0 else "all but %d of 34 slices" % max(hb),
+             min(floor), max(floor)),
+          "- **The loss ranking depends on the ratio.** At r = 1/3, unweighted MSE is significantly worse "
+          "than L1 for single maps (%.3f×, Holm p = %.2g), the reverse of the r = 0 ranking. Both "
+          "noise-normalized losses are on par with plain L1 for single maps; noise-normalized MSE pulls "
+          "ahead when 5 or more repetitions are averaged (%.3f× at 9; secondary endpoint, p = %.1g "
+          "unadjusted). Losses must therefore be compared at a stated ratio."
+          % (rt["prim"]["B"]["gmean"], rt["prim"]["B"]["p_holm"],
+             rt["secA"]["C|9|signal"]["gmean"], rt["secA"]["C|9|signal"]["p"]),
+          "- **Ratio and averaging interact.** The ratio with the lowest error grows with the number of "
+          "repetitions averaged; with 9 repetitions, r = 1/3 (%.1f) beats the full posterior mean (%.1f), "
+          "which over-smooths when many outputs are averaged — while for a single map r = 0 has the lowest "
+          "error (%.1f vs %.1f) at the price of visible blur."
+          % (sf("A", 1 / 3, 9), sf("A", 0.0, 9), sf("A", 0.0, 1), sf("A", 1 / 3, 1)),
+          ""]
 D += ["## Reproduction",
       "",
       "Pre-registration: `Archive/CV_R3/PREREGISTRATION.md` (sha256 `%s`). Training: "

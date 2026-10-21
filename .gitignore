@@ -21,3 +21,6 @@ checkpoints/**/*.png
 # scratch
 _dev/
 runs/_*/
+
+# decoded display arrays (derived from the data; regenerate with experiments/_cv_ratio_eval.py)
+runs/**/*.npy
