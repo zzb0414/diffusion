@@ -73,6 +73,19 @@ for kk, _, d in ARMS:
 assert all(len(FOLD[s]) == 1 for s in (8, 16, 17))       # same held-out fold for every loss
 FOLD = {s: FOLD[s].pop() for s in (8, 16, 17)}
 
+# display window of Figs. 1-2 (must match experiments/_figures.py): saturation of the shown panels
+sys.path.insert(0, os.path.join(ROOT, "experiments"))
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+from _figures_window import WIN                              # noqa: E402
+from _r3_train import load_data                              # noqa: E402
+_x = load_data().double().numpy()
+_mag = lambda z: np.sqrt(z[..., 0, :, :] ** 2 + z[..., 1, :, :] ** 2)
+SAT = {}
+for s in (8, 16, 17):
+    m = _mag(_x[s].mean(0)); v = WIN * np.percentile(m, 99.5)
+    SAT[s] = (100 * float((_mag(_x[s][0]) > v).mean()), 100 * float((m > v).mean()))
+satr = lambda i: "%.1f–%.1f" % (min(SAT[s][i] for s in SAT), max(SAT[s][i] for s in SAT))
+
 s1, s9 = bs("A", 1, "plain"), bs("A", 9, "plain")
 m1, m9 = bs("A", 1, "blur_matched"), bs("A", 9, "blur_matched")
 
@@ -176,11 +189,15 @@ T = [
     "models blind to the slice shown:** each slice is decoded by the cross-validation model whose training "
     "set excluded every repetition of that slice (folds %d, %d and %d). Columns: one noisy repetition; the "
     "plain mean of all 10; then losses (A)–(D). For each loss, the top sub-row is one denoised repetition "
-    "and the bottom sub-row the mean of the 10 independently denoised repetitions. Grey scale per slice: "
-    "0 to the 99.5th percentile of the plain mean. At $r = 1/3$ each denoised repetition keeps the noise "
+    "and the bottom sub-row the mean of the 10 independently denoised repetitions. **Display:** one grey "
+    "window per slice, shared by all its panels, from 0 to %.1f× the 99.5th percentile of the plain mean — "
+    "opened slightly beyond that percentile, for display only, so the noisy repetition is not dominated by "
+    "saturation while the denoised maps keep their contrast (%s%% of the noisy repetition's pixels and "
+    "%s%% of the plain mean's still saturate). No head mask is applied: the background is kept to show the "
+    "spatial pattern of the noise and its removal. At $r = 1/3$ each denoised repetition keeps the noise "
     "of a 9-repetition reference ($\\hat\\sigma_{\\mathrm{out}}/\\hat\\sigma$ median %.3f, %.3f, %.3f, "
     "%.3f for A–D)."
-    % (SIG[8], SIG[16], SIG[17], FOLD[8], FOLD[16], FOLD[17],
+    % (SIG[8], SIG[16], SIG[17], FOLD[8], FOLD[16], FOLD[17], WIN, satr(0), satr(1),
        med("A", 1 / 3), med("B", 1 / 3), med("C", 1 / 3), med("D", 1 / 3)),
     "",
     "**Figure 2** (`fig2_ratio_sweep_s16.png`). Effect of the target ratio on slice 16 "
@@ -189,9 +206,11 @@ T = [
     "to 0 (full network estimate). For each loss (A)–(D), the top row is one denoised repetition and the "
     "bottom row the mean of the 10 denoised repetitions. Decreasing $r$ removes noise "
     "($\\hat\\sigma_{\\mathrm{out}}/\\hat\\sigma$ for loss A on this slice: %s) but progressively smooths "
-    "fine structure; averaging does not restore structure removed in every repetition."
+    "fine structure; averaging does not restore structure removed in every repetition. Same display "
+    "window rule as Fig. 1 (%.1f× the 99.5th percentile of the plain mean, shared by all panels), no head "
+    "mask."
     % (SIG[16], FOLD[16], ", ".join("%s at $r = %s$" % (("%.2f" % NZ["A"][(16, round(r, 4))]), RTXT[r])
-                         for r in (1.0, 1 / 3, 0.0))),
+                         for r in (1.0, 1 / 3, 0.0)), WIN),
     "",
     "**Figure 3** (`fig3_neff_r_a.png`). Accuracy as a function of the number of repetitions averaged $a$ "
     "and the target ratio $r$, one panel per loss. $n_{\\mathrm{eff}} = \\hat\\sigma^2/\\mathrm{MSE}$ "

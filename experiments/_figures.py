@@ -59,6 +59,19 @@ x0 = lambda d, s: np.load(os.path.join(d, "ratio_eval", f"x0_s{s:02d}.npy")).ast
 gm = lambda v: float(np.exp(np.mean(np.log(v))))
 
 
+from _figures_window import WIN   # display window = WIN x 99.5th pct of the plain mean (shared per slice)  # noqa: E402
+
+
+def window(mean10):
+    return WIN * float(np.percentile(mag(mean10), 99.5))
+
+
+def show(ax, img, vmax):
+    """Transposed magnitude panel on a shared [0, vmax] grey window."""
+    ax.imshow(img.T, cmap="gray", vmin=0, vmax=vmax)
+    off(ax)
+
+
 def off(ax):
     ax.set_xticks([]); ax.set_yticks([])
     for sp in ax.spines.values():
@@ -78,9 +91,9 @@ gs = GridSpec(nrow, 7, figure=fig, height_ratios=hr, width_ratios=[1, 1, 0.2, 1,
 heads = ["Noisy", "Mean of 10"] + [f"({k}) {n}" for k, _, n in ARMS]
 for i, s in enumerate(SL):
     r0 = 3 * i
-    ens = x[s]; mean10 = ens.mean(0); vmax = float(np.percentile(mag(mean10), 99.5))
+    ens = x[s]; mean10 = ens.mean(0); vmax = window(mean10)
     for j, img in enumerate((mag(ens[0]), mag(mean10))):
-        ax = fig.add_subplot(gs[r0:r0 + 2, j]); ax.imshow(img, cmap="gray", vmin=0, vmax=vmax); off(ax)
+        ax = fig.add_subplot(gs[r0:r0 + 2, j]); show(ax, img, vmax)
         if i == 0:
             ax.set_title(heads[j], fontsize=15)
         if j == 0:
@@ -88,7 +101,7 @@ for i, s in enumerate(SL):
     for j, (k, d, _) in enumerate(ARMS):
         out = x0(d, s) + LOCK * (ens - x0(d, s))
         for sub, img in enumerate((mag(out[0]), mag(out.mean(0)))):
-            ax = fig.add_subplot(gs[r0 + sub, 3 + j]); ax.imshow(img, cmap="gray", vmin=0, vmax=vmax); off(ax)
+            ax = fig.add_subplot(gs[r0 + sub, 3 + j]); show(ax, img, vmax)
             if i == 0 and sub == 0:
                 ax.set_title(heads[2 + j].replace(", noise-normalized", ",\nnoise-normalized"), fontsize=14)
             if j == 0:
@@ -98,7 +111,7 @@ fig.savefig(os.path.join(OUT, "fig1_maps_matched_noise.png"), dpi=200, bbox_inch
 # ---- Fig 2: r sweep for slice 16, all arms stacked --------------------------------------------
 S2 = 16
 order_r = (1.0, 0.5, 1 / 3, 0.25, 1 / 6, 1 / 12, 0.0)
-ens = x[S2]; vmax = float(np.percentile(mag(ens.mean(0)), 99.5))
+ens = x[S2]; vmax = window(ens.mean(0))
 GAP = 0.2                                             # spacer row: fits one header line
 hr = [GAP]
 for i in range(len(ARMS)):
@@ -111,7 +124,7 @@ for i, (k, d, name) in enumerate(ARMS):
     for j, r in enumerate(order_r):
         out = X0 + r * (ens - X0)
         for sub, img in enumerate((mag(out[0]), mag(out.mean(0)))):
-            ax = fig.add_subplot(gs[r0 + sub, j]); ax.imshow(img, cmap="gray", vmin=0, vmax=vmax); off(ax)
+            ax = fig.add_subplot(gs[r0 + sub, j]); show(ax, img, vmax)
             if j == 0 and sub == 0:              # block header, top-left of each major panel
                 ax.text(0.0, 1.04, f"({k}) {name}", transform=ax.transAxes, ha="left", va="bottom",
                         fontsize=16, fontweight="bold")
