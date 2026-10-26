@@ -1159,3 +1159,53 @@ Highest-n_eff ratio per a (descriptive, not a selection): L1: a=1→0, a=2→1/1
 ## PLAN 2026-10-26 — datasets 2 and 3: GEN (generalization) and MX_CV (pooled training)
 
 dataset2 and dataset3 (same subject, poorer receiver coil, lower SNR; 2 and 3 from one session with exactly matching slices, dataset1 close) are brought into the workflow. Read-only checks: σ̂ medians 0.085 / 0.151 / 0.095 (ds1/2/3), ds3 minimum 0.0339 below ds1's 0.0368; same-index maps correlate 0.86–0.91 vs 0.75–0.79 for distant indices (same anatomy). **GEN** (evaluation-only, first): the existing dataset1-only fold models decode every ds2/ds3 slice, each by the fold that held its slice index out — strictly unseen data and anatomy (pre-registration `Archive/MX_CV/PREREGISTRATION_GEN.md`, sha256 `9d686cc815b52088`). **MX_CV**: arms A–D retrained on ds1+2+3 with folds grouped by slice index (CV_R3's assignment), 6000 iterations with 2000 primary (pre-registration `Archive/MX_CV/PREREGISTRATION.md`, sha256 `2d2474e854e15083`). New code in new files; existing scripts stay byte-reproducible. Figures are no longer committed (encrypted at rest). Protected artifacts hashed: `Archive/MX_CV/protected_before.sha256`.
+
+---
+
+## RUN 2026-10-26 — GEN results
+
+Pre-registered (`Archive/MX_CV/PREREGISTRATION_GEN.md`). The dataset1-only fold models (iteration 2000) decode every slice of datasets 2 and 3 — a different receiver coil, never seen in training — each by the fold that held its slice index out, so data and anatomy are unseen. Verification 4 passed: GEN's dataset-1 rows for arm A equal the CV_RATIO numbers (10200 values).
+
+**PRIMARY (arm A, r = 1/3, a = 1, signal):**
+
+- Dataset 2, vs plain averaging (= n_eff of one repetition): 8.162× (95% CI 8.016–8.311; 34/34; p = 6e-11, Holm 1e-10) → **supported**
+- Dataset 3, vs plain averaging (= n_eff of one repetition): 7.422× (95% CI 6.934–7.845; 34/34; p = 6e-11, Holm 1e-10) → **supported**
+- Dataset 2, vs noise-matched blur: 0.989× (95% CI 0.975–1.004; 13/34; p = 0.9, Holm 0.9) → **not supported**
+- Dataset 3, vs noise-matched blur: 1.046× (95% CI 1.027–1.065; 26/34; p = 3e-05, Holm 6e-05) → **supported**
+
+**Calibration** σ̂_out/σ̂ at r = 1/3 (median, IQR):
+
+| loss | dataset 1 | dataset 2 (unseen) | dataset 3 (unseen) |
+|---|---|---|---|
+| (A) L1 | 0.348 (IQR 0.341–0.355) | 0.333 (IQR 0.330–0.338) | 0.340 (IQR 0.335–0.348) |
+| (B) L1, noise-normalized | 0.345 (IQR 0.342–0.353) | 0.337 (IQR 0.334–0.339) | 0.341 (IQR 0.338–0.343) |
+| (C) MSE | 0.353 (IQR 0.340–0.364) | 0.339 (IQR 0.334–0.348) | 0.347 (IQR 0.334–0.361) |
+| (D) MSE, noise-normalized | 0.348 (IQR 0.344–0.355) | 0.336 (IQR 0.332–0.338) | 0.339 (IQR 0.337–0.344) |
+
+Slices below the dataset1 models' ladder (σ̂ < 0.0368, extrapolated): dataset 2: none; dataset 3: 21.
+
+**n_eff at r = 1/3 per dataset** (geometric mean over 34 slices; ×plain, ×noise-matched blur, slices won):
+
+| loss | dataset | a = 1 | a = 5 | a = 9 |
+|---|---:|---|---|---|
+| (A) L1 | 1 | 6.84 (×6.84 plain, ×1.062 blur, 32/34) | 24.55 (×4.91 plain, ×1.143 blur, 33/34) | 34.65 (×3.85 plain, ×1.187 blur, 33/34) |
+| (A) L1 | 2 | 8.16 (×8.16 plain, ×0.989 blur, 13/34) | 31.67 (×6.33 plain, ×0.978 blur, 12/34) | 46.75 (×5.19 plain, ×0.972 blur, 13/34) |
+| (A) L1 | 3 | 7.42 (×7.42 plain, ×1.046 blur, 26/34) | 29.30 (×5.86 plain, ×1.042 blur, 25/34) | 43.78 (×4.86 plain, ×1.039 blur, 20/34) |
+| (B) L1, noise-normalized | 1 | 6.86 (×6.86 plain, ×1.058 blur, 28/34) | 24.20 (×4.84 plain, ×1.125 blur, 33/34) | 33.83 (×3.76 plain, ×1.161 blur, 31/34) |
+| (B) L1, noise-normalized | 2 | 8.02 (×8.02 plain, ×0.984 blur, 11/34) | 30.71 (×6.14 plain, ×0.955 blur, 9/34) | 44.93 (×4.99 plain, ×0.937 blur, 9/34) |
+| (B) L1, noise-normalized | 3 | 7.64 (×7.64 plain, ×1.045 blur, 25/34) | 29.50 (×5.90 plain, ×1.022 blur, 18/34) | 43.43 (×4.83 plain, ×1.008 blur, 16/34) |
+| (C) MSE | 1 | 6.51 (×6.51 plain, ×1.053 blur, 32/34) | 23.92 (×4.78 plain, ×1.130 blur, 34/34) | 34.23 (×3.80 plain, ×1.172 blur, 34/34) |
+| (C) MSE | 2 | 7.84 (×7.84 plain, ×0.994 blur, 14/34) | 31.50 (×6.30 plain, ×1.005 blur, 17/34) | 47.59 (×5.29 plain, ×1.012 blur, 19/34) |
+| (C) MSE | 3 | 7.00 (×7.00 plain, ×1.049 blur, 26/34) | 28.49 (×5.70 plain, ×1.061 blur, 27/34) | 43.46 (×4.83 plain, ×1.069 blur, 27/34) |
+| (D) MSE, noise-normalized | 1 | 6.91 (×6.91 plain, ×1.070 blur, 33/34) | 25.26 (×5.05 plain, ×1.178 blur, 34/34) | 36.02 (×4.00 plain, ×1.238 blur, 34/34) |
+| (D) MSE, noise-normalized | 2 | 8.08 (×8.08 plain, ×0.987 blur, 12/34) | 31.50 (×6.30 plain, ×0.977 blur, 12/34) | 46.63 (×5.18 plain, ×0.971 blur, 12/34) |
+| (D) MSE, noise-normalized | 3 | 7.75 (×7.75 plain, ×1.052 blur, 26/34) | 30.43 (×6.09 plain, ×1.048 blur, 23/34) | 45.25 (×5.03 plain, ×1.044 blur, 23/34) |
+
+Per band vs noise-matched blur, a = 1 (median ratio; slices won), lowest → finest:
+
+- (A) L1: ds1: 6.06 (34), 5.34 (34), 2.61 (34), 0.34 (0); ds2: 3.69 (34), 5.60 (34), 3.06 (34), 0.33 (0); ds3: 4.30 (34), 5.30 (34), 2.54 (34), 0.24 (0)
+- (B) L1, noise-normalized: ds1: 6.34 (34), 5.23 (34), 2.53 (34), 0.32 (0); ds2: 3.51 (34), 5.37 (34), 2.97 (34), 0.33 (0); ds3: 4.93 (34), 5.10 (34), 2.49 (34), 0.25 (0)
+- (C) MSE: ds1: 5.55 (34), 4.99 (34), 2.57 (34), 0.35 (0); ds2: 3.56 (34), 5.67 (34), 3.06 (34), 0.35 (0); ds3: 4.03 (34), 4.98 (34), 2.54 (34), 0.27 (0)
+- (D) MSE, noise-normalized: ds1: 6.42 (34), 5.31 (34), 2.57 (34), 0.33 (0); ds2: 3.61 (34), 5.52 (34), 3.01 (34), 0.33 (0); ds3: 4.84 (34), 5.12 (34), 2.48 (33), 0.26 (0)
+
+**Figures** (`runs/gen/report/`, not committed): `gen_neff_vs_a.png`, `gen_calibration.png`, `gen_maps_s16.png`. **Data:** `runs/gen/<arm>/*.csv`, `runs/gen/report/summary.json`. **Commands:** `python experiments/_mx_eval.py --run <dataset1-only arm> --datasets 2 3 --out runs/gen/<arm>` (A: `--datasets 1 2 3`); `python experiments/_gen_report.py`.
