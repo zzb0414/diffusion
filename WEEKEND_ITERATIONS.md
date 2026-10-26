@@ -1153,3 +1153,9 @@ Geometric-mean n_eff (signal) by r and a; r = 1 is plain averaging (= a):
 Highest-n_eff ratio per a (descriptive, not a selection): L1: a=1→0, a=2→1/12, a=3→1/12, a=5→1/12, a=7→1/6, a=9→1/6; MSE: a=1→0, a=2→0, a=3→1/12, a=5→1/12, a=7→1/6, a=9→1/6; MSE, noise-norm.: a=1→0, a=2→1/12, a=3→1/12, a=5→1/12, a=7→1/6, a=9→1/6; L1, noise-norm.: a=1→0, a=2→1/12, a=3→1/12, a=5→1/6, a=7→1/6, a=9→1/4.
 
 **Figures** (`runs/cv_ratio/report/`): `maps_A_trainval.png`, `maps_A_test.png` (set A maps), `maps_B_<arm>_s<NN>.png` (set B maps), `B_neff_surface.png`, `B_noise_vs_r.png`, `B_frontier.png`, `B_bands_vs_r.png`. **Data:** `<arm>/ratio_eval/*.csv`, `runs/cv_ratio/report/summary.json`. **Commands:** `python experiments/_cv_ratio_eval.py --cv <arm dir>`; `python experiments/_ratio_report.py`. Stdout: `Archive/CV_RATIO/*_raw.html`.
+
+---
+
+## PLAN 2026-10-26 — datasets 2 and 3: GEN (generalization) and MX_CV (pooled training)
+
+dataset2 and dataset3 (same subject, poorer receiver coil, lower SNR; 2 and 3 from one session with exactly matching slices, dataset1 close) are brought into the workflow. Read-only checks: σ̂ medians 0.085 / 0.151 / 0.095 (ds1/2/3), ds3 minimum 0.0339 below ds1's 0.0368; same-index maps correlate 0.86–0.91 vs 0.75–0.79 for distant indices (same anatomy). **GEN** (evaluation-only, first): the existing dataset1-only fold models decode every ds2/ds3 slice, each by the fold that held its slice index out — strictly unseen data and anatomy (pre-registration `Archive/MX_CV/PREREGISTRATION_GEN.md`, sha256 `9d686cc815b52088`). **MX_CV**: arms A–D retrained on ds1+2+3 with folds grouped by slice index (CV_R3's assignment), 6000 iterations with 2000 primary (pre-registration `Archive/MX_CV/PREREGISTRATION.md`, sha256 `2d2474e854e15083`). New code in new files; existing scripts stay byte-reproducible. Figures are no longer committed (encrypted at rest). Protected artifacts hashed: `Archive/MX_CV/protected_before.sha256`.
