@@ -34,13 +34,25 @@ def main():
     ap.add_argument("--datasets", type=int, nargs="+", default=[1, 2, 3])
     ap.add_argument("--ratios", type=float, nargs="+", default=None)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--degrade", default=None, help="TQ E2: '<self|white|ds2>:<factor>' added-noise degradation")
+    ap.add_argument("--degrade-seed", type=int, default=20261027)
     a_ = ap.parse_args()
+    assert not os.path.exists(os.path.join(a_.out, "per_slice_ratio.csv")), "refusing to overwrite " + a_.out
     ratios = tuple(RATIOS if a_.ratios is None else
                    sorted({r for r in RATIOS if any(abs(r - q) < 1e-6 for q in a_.ratios)}))
     assert len(ratios) == (len(RATIOS) if a_.ratios is None else len(a_.ratios)), "unknown ratio"
     os.makedirs(a_.out, exist_ok=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     x, meta, sig = load_datasets(a_.datasets)
+    if a_.degrade is not None:                       # TQ E2: controlled added noise, sigma re-estimated
+        from _degrade import degrade
+        from _r3_train import sigma_hat
+        mode, fac = a_.degrade.split(":")
+        xd = x.double().numpy().copy()
+        for i, (d, s) in enumerate(meta):
+            xd[i] = degrade(xd[i], float(fac), mode, seed=a_.degrade_seed + 1000 * d + s)[0]
+        x = torch.from_numpy(xd).to(x.dtype)
+        sig = sigma_hat(x)
     folds = cv_folds()
     by_fold = {k: [i for i, (d, s) in enumerate(meta) if folds[s] == k] for k in range(5)}
 
@@ -72,7 +84,8 @@ def main():
         w = csv.DictWriter(f, fieldnames=keys); w.writeheader(); w.writerows(rows)
     with open(os.path.join(a_.out, "bands_ratio.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(brows[0].keys())); w.writeheader(); w.writerows(brows)
-    json.dump(dict(run=a_.run, iter=a_.iter, datasets=a_.datasets, ratios=list(ratios)),
+    json.dump(dict(run=a_.run, iter=a_.iter, datasets=a_.datasets, ratios=list(ratios),
+                   degrade=a_.degrade, degrade_seed=a_.degrade_seed if a_.degrade else None),
               open(os.path.join(a_.out, "eval_config.json"), "w"), indent=2)
     print("wrote", a_.out, len(rows), "rows;", len(brows), "band rows; self-checks passed")
 

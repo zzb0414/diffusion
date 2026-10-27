@@ -44,7 +44,7 @@ class DiffusionTrainer:
 
     def step_multireal(self, x0, rng=None, weights=None, loss="l1",
                        huber_delta=0.05, sigma_y=None, p_raw=0.5,
-                       noise_norm=False, sigma_ref=None):
+                       noise_norm=False, sigma_ref=None, target_k=None):
         """Training step for the N-realization per-realization objective.
 
         Same as ``step``, but drives ``N2N_DSM.loss_multireal`` (per-realization
@@ -66,7 +66,7 @@ class DiffusionTrainer:
                                              loss=loss, huber_delta=huber_delta,
                                              sigma_y=sigma_y, p_raw=p_raw,
                                              noise_norm=noise_norm,
-                                             sigma_ref=sigma_ref)
+                                             sigma_ref=sigma_ref, target_k=target_k)
         loss_val.backward()
         if self.grad_clip > 0:
             # Cap the total gradient norm before the step.

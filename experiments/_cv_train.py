@@ -57,6 +57,8 @@ def main():
     ap.add_argument("--noise-norm", action="store_true",
                     help="weight each sample by (sigma_ref/sigma_tot)^p, p=1 L1 / 2 MSE")
     ap.add_argument("--iters", type=int, default=None, help="smoke tests only; default = fixed recipe")
+    ap.add_argument("--target-k", type=int, default=None,
+                    help="TQ: LOO target from a random k-subset of the other repetitions (default: all N-1)")
     args = ap.parse_args()
 
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -102,6 +104,8 @@ def main():
                     p_raw=CFG["P_RAW"], fold=args.fold, K=K, held_out=held)
     if args.noise_norm:                      # recorded only when used: default cfg unchanged
         ckpt_cfg.update(noise_norm=True, sigma_ref=sigma_ref)
+    if args.target_k is not None:                # recorded only when used: default cfg unchanged
+        ckpt_cfg.update(target_k=args.target_k)
     with open(os.path.join(RUN, "config.json"), "w") as f:
         json.dump(dict(cfg=CFG, ckpt_cfg=ckpt_cfg, folds=F, held_out=held,
                        train_slices=train_slices,
@@ -128,7 +132,8 @@ def main():
         poss = torch.randint(0, len(train_slices), (CFG["BATCH"],), device=DEVICE)
         loss = trainer.step_multireal(x_train[poss], loss=args.loss, sigma_y=sy_train[poss],
                                       p_raw=CFG["P_RAW"], noise_norm=args.noise_norm,
-                                      sigma_ref=sigma_ref if args.noise_norm else None)
+                                      sigma_ref=sigma_ref if args.noise_norm else None,
+                                      target_k=args.target_k)
         recent = (recent + [loss])[-50:]
         if it % 50 == 0:
             hl = monitor()

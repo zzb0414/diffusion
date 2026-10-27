@@ -1291,3 +1291,25 @@ Per band vs noise-matched blur, a = 1 (median ratio; slices won), lowest → fin
 | (D) MSE, noise-normalized | 3 | 1.007× (19/34, p=7e-01) | 0.932× (6/34, p=1e-03) | 0.895× (7/34, p=5e-04) |
 
 - Single maps improve with longer pooled training (L1 a = 1: 1.043–1.083× on all datasets), but averaged estimates degrade (a = 9 for L1 and both noise-normalized arms: 0.705–0.930×): the longer-trained models carry more error that is shared by every repetition, which averaging cannot remove. The checkpoint that is best for single maps is not the one to use when outputs are averaged — the stopping point depends on the use.
+
+### TQ exploratory diagnostics — reference quality vs SNR vs noise colour
+
+*Exploratory, read-only (no training).* Per-repetition SNR in the signal region (median [range]): ds1 0.13 [0.02–0.24]; ds2 0.04 [0.01–0.07]; ds3 0.05 [0.01–0.11].
+Noise colour, finest/coarsest band noise power (white = 1): ds1 0.66; ds2 1.48; ds3 0.53 — dataset 2's noise is fine-heavy, datasets 1 and 3 coarse-heavy. Spatial noise variation p95/p5: ds1 2.29; ds2 2.22; ds3 2.67.
+
+Edge over the noise-matched blur (r = 1/3) across all 102 slices — Spearman ρ with log SNR and with σ̂; mean log-residual per dataset after a linear fit on log SNR:
+
+- dataset1-only (A), a = 1: ρ(SNR) -0.19, ρ(σ̂) -0.74, residual ds1/2/3 +0.035/-0.046/+0.012
+- dataset1-only (A), a = 9: ρ(SNR) +0.23, ρ(σ̂) -0.53, residual ds1/2/3 +0.087/-0.073/-0.014
+- pooled (A) @2000, a = 1: ρ(SNR) -0.27, ρ(σ̂) -0.76, residual ds1/2/3 +0.018/-0.043/+0.026
+- pooled (A) @2000, a = 9: ρ(SNR) +0.09, ρ(σ̂) -0.60, residual ds1/2/3 +0.022/-0.055/+0.033
+- pooled (B) @2000, a = 1: ρ(SNR) -0.24, ρ(σ̂) -0.81, residual ds1/2/3 +0.020/-0.051/+0.031
+- pooled (B) @2000, a = 9: ρ(SNR) +0.07, ρ(σ̂) -0.72, residual ds1/2/3 +0.023/-0.085/+0.062
+
+Reading (to be tested by TQ E1/E2): the edge tracks noise strength, and dataset 2 stays below the SNR trend even for pooled models trained on it, consistent with its fine-heavy noise colour (cheap for a blur to remove) rather than with reference quality alone.
+
+---
+
+## PLAN 2026-10-27 — TQ: is performance governed by reference quality, input SNR or noise colour?
+
+E1 retrains the dataset1-only recipe (arms A, D) with LOO targets from k = 1 or 3 other repetitions (k = 9 existing) to vary reference quality at fixed input; E2 evaluates existing models on dataset-1 slices degraded to 1.4× and 2× σ̂ with self-coloured, white or dataset-2-coloured noise to separate SNR from noise colour. Pre-registration `Archive/TQ/PREREGISTRATION.md` (sha256 `9e817c388d658b5c`). All outputs in new directories; existing results hashed (`Archive/TQ/protected_before.sha256`, 1514 files) and re-verified at the end.

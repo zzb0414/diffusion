@@ -444,8 +444,15 @@ class N2N_DSM:
 
     def loss_multireal(self, x0_stack, rng=None, weights=None, loss="l1",
                        huber_delta=0.05, sigma_y=None, p_raw=0.5,
-                       noise_norm=False, sigma_ref=None):
+                       noise_norm=False, sigma_ref=None, target_k=None):
         """Per-realization Tweedie-N2N over a shared 2-channel net.
+
+        ``target_k`` (optional, 1..N-1): build each target from a random k-subset of
+        the other N-1 realizations instead of all of them (a noisier, still unbiased
+        N2N target) -- used to study how reference quality affects training. The
+        subsets come from a dedicated generator so batches and perturbation noise
+        match the default run exactly. ``None`` keeps the leave-one-out mean of all
+        N-1 (the default, unchanged).
 
         NOISE LABELS. A realization already carries acquisition noise sigma_y, so
         perturbing it by sigma_add leaves TOTAL noise sqrt(sigma_y^2 + sigma_add^2).
@@ -502,6 +509,8 @@ class N2N_DSM:
         # rather than collapse onto the all-N average it could copy from its input.
         tot_loo = total.unsqueeze(1) - enss               # (B, N, 2, H, W)
         T = (tot_loo / (N - 1)).reshape(B * N, 2, H, W)
+        if target_k is not None:
+            T = self._subset_target(enss, target_k).reshape(B * N, 2, H, W)
         if sigma_y is not None:
             assert weights is None, "level weights belong to the legacy path"
             sy = torch.as_tensor(sigma_y, dtype=X.dtype,
@@ -535,6 +544,23 @@ class N2N_DSM:
         # "mse", "huber" (SmoothL1, quadratic inside huber_delta then linear), or
         # "mag_l1" (L1 weighted by |T|, pushing capacity toward high-signal structure).
         return self._regress(x0_hat, T, loss, huber_delta)
+
+    def _subset_target(self, enss, k):
+        """Mean of a random k-subset of the OTHER realizations, per (slice, realization).
+
+        enss: (B, N, 2, H, W). Draws come from a dedicated generator (seeded once),
+        leaving the global RNG stream -- batches, perturbation noise -- untouched.
+        """
+        B, N = enss.shape[:2]
+        assert 1 <= k <= N - 1, "target_k must be in 1..N-1"
+        if getattr(self, "_tk_gen", None) is None or self._tk_gen.device != enss.device:
+            self._tk_gen = torch.Generator(device=enss.device)
+            self._tk_gen.manual_seed(20261027)
+        score = torch.rand(B, N, N, device=enss.device, generator=self._tk_gen)
+        score = score.masked_fill(torch.eye(N, dtype=torch.bool, device=enss.device), 2.0)  # never pick self
+        rank = score.argsort(-1).argsort(-1)                # (B, N target, N source)
+        w = (rank < k).to(enss.dtype) / k
+        return torch.einsum("bts,bschw->btchw", w, enss)
 
     @staticmethod
     def _noise_weight(sigma, loss, sigma_ref):
