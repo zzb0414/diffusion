@@ -1,0 +1,16 @@
+[20:46:53] START TRAIN C fold4
+[20:47:01] MX arm C (loss=mse, noise_norm=False) fold 4/5 datasets=[1, 2, 3] held-out indices=[8, 14, 19, 24, 28, 33] | train slices=84 held-out slices=18 device=cuda
+[20:47:01] ladder 0.0339..0.40 (global min sigma_hat); sigma_ref 0.1000 (geo-mean of training sigma_hat)
+[20:49:14] iter   500 train=0.00204 heldout_l1(monitor)=0.03319
+[20:51:25] iter  1000 train=0.00174 heldout_l1(monitor)=0.03085
+[20:53:35] iter  1500 train=0.00174 heldout_l1(monitor)=0.03000
+[20:55:47] iter  2000 train=0.00166 heldout_l1(monitor)=0.02945
+[20:57:58] iter  2500 train=0.00169 heldout_l1(monitor)=0.02924
+[21:00:09] iter  3000 train=0.00167 heldout_l1(monitor)=0.02917
+[21:02:22] iter  3500 train=0.00152 heldout_l1(monitor)=0.02910
+[21:04:33] iter  4000 train=0.00161 heldout_l1(monitor)=0.02927
+[21:06:44] iter  4500 train=0.00156 heldout_l1(monitor)=0.02936
+[21:08:55] iter  5000 train=0.00162 heldout_l1(monitor)=0.02976
+[21:11:06] iter  5500 train=0.00140 heldout_l1(monitor)=0.03010
+[21:13:17] iter  6000 train=0.00147 heldout_l1(monitor)=0.03089
+[21:13:17] DONE arm C fold 4: 6000 iterations in 26.2 min (primary checkpoint: iteration 2000, fixed in advance)

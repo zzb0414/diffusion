@@ -1,0 +1,17 @@
+[13:37:01] START TRAIN A fold3
+[13:37:09] MX arm A (loss=l1, noise_norm=False) fold 3/5 datasets=[1, 2, 3] held-out indices=[0, 1, 2, 7, 15, 18, 21] | train slices=81 held-out slices=21 device=cuda
+[13:37:09] ladder 0.0339..0.40 (global min sigma_hat); sigma_ref 0.0970 (geo-mean of training sigma_hat)
+[13:37:09] NOTE held-out ds3 slice 21 sigma 0.0339 is quieter than every training slice of this fold (min 0.0368); extrapolated slightly.
+[13:39:36] iter   500 train=0.03062 heldout_l1(monitor)=0.03308
+[13:41:59] iter  1000 train=0.03043 heldout_l1(monitor)=0.03240
+[13:44:23] iter  1500 train=0.02915 heldout_l1(monitor)=0.03212
+[13:46:46] iter  2000 train=0.03121 heldout_l1(monitor)=0.03203
+[13:49:10] iter  2500 train=0.03012 heldout_l1(monitor)=0.03196
+[13:51:33] iter  3000 train=0.02880 heldout_l1(monitor)=0.03221
+[13:54:01] iter  3500 train=0.02815 heldout_l1(monitor)=0.03264
+[13:56:24] iter  4000 train=0.02758 heldout_l1(monitor)=0.03316
+[14:07:33] iter  4500 train=0.02617 heldout_l1(monitor)=0.03353
+[14:18:16] iter  5000 train=0.02667 heldout_l1(monitor)=0.03460
+[14:28:28] iter  5500 train=0.02394 heldout_l1(monitor)=0.03518
+[14:37:40] iter  6000 train=0.02339 heldout_l1(monitor)=0.03564
+[14:37:40] DONE arm A fold 3: 6000 iterations in 60.5 min (primary checkpoint: iteration 2000, fixed in advance)

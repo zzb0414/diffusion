@@ -1,0 +1,15 @@
+[13:10:22] MX arm A (loss=l1, noise_norm=False) fold 2/5 datasets=[1, 2, 3] held-out indices=[5, 12, 22, 25, 30, 31, 32] | train slices=81 held-out slices=21 device=cuda
+[13:10:22] ladder 0.0339..0.40 (global min sigma_hat); sigma_ref 0.0989 (geo-mean of training sigma_hat)
+[13:12:37] iter   500 train=0.03159 heldout_l1(monitor)=0.03095
+[13:14:49] iter  1000 train=0.03179 heldout_l1(monitor)=0.03013
+[13:17:02] iter  1500 train=0.02952 heldout_l1(monitor)=0.02968
+[13:19:14] iter  2000 train=0.02946 heldout_l1(monitor)=0.02950
+[13:21:27] iter  2500 train=0.03075 heldout_l1(monitor)=0.02948
+[13:23:40] iter  3000 train=0.02991 heldout_l1(monitor)=0.02961
+[13:25:52] iter  3500 train=0.02895 heldout_l1(monitor)=0.02991
+[13:28:05] iter  4000 train=0.02825 heldout_l1(monitor)=0.03058
+[13:30:17] iter  4500 train=0.02775 heldout_l1(monitor)=0.03111
+[13:32:30] iter  5000 train=0.02773 heldout_l1(monitor)=0.03181
+[13:34:42] iter  5500 train=0.02562 heldout_l1(monitor)=0.03250
+[13:36:56] iter  6000 train=0.02431 heldout_l1(monitor)=0.03300
+[13:36:56] DONE arm A fold 2: 6000 iterations in 26.5 min (primary checkpoint: iteration 2000, fixed in advance)

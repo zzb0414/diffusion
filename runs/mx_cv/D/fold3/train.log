@@ -1,0 +1,16 @@
+[22:33:46] MX arm D (loss=mse, noise_norm=True) fold 3/5 datasets=[1, 2, 3] held-out indices=[0, 1, 2, 7, 15, 18, 21] | train slices=81 held-out slices=21 device=cuda
+[22:33:46] ladder 0.0339..0.40 (global min sigma_hat); sigma_ref 0.0970 (geo-mean of training sigma_hat)
+[22:33:46] NOTE held-out ds3 slice 21 sigma 0.0339 is quieter than every training slice of this fold (min 0.0368); extrapolated slightly.
+[22:36:00] iter   500 train=0.00089 heldout_l1(monitor)=0.03285
+[22:38:13] iter  1000 train=0.00085 heldout_l1(monitor)=0.03254
+[22:40:25] iter  1500 train=0.00081 heldout_l1(monitor)=0.03224
+[22:42:38] iter  2000 train=0.00079 heldout_l1(monitor)=0.03192
+[22:44:50] iter  2500 train=0.00078 heldout_l1(monitor)=0.03187
+[22:47:03] iter  3000 train=0.00075 heldout_l1(monitor)=0.03207
+[22:49:16] iter  3500 train=0.00073 heldout_l1(monitor)=0.03201
+[22:51:28] iter  4000 train=0.00071 heldout_l1(monitor)=0.03237
+[22:53:41] iter  4500 train=0.00066 heldout_l1(monitor)=0.03303
+[22:55:53] iter  5000 train=0.00064 heldout_l1(monitor)=0.03362
+[22:58:06] iter  5500 train=0.00058 heldout_l1(monitor)=0.03430
+[23:00:19] iter  6000 train=0.00053 heldout_l1(monitor)=0.03470
+[23:00:19] DONE arm D fold 3: 6000 iterations in 26.5 min (primary checkpoint: iteration 2000, fixed in advance)
