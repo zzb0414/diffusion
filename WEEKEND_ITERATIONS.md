@@ -1313,3 +1313,80 @@ Reading (to be tested by TQ E1/E2): the edge tracks noise strength, and dataset 
 ## PLAN 2026-10-27 — TQ: is performance governed by reference quality, input SNR or noise colour?
 
 E1 retrains the dataset1-only recipe (arms A, D) with LOO targets from k = 1 or 3 other repetitions (k = 9 existing) to vary reference quality at fixed input; E2 evaluates existing models on dataset-1 slices degraded to 1.4× and 2× σ̂ with self-coloured, white or dataset-2-coloured noise to separate SNR from noise colour. Pre-registration `Archive/TQ/PREREGISTRATION.md` (sha256 `9e817c388d658b5c`). All outputs in new directories; existing results hashed (`Archive/TQ/protected_before.sha256`, 1514 files) and re-verified at the end.
+
+---
+
+## RUN 2026-10-27 — TQ results (reference quality vs input SNR vs noise colour)
+
+Pre-registered (`Archive/TQ/PREREGISTRATION.md`). E1: 20 models (arms A, D × k ∈ {1, 3} × 5 folds, 2000 iterations) trained with the LOO target averaged over a random k of the other 9 repetitions; compared with the k = 9 models of the same arm, all slices decoded by their held-out fold. E2: 24 evaluations (4 models × 3 noise colours × f ∈ {2.0, 1.4}) of dataset 1 with added independent noise. All evaluations passed their self-checks; the report's dry run gave 1.000.
+
+Achieved noise factor σ̂_degraded/σ̂ (median over slices): f2.0: self 2.001, white 2.001, ds2 2.001; f1.4: self 1.401, white 1.400, ds2 1.401.
+
+### E1 — does the quality of the training reference matter?
+
+**PRIMARY (arm A, dataset 1, r = 1/3, a = 1, signal; n_eff k=1 / k=9):** 1.029× (95% CI 1.004–1.056; 21/34 better), Wilcoxon p = 0.039 → **k = 1 better**.
+
+n_eff ratio vs k = 9 (r = 1/3; geometric mean, slices better, two-sided p):
+
+| arm | k | dataset | a = 1 | a = 5 | a = 9 | a = 1, r = 0 |
+|---|---:|---:|---|---|---|---|
+| (A) | 1 | 1 | 1.029× (21/34, p=0.04) | 1.015× (22/34, p=0.1) | 1.008× (20/34, p=0.5) | 1.092× (26/34) |
+| (A) | 1 | 2 | 1.002× (21/34, p=0.5) | 1.026× (23/34, p=0.02) | 1.042× (26/34, p=8e-05) | 1.179× (33/34) |
+| (A) | 1 | 3 | 1.021× (19/34, p=0.3) | 1.028× (18/34, p=0.1) | 1.034× (22/34, p=0.03) | 1.147× (28/34) |
+| (A) | 3 | 1 | 0.989× (13/34, p=0.3) | 1.002× (18/34, p=0.9) | 1.010× (17/34, p=0.3) | 1.102× (33/34) |
+| (A) | 3 | 2 | 0.980× (11/34, p=0.04) | 1.004× (18/34, p=0.8) | 1.020× (20/34, p=0.09) | 1.151× (33/34) |
+| (A) | 3 | 3 | 0.985× (16/34, p=0.4) | 1.009× (18/34, p=0.4) | 1.024× (23/34, p=0.02) | 1.183× (33/34) |
+| (D) | 1 | 1 | 1.008× (21/34, p=0.3) | 1.005× (19/34, p=0.2) | 1.004× (17/34, p=0.5) | 1.162× (32/34) |
+| (D) | 1 | 2 | 0.999× (16/34, p=0.8) | 1.024× (23/34, p=0.006) | 1.041× (28/34, p=4e-06) | 1.226× (32/34) |
+| (D) | 1 | 3 | 0.998× (15/34, p=0.5) | 1.006× (18/34, p=0.8) | 1.012× (19/34, p=0.8) | 1.200× (29/34) |
+| (D) | 3 | 1 | 0.976× (15/34, p=0.1) | 0.998× (16/34, p=0.7) | 1.011× (22/34, p=0.09) | 1.135× (32/34) |
+| (D) | 3 | 2 | 0.964× (14/34, p=0.004) | 0.986× (14/34, p=0.1) | 1.001× (17/34, p=0.9) | 1.123× (30/34) |
+| (D) | 3 | 3 | 0.970× (14/34, p=0.04) | 0.992× (16/34, p=0.5) | 1.006× (16/34, p=0.8) | 1.144× (30/34) |
+
+Edge over the noise-matched blur (geometric mean of n_eff / n_eff_blur, r = 1/3) by target size k = 1 / 3 / 9:
+
+- (A): ds1 a=1: 1.066 / 1.064 / 1.062; ds1 a=9: 1.190 / 1.200 / 1.187; ds2 a=1: 0.996 / 0.995 / 0.989; ds2 a=9: 1.012 / 1.002 / 0.972; ds3 a=1: 1.053 / 1.054 / 1.046; ds3 a=9: 1.069 / 1.075 / 1.039
+- (D): ds1 a=1: 1.077 / 1.075 / 1.070; ds1 a=9: 1.241 / 1.247 / 1.238; ds2 a=1: 0.993 / 0.993 / 0.987; ds2 a=9: 1.011 / 0.988 / 0.971; ds3 a=1: 1.059 / 1.058 / 1.052; ds3 a=9: 1.060 / 1.062 / 1.044
+
+### E2 — input SNR or noise colour?
+
+**PRIMARY (dataset1-only A, f = 2.0, a = 1, r = 1/3, signal; edge ratio colour / self, Holm over 2):**
+
+- white / self: 1.002× (95% CI 1.000–1.005; 20/34 better), p = 0.15, Holm 0.16 → **no significant difference**
+- ds2 / self: 1.003× (95% CI 1.001–1.005; 21/34 better), p = 0.078, Holm 0.16 → **no significant difference**
+
+Edge over the noise-matched blur (geometric mean), undegraded → degraded by colour, with the real datasets 2/3 for reference:
+
+| model | a | undegraded | self f1.4 | white f1.4 | ds2 f1.4 | self f2.0 | white f2.0 | ds2 f2.0 | real ds2 | real ds3 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| one_A | 1 | 1.062 | 1.028 | 1.032 | 1.032 | 1.014 | 1.017 | 1.017 | 0.989 | 1.046 |
+| one_A | 9 | 1.187 | 1.140 | 1.126 | 1.120 | 1.120 | 1.103 | 1.102 | 0.972 | 1.039 |
+| one_D | 1 | 1.070 | 1.030 | 1.035 | 1.035 | 1.015 | 1.018 | 1.019 | 0.987 | 1.052 |
+| one_D | 9 | 1.238 | 1.172 | 1.158 | 1.153 | 1.128 | 1.109 | 1.113 | 0.971 | 1.044 |
+| pool_A | 1 | 1.048 | 1.021 | 1.026 | 1.026 | 1.010 | 1.013 | 1.014 | 1.004 | 1.072 |
+| pool_A | 9 | 1.163 | 1.126 | 1.114 | 1.109 | 1.105 | 1.089 | 1.089 | 1.072 | 1.173 |
+| pool_D | 1 | 1.056 | 1.019 | 1.024 | 1.025 | 1.005 | 1.008 | 1.009 | 1.004 | 1.085 |
+| pool_D | 9 | 1.197 | 1.135 | 1.122 | 1.120 | 1.096 | 1.079 | 1.082 | 1.077 | 1.241 |
+
+Edge ratio colour / self for every model (geometric mean, slices better, Holm over the 2 colours):
+
+| model | f | a | white / self | ds2 / self |
+|---|---:|---:|---|---|
+| one_A | 2.0 | 1 | 1.002× (20/34, Holm 0.2) | 1.003× (21/34, Holm 0.2) |
+| one_A | 2.0 | 9 | 0.984× (4/34, Holm 6e-06) | 0.983× (7/34, Holm 2e-06) |
+| one_A | 1.4 | 1 | 1.004× (25/34, Holm 0.002) | 1.004× (19/34, Holm 0.02) |
+| one_A | 1.4 | 9 | 0.987× (6/34, Holm 1e-05) | 0.982× (4/34, Holm 2e-08) |
+| one_D | 2.0 | 1 | 1.002× (20/34, Holm 0.2) | 1.004× (23/34, Holm 0.04) |
+| one_D | 2.0 | 9 | 0.984× (5/34, Holm 1e-05) | 0.987× (10/34, Holm 0.0002) |
+| one_D | 1.4 | 1 | 1.005× (27/34, Holm 0.0002) | 1.005× (22/34, Holm 0.007) |
+| one_D | 1.4 | 9 | 0.988× (7/34, Holm 2e-05) | 0.983× (5/34, Holm 3e-07) |
+| pool_A | 2.0 | 1 | 1.002× (21/34, Holm 0.07) | 1.003× (23/34, Holm 0.02) |
+| pool_A | 2.0 | 9 | 0.986× (4/34, Holm 0.0001) | 0.986× (10/34, Holm 0.0003) |
+| pool_A | 1.4 | 1 | 1.004× (26/34, Holm 0.0001) | 1.005× (25/34, Holm 0.0006) |
+| pool_A | 1.4 | 9 | 0.989× (6/34, Holm 6e-05) | 0.985× (6/34, Holm 4e-06) |
+| pool_D | 2.0 | 1 | 1.003× (22/34, Holm 0.06) | 1.004× (24/34, Holm 0.004) |
+| pool_D | 2.0 | 9 | 0.985× (6/34, Holm 8e-05) | 0.987× (9/34, Holm 0.0003) |
+| pool_D | 1.4 | 1 | 1.005× (26/34, Holm 0.0004) | 1.006× (25/34, Holm 0.0005) |
+| pool_D | 1.4 | 9 | 0.989× (7/34, Holm 8e-05) | 0.986× (7/34, Holm 4e-05) |
+
+**Data:** `runs/tq/<arm>_k<k>/eval_it2000/`, `runs/degrade/`, `runs/tq/report/summary.json`. **Commands:** `bash runs/tq_queue.sh`; `python experiments/_tq_report.py`.
