@@ -37,9 +37,17 @@ and then averages the results. The expectation follows from the limited spatial 
 each repetition is denoised from too little information, and averaging afterwards cannot restore what each
 denoising step discarded.
 
-*Status:* not yet tested. A direct test trains a model to denoise the a-repetition mean, with the remaining
-repetitions as its target. It then compares that model with "denoise each, then average" at equal a, using the
-same split-half n_eff estimator.
+*Theory:* with i.i.d. Gaussian noise the mean of the repetitions is a sufficient statistic for the signal, so
+E[x | mean] is the MMSE estimate. The average of per-repetition estimates E[x | y_i] generally is not, because each
+one shrinks toward the prior using only one repetition's information.
+
+*Status: partly tested, inconclusive* (R4_SUBSET, 2026-10-20, single split; see `WEEKEND_ITERATIONS.md`). A
+subset-mean model was trained with input = mean of m repetitions and target = mean of the other 10 − m. It matched
+"denoise each, then average" at a = 1. At a = 9 it lost on the quiet test slices (ratio 0.70–0.77 even after
+balancing and augmentation, R4c) and won on the noisy one (1.15). This was attributed to data: an averaged input at
+σ̂/3 is only produced by the few training slices that are quiet enough. The evidence so far is "data-limited", not
+"wrong". It needs a cross-validated re-test, and ideally more training data. The TQ finding (note 4) helps: target
+quality is not the bottleneck, so even a = 9 with a single held-out repetition as target is a valid training pair.
 
 ## 4. New finding: the LOO-mean target is an unnecessary detour
 
@@ -76,7 +84,20 @@ Together, performance is governed by input SNR. Neither target quality nor noise
 
 ## Directions for the article
 
-- Test the hypothesis in note 3 (denoise the mean vs denoise each, then average).
+**Scope (2026-10-28).**
+- **Beyond ASL:** the method is not ASL-specific. As the abstract already states, it applies to any noisy MR
+  acquisition with repetitions.
+- **More data:** three datasets from one subject are not enough for a full article. If growing k proves marginal
+  (note 4), collaborators' data can be pooled with plain N2N pairs as targets, without needing many repetitions per
+  site.
+- **Expected next problem:** heterogeneous data. Feature extractors and decoders, and alignment across resolutions
+  and matrix sizes.
+- **First, a solid ground:** confirm note 4 (seeds, learning curves), settle note 3, and derive r*(a).
+
+- Test the hypothesis in note 3 (denoise the mean vs denoise each, then average) under cross-validation.
+- Derive the optimal strength r*(a) for averaged estimates (averaging removes variance, not bias) and check it
+  against the measured sweeps; candidate central contribution.
+- Add baselines for an AI venue: MP-PCA, Patch2Self, Noise2Score / Recorrupted-to-Recorrupted, BM3D, DDM2.
 - Recast the method around plain N2N pairs, with r (or its a-dependent optimum) as the strength control.
 - Extend the E2 degradation to 3× σ̂ to cover dataset 2's SNR (evaluation only).
 - Strengthen baselines: a SURE-tuned blur, and correct the oracle-blur wording.
