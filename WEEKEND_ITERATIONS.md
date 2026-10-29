@@ -1466,3 +1466,32 @@ Augmentation + ladder to σ̂/3 vs the existing PER recipe (iteration 2000, best
 - **Moved:** the Shepp-Logan foundation demo (`demo.py`, `demo.ipynb`, `n2n.ipynb`, `fid.py`, `data_loader.py`, figures)
   to `legacy/`; its weights (`legacy/saved_models/`) are no longer tracked. The encrypted R3/R4 PNGs are no longer
   tracked (they remain in earlier commits).
+
+---
+
+## EXPLORATORY 2026-10-29 — AR_HEADROOM: how much does an adaptive strength r buy?
+
+Not pre-registered (read-only; existing fold models at iteration 2000, held-out slices). Every pixel's split-half
+error is an exact quadratic in r, so each rule's optimum has a closed form. Uniform r = 1/3 reproduces the logged
+dataset-1 n_eff (worst relative difference 7e-14). Rules: fixed r = 1/3; one global r per averaging depth a,
+chosen on the other folds' slices (baseline); per-slice oracle; r per local-signal or edge-strength quintile
+(cross-fitted); r per 8×8 block (in-sample oracle). Honesty check: the 10 repetitions are split into two
+independent halves of 5; an r map chosen on one half is scored on the other (cross-half).
+
+**Reading:**
+- **Biggest lever: r set by a (closed form / global per a), not adaptivity.** Fixed r = 1/3 reaches only 0.19–0.31×
+  the global-r(a) n_eff for a single map and 0.78–0.92× at a = 9.
+- **Per-slice adaptivity is small:** even the in-sample oracle gains only 0.5–4.2%.
+- **Free spatial r maps are fitted noise:** the 8×8 block oracle's in-sample gain (up to +33%) turns into a loss
+  cross-half (0.79–0.98× for 8×8; 0.84–1.01× for 16×16).
+- **Structure-driven spatial r is real but modest:** r per local-signal quintile, cross-fitted, gains +0.1–0.8% for a
+  single map and +3–8% at a = 9 (dataset 2: up to +7.8%). It survives the cross-half check (+1–11%). Edge
+  strength gives nothing.
+
+**Implication for the roadmap:** the averaging-aware strength r*(a) is the main contribution. Per-input
+adaptivity can add only a few percent, and only through a structure-dependent rule (lower r in low-signal regions,
+higher in high-signal ones). Its ceiling is set by learnable structure, not by per-block tuning.
+
+**Verbatim outputs:** `runs/ar/headroom/stdout_headroom.txt` (all rules, models A and D, datasets 1–3, a = 1–9) and
+`runs/ar/headroom/stdout_crosshalf.txt` (honesty check, model A); `runs/ar/headroom/summary.json`. **Commands:**
+`python experiments/_ar_headroom.py`; `cd experiments && python _ar_crosshalf.py`.
