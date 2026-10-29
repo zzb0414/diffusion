@@ -41,7 +41,6 @@ from _data import load_datasets, cv_folds
 
 CFG = dict(L=40, SIGMA_MAX=0.4, P_RAW=0.5, CKPT_EVERY=500, BATCH=8, LR=1e-3, GRAD_CLIP=1.0,
            NET_BASE=32, NET_EMB=32, K=5, M_MAX=9, NBINS=12)
-LOSS = "l1"
 
 
 def dihedral(x, k, flip):
@@ -61,7 +60,14 @@ def main():
     ap.add_argument("--train-frac", type=float, default=1.0)
     ap.add_argument("--aug", action="store_true")
     ap.add_argument("--ladder-div", type=float, default=1.0)
+    ap.add_argument("--loss", default="l1", choices=["l1", "mse"])
+    ap.add_argument("--noise-norm", action="store_true", help="weight by (sigma_ref/sigma_tot)^p (DEC)")
+    ap.add_argument("--param", default="score", choices=["score", "direct"], help="DEC: x0 parametrization")
+    ap.add_argument("--blind", action="store_true", help="DEC: hide sigma from the net")
+    ap.add_argument("--p-raw", type=float, default=None, help="DEC: probability of no added noise (default 0.5)")
     args = ap.parse_args()
+    LOSS = args.loss
+    P_RAW = CFG["P_RAW"] if args.p_raw is None else args.p_raw
     assert args.mode == "per" or args.target_k is None, "target_k applies to --mode per"
 
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -97,8 +103,10 @@ def main():
 
     x_train = pack(x, tr, DEVICE)
     sy_train = sig[tr].to(DEVICE)
+    sigma_ref = float(torch.exp(torch.log(sig[tr]).mean()))     # as _cv_train.py / _mx_train.py
     net = UNet(in_ch=2, out_ch=2, base_out=CFG["NET_BASE"], emb_dim=CFG["NET_EMB"]).to(DEVICE)
-    n2n = N2N_DSM(L=CFG["L"], sigma_min=sigma_min, sigma_max=CFG["SIGMA_MAX"], backbone=net)
+    n2n = N2N_DSM(L=CFG["L"], sigma_min=sigma_min, sigma_max=CFG["SIGMA_MAX"], backbone=net,
+                  param=args.param, blind=args.blind)
     trainer = DiffusionTrainer(n2n, lr=CFG["LR"], device=DEVICE, grad_clip=CFG["GRAD_CLIP"])
     if args.target_k is not None:                 # seed 101 -> 20261027, the TQ generator
         n2n._tk_gen = torch.Generator(device=x_train.device)
@@ -116,10 +124,14 @@ def main():
     ckpt_cfg = dict(net_type="N2N_DSM", noise_label="total",
                     objective="multireal" if args.mode == "per" else "subset_balanced",
                     N=N, L=CFG["L"], sigma_min=sigma_min, sigma_max=CFG["SIGMA_MAX"],
-                    base_out=CFG["NET_BASE"], emb_dim=CFG["NET_EMB"], loss=LOSS, p_raw=CFG["P_RAW"],
+                    base_out=CFG["NET_BASE"], emb_dim=CFG["NET_EMB"], loss=LOSS, p_raw=P_RAW,
                     fold=args.fold, K=CFG["K"], held_out=held, datasets=args.datasets, mode=args.mode,
                     seed=args.seed, target_k=args.target_k, train_frac=args.train_frac, aug=args.aug,
                     ladder_div=args.ladder_div)
+    if args.noise_norm:
+        ckpt_cfg.update(noise_norm=True, sigma_ref=sigma_ref)
+    if args.param != "score" or args.blind:
+        ckpt_cfg.update(param=args.param, blind=args.blind)
     with open(os.path.join(RUN, "config.json"), "w") as f:
         json.dump(dict(cfg=CFG, ckpt_cfg=ckpt_cfg, held_out=held, train_slices=train_idx, iters=args.iters,
                        datasets=args.datasets, train_units=[list(meta[i]) for i in tr],
@@ -133,7 +145,7 @@ def main():
     @torch.no_grad()
     def monitor():                                # held-out L1 at a = 1, logged only
         n2n.net.eval()
-        x0 = xh + sh.square().view(-1, 1, 1, 1) * n2n.net(xh, n2n.level_coord(sh))
+        x0 = n2n._x0(xh, sh)
         n2n.net.train()
         return torch.nn.functional.l1_loss(x0, Th).item()
 
@@ -155,10 +167,13 @@ def main():
             xb = torch.stack([dihedral(xb[i], int(rng_np.integers(4)), bool(rng_np.integers(2)))
                               for i in range(len(xb))])
         if args.mode == "per":
-            l_ = trainer.step_multireal(xb, loss=LOSS, sigma_y=sy_train[poss], p_raw=CFG["P_RAW"],
+            l_ = trainer.step_multireal(xb, loss=LOSS, sigma_y=sy_train[poss], p_raw=P_RAW,
+                                        noise_norm=args.noise_norm,
+                                        sigma_ref=sigma_ref if args.noise_norm else None,
                                         target_k=args.target_k)
         else:
-            l_ = trainer.step_subset(xb, sy_train[poss], loss=LOSS, p_raw=CFG["P_RAW"], m=mm)
+            assert not args.noise_norm, "noise_norm: --mode per only"
+            l_ = trainer.step_subset(xb, sy_train[poss], loss=LOSS, p_raw=P_RAW, m=mm)
         recent = (recent + [l_])[-50:]
         if it % 50 == 0:
             hl = monitor()

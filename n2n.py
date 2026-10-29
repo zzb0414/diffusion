@@ -387,7 +387,12 @@ class N2N_DSM:
     """
 
     def __init__(self, L=10, sigma_min=0.01, sigma_max=50.0, backbone=UNet(),
-                 task_sigma=None):
+                 task_sigma=None, param="score", blind=False):
+        # ``param`` / ``blind`` (DEC ablation): "score" (default) decodes x0_hat = x + sigma^2 net(x, sigma);
+        # "direct" reads x0_hat = net(x, sigma). ``blind=True`` hides sigma from the net (constant level
+        # coordinate 0). Defaults reproduce the original model exactly.
+        assert param in ("score", "direct")
+        self.param, self.blind = param, blind
         # Tie the schedule to the real data's noise: if `task_sigma` is given (the
         # acquisition sigma = ref_mag/SNR), defaults sigma_min to it (keep the
         # finest detail that is not pure noise) and leaves sigma_max to the caller.
@@ -618,8 +623,17 @@ class N2N_DSM:
         add = (sigma.square() - sy.square()).clamp_min(0.0).sqrt()
         eps = torch.randn(X.shape, dtype=X.dtype, device=X.device, generator=rng)
         x_tilde = X + add.view(-1, 1, 1, 1) * eps
-        score = self.net(x_tilde, self.level_coord(sigma))
-        return x_tilde + sigma.square().view(-1, 1, 1, 1) * score, sigma
+        return self._x0(x_tilde, sigma), sigma
+
+    def _x0(self, x, sigma):
+        """Clean estimate at TOTAL noise ``sigma`` ((K,) tensor) under the model's parametrization."""
+        lev = self.level_coord(sigma)
+        if self.blind:
+            lev = torch.zeros_like(lev)
+        out = self.net(x, lev)
+        if self.param == "direct":
+            return out
+        return x + sigma.square().view(-1, 1, 1, 1) * out
 
     def loss_subset(self, x0_stack, sigma_y, rng=None, loss="l1", huber_delta=0.05,
                     p_raw=0.5, m_max=None, m=None, noise_norm=False, sigma_ref=None):
@@ -850,8 +864,43 @@ class N2N_DSM:
         y = y.to(device)
         st = torch.as_tensor(sigma_task, dtype=y.dtype, device=device)
         st = st.expand(y.shape[0]) if st.dim() == 0 else st
-        x0_hat = y + st.square().view(-1, 1, 1, 1) * self.net(y, self.level_coord(st))
+        x0_hat = self._x0(y, st)
         return x0_hat + target_ratio * (y - x0_hat)
+
+    @torch.no_grad()
+    def walk_to(self, y, sigma_task, target_ratio=0.0, steps=20, eta=0.0, sigma_floor=None,
+                generator=None, device="cpu"):
+        """Multi-step reverse diffusion from ``sigma_task`` to ``target_ratio * sigma_task`` (DEC, part B).
+
+        Geometric grid of ``steps`` levels from sigma_task down to sigma_stop = max(target_ratio * sigma_task,
+        sigma_floor), with the VE DDIM update (eta = 0: deterministic / probability-flow; eta = 1: ancestral,
+        i.e. a posterior sample):
+            x0 = x0_hat(x, s);  c = eta * s' * sqrt(1 - s'^2/s^2)
+            x' = x0 + sqrt(s'^2 - c^2) * (x - x0)/s + c * z
+        then one deterministic DDIM step from sigma_stop to target_ratio * sigma_task (target_ratio = 0: the
+        Tweedie estimate at sigma_stop). ``sigma_floor`` defaults to the ladder bottom: N2N never trains below
+        the quietest acquisition noise, so the score is not learned there. ``steps = 0`` (or sigma_stop >=
+        sigma_task) reduces to ``denoise_to``. sigma_task is a scalar.
+        """
+        if y.dim() == 3:
+            y = y.unsqueeze(0)
+        x = y.to(device)
+        s0 = float(sigma_task)
+        floor = float(self.dsm.sigmas[0]) if sigma_floor is None else float(sigma_floor)
+        s_end = target_ratio * s0
+        s_stop = max(s_end, floor)
+        if steps > 0 and s_stop < s0:
+            grid = torch.exp(torch.linspace(math.log(s0), math.log(s_stop), steps + 1)).tolist()
+            for s, s2 in zip(grid[:-1], grid[1:]):
+                x0 = self._x0(x, torch.full((x.shape[0],), s, device=device))
+                c = eta * s2 * math.sqrt(max(0.0, 1.0 - s2 ** 2 / s ** 2))
+                z = torch.randn(x.shape, device=device, generator=generator) if c > 0 else 0.0
+                x = x0 + math.sqrt(max(0.0, s2 ** 2 - c ** 2)) * (x - x0) / s + c * z
+            s_cur = grid[-1]
+        else:
+            s_cur = s0
+        x0 = self._x0(x, torch.full((x.shape[0],), s_cur, device=device))
+        return x0 + (s_end / s_cur) * (x - x0)
 
 
 class N2N_DSM_Multi:

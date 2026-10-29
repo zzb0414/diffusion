@@ -49,7 +49,8 @@ def load(path, device):
     c = blob["cfg"]
     assert c.get("noise_label") == "total", "not a total-noise checkpoint"
     net = UNet(in_ch=2, out_ch=2, base_out=c["base_out"], emb_dim=c["emb_dim"]).to(device)
-    m = N2N_DSM(L=c["L"], sigma_min=c["sigma_min"], sigma_max=c["sigma_max"], backbone=net)
+    m = N2N_DSM(L=c["L"], sigma_min=c["sigma_min"], sigma_max=c["sigma_max"], backbone=net,
+                param=c.get("param", "score"), blind=c.get("blind", False))
     m.net.load_state_dict(blob["state_dict"]); m.net.eval()
     return m, blob["train_iters"]
 
