@@ -1390,3 +1390,61 @@ Edge ratio colour / self for every model (geometric mean, slices better, Holm ov
 | pool_D | 1.4 | 9 | 0.989× (7/34, Holm 8e-05) | 0.986× (7/34, Holm 4e-05) |
 
 **Data:** `runs/tq/<arm>_k<k>/eval_it2000/`, `runs/degrade/`, `runs/tq/report/summary.json`. **Commands:** `bash runs/tq_queue.sh`; `python experiments/_tq_report.py`.
+
+---
+
+## RUN 2026-10-29 — GROUND results (KR: is k marginal? SM: denoise the mean vs denoise each)
+
+Pre-registered (`Archive/GROUND/PREREGISTRATION.md`, written before any run). 60 new models: KR-seed (k ∈ {1, 9} × seeds 102, 103 × 5 folds, 4000 iterations), KR-frac (k ∈ {1, 9} × training fraction 0.5, 0.25 × 5 folds, 2000 iterations), SM (PER and SUB, dihedral augmentation, ladder down to σ̂_min/3, dataset 1 and pooled datasets 1–3, 3000 iterations); seed 101 comes from the existing `runs/cv_r3` (k = 9) and `runs/tq/A_k1` (k = 1). All evaluated with `_gr_eval.py` (reproduces `evaluate_slice` n_eff to 6e-15); `_gr_train.py` reproduces `_cv_train.py` and `_mx_train.py` exactly on deterministic CPU. The report's dry run gave 1.000. Note: GPU training is not bit-reproducible run to run (also for the original scripts), so every seed is an independent draw.
+
+### KR — is the target size k marginal?
+
+**PRIMARY (dataset 1, a = 1, r = 1/3, iteration 2000; per slice the geometric mean over seeds 101–103 of n_eff(k=1)/n_eff(k=9)):** 1.000× (90% CI 0.984–1.017; 17/34 better) → **k marginal (equivalent within ±5%)**.
+
+Per seed (same read-out): seed 101 1.029× (90% CI 1.008–1.052; 21/34 better); seed 102 0.987× (90% CI 0.959–1.014; 16/34 better); seed 103 0.985× (90% CI 0.962–1.009; 16/34 better).
+Seed-to-seed noise floor (same k, seed s / seed 101): k = 9: 102: 1.018×, 103: 0.991×; k = 1: 102: 0.976×, 103: 0.948×.
+
+Learning curve, n_eff(k=1)/n_eff(k=9) (geometric mean, 90% CI; seeds 101–103 up to 2000, 102–103 beyond; at r = 1/3 and at each k's best grid r):
+
+| iteration | a = 1, r = 1/3 | a = 9, r = 1/3 | a = 1, best r | a = 9, best r |
+|---:|---|---|---|---|
+| 500 | 0.942 (0.919–0.965) | 0.955 (0.944–0.965) | 0.866 (0.841–0.889) | 0.952 (0.941–0.963) |
+| 1000 | 0.968 (0.953–0.983) | 0.958 (0.951–0.966) | 0.919 (0.908–0.929) | 0.943 (0.935–0.950) |
+| 1500 | 0.952 (0.940–0.964) | 0.956 (0.947–0.966) | 0.982 (0.960–1.001) | 0.951 (0.936–0.965) |
+| 2000 | 1.000 (0.984–1.017) | 1.011 (0.995–1.027) | 1.125 (1.089–1.163) | 1.024 (0.999–1.050) |
+| 3000 | 1.007 (0.991–1.024) | 1.194 (1.147–1.244) | 1.363 (1.300–1.429) | 1.252 (1.197–1.308) |
+| 4000 | 1.009 (0.993–1.026) | 1.278 (1.231–1.329) | 1.371 (1.319–1.424) | 1.282 (1.238–1.329) |
+
+Absolute n_eff (geometric mean, r = 1/3; seed 101 ≤ 2000, seed 102 at 4000), k = 1 / k = 9: it 500 a=1: 5.51 / 5.49; it 500 a=9: 28.20 / 28.95; it 1000 a=1: 6.31 / 6.29; it 1000 a=9: 31.93 / 32.61; it 2000 a=1: 7.04 / 6.84; it 2000 a=9: 34.94 / 34.65; it 4000 a=1: 6.82 / 6.73; it 4000 a=9: 27.90 / 21.58.
+
+Less training data (seed 101), n_eff(k=1)/n_eff(k=9) at r = 1/3 (90% CI):
+
+| training fraction | iteration | a = 1 | a = 5 | a = 9 |
+|---:|---:|---|---|---|
+| 0.5 | 1000 | 0.959 (0.934–0.985) | 0.967 (0.952–0.983) | 0.971 (0.959–0.985) |
+| 0.5 | 2000 | 0.990 (0.965–1.017) | 1.091 (1.059–1.125) | 1.138 (1.098–1.181) |
+| 0.25 | 1000 | 1.012 (0.985–1.040) | 1.024 (1.006–1.042) | 1.030 (1.011–1.048) |
+| 0.25 | 2000 | 0.989 (0.967–1.011) | 1.160 (1.115–1.209) | 1.231 (1.174–1.291) |
+
+Absolute n_eff at 2000 (r = 1/3), k = 1 / k = 9: frac 0.5 a=1: 6.19 / 6.25; frac 0.5 a=9: 30.09 / 26.44; frac 0.25 a=1: 5.50 / 5.56; frac 0.25 a=9: 24.16 / 19.63; full data (seed 101) a=1: 7.04 / 6.84, a=9: 34.94 / 34.65.
+
+### SM — denoise the mean (SUB) vs denoise each, then average (PER)
+
+**PRIMARY 2a (pooled training, dataset 1, a = 9, iteration 3000, each arm at its best grid r: SUB r = 0.000, PER r = 0.250):** 0.967× (95% CI 0.930–1.005; 15/34 better), p = 0.26, Holm 0.36 → **no significant difference**.
+**PRIMARY 2b (data limitation: SUB/PER pooled ÷ SUB/PER dataset-1-only, dataset 1, a = 9):** 1.033× (95% CI 0.993–1.076; 20/34 better), p = 0.18, Holm 0.36 → **no significant difference**.
+
+SUB / PER n_eff at each arm's best r (iteration 3000; geometric mean, slices better, two-sided p):
+
+| training | dataset | a = 1 | a = 2 | a = 3 | a = 5 | a = 7 | a = 9 |
+|---|---:|---|---|---|---|---|---|
+| dataset 1 | 1 | 0.957× (6/34, p=6e-05) | 0.970× (9/34, p=0.004) | 0.962× (7/34, p=0.002) | 0.969× (15/34, p=0.3) | 0.953× (13/34, p=0.03) | 0.937× (13/34, p=0.03) |
+| pooled | 1 | 0.965× (7/34, p=0.004) | 0.989× (11/34, p=0.1) | 0.982× (14/34, p=0.2) | 0.998× (20/34, p=0.7) | 0.980× (15/34, p=0.6) | 0.967× (15/34, p=0.3) |
+| pooled | 2 | 0.948× (5/34, p=0.003) | 0.983× (17/34, p=0.6) | 1.003× (23/34, p=0.1) | 0.971× (20/34, p=1) | 0.944× (19/34, p=0.9) | 0.936× (21/34, p=0.5) |
+| pooled | 3 | 0.988× (10/34, p=0.07) | 0.951× (12/34, p=0.1) | 0.885× (6/34, p=5e-07) | 0.811× (8/34, p=3e-05) | 0.761× (11/34, p=0.0005) | 0.721× (12/34, p=0.001) |
+
+Same at fixed r (iteration 3000), a = 1 / 5 / 9: ds1 ds1 r=0: 0.957 / 1.050 / 1.114; ds1 ds1 r=1/3: 1.051 / 0.869 / 0.792; pool ds1 r=0: 0.965 / 1.110 / 1.201; pool ds1 r=1/3: 0.955 / 0.824 / 0.787; pool ds2 r=0: 0.948 / 1.030 / 1.042; pool ds2 r=1/3: 0.977 / 0.865 / 0.826; pool ds3 r=0: 0.988 / 0.871 / 0.803; pool ds3 r=1/3: 0.946 / 0.769 / 0.668.
+Iteration 2000, best r, a = 1 / 5 / 9: ds1 ds1: 0.934 / 0.915 / 0.875; pool ds1: 0.967 / 0.944 / 0.910; pool ds2: 0.939 / 0.898 / 0.866; pool ds3: 0.958 / 0.749 / 0.669.
+Absolute n_eff at best r (iteration 3000), PER / SUB: ds1 ds1 a=1: 26.08 / 24.96; ds1 ds1 a=9: 38.78 / 36.33; pool ds1 a=1: 24.50 / 23.65; pool ds1 a=9: 35.82 / 34.66; pool ds2 a=1: 59.48 / 56.36; pool ds2 a=9: 74.66 / 69.91; pool ds3 a=1: 46.10 / 45.52; pool ds3 a=9: 74.52 / 53.71.
+Augmentation + ladder to σ̂/3 vs the existing PER recipe (iteration 2000, best r): dataset-1 training ds1 a=1 1.080× (24/34); dataset-1 training ds1 a=9 0.985× (15/34); pooled training ds1 a=1 0.891× (1/34); pooled training ds1 a=9 0.902× (1/34); pooled training ds2 a=1 0.940× (3/34); pooled training ds2 a=9 0.936× (2/34); pooled training ds3 a=1 0.820× (0/34); pooled training ds3 a=9 0.813× (6/33).
+
+**Data:** `runs/gr/{kr,sm}/`, `runs/gr/{kr_eval,sm_eval}/`, `runs/gr/report/summary.json`. **Commands:** `bash runs/gr/queue_a.sh`; `bash runs/gr/queue_b.sh`; `bash runs/gr/queue_eval.sh`; `python experiments/_gr_report.py`.
