@@ -53,7 +53,17 @@ noise alone.
 - **Caution:** the decomposition is an identity of the estimator, so a perfect fit is not evidence. The substance
   is the closed form and the interpretation of b, v and c (`experiments/_gr_theory.py`).
 - **Ground-truth-free:** all three numbers can be estimated from a slice's own repetitions, which makes an adaptive
-  r possible (Part II).
+  r possible.
+- **Adaptive r is subtle; the depth-dependent r is the lever (AR_HEADROOM, exploratory, 2026-10-29).**
+  - **Fixed r = 1/3 is far off:** it reaches only 0.19–0.31× the n_eff of one r chosen per averaging depth a for a
+    single map, and 0.78–0.92× at a = 9.
+  - **Per-slice r adds at most 0.5–4.2%,** even chosen on the scored slice itself.
+  - **Free spatial r maps are fitted noise:** an 8×8 block map chosen on one half of the repetitions scores
+    0.79–0.98× on the other, independent half.
+  - **A structure rule helps a little:** r set by local signal level, chosen on other slices, adds +3–8% at a = 9 and
+    survives the cross-half check.
+  - **Conclusion:** the best r is essentially a simple function of the averaging depth.
+  (`experiments/_ar_headroom.py`, `_ar_crosshalf.py`.)
 
 ### 4. Target quality is marginal; input SNR governs performance (established)
 
@@ -116,7 +126,7 @@ noise alone.
 |---|---|---|
 | Model | Small U-Net conditioned on the total noise level, s_θ(y, σ); one model for all slices, SNRs and datasets | Notes 1, 4 |
 | Decoding | One-shot Tweedie estimate per repetition, blended with r, then averaged ("PER"). One network pass per repetition | Notes 2, 5 |
-| Strength | r chosen for the averaging depth a: r*(a) from the closed form, or a fixed r per a. Adaptive r is the open question | Note 3 |
+| Strength | r chosen for the averaging depth a: r*(a) from the closed form, or one r per a chosen on other slices. Optional: r by local signal level (+3–8% at large a) | Note 3 |
 | Loss | MSE, noise-normalized | Note 6 |
 | Targets | Leave-one-out mean where N ≥ 3 (equivalent and lower variance); single other repetition when N = 2 | Note 4 |
 | Training | About 2000 iterations; checkpoint selected by validation n_eff at the intended a, not by loss | Notes 4, 6 |
@@ -185,7 +195,7 @@ insensitivity (N2N theory).
 |---|---|---|
 | Score + Tweedie decoding is needed | Same network trained as a direct N2N regressor (x̂ = f(y, σ)), decoded with the same dial. If equal, simplify the framing to "any noise-conditional N2N denoiser + dial" | To do |
 | Generative sampling recovers detail from the learned prior | Full reverse diffusion (sampling to σ = 0) vs one-shot Tweedie (posterior mean) vs direct regressor, scored overall and on the finest-frequency n_eff bands. See the note below the table | To do |
-| Dial for averaging | r = 0 (Noise2Score-like), fixed r = 1/3, global r*(a), per-slice r̂*(a) estimated without ground truth, spatial r map; for a = 1…N | Headroom analysis next |
+| Dial for averaging | r = 0 (Noise2Score-like), fixed r = 1/3, global r*(a), per-slice r, signal-dependent r, spatial r map; for a = 1…N | Headroom done (AR_HEADROOM, note 3); confirm on new data |
 | Ground-truth-free estimator | Synthetic data with known ground truth (digital phantom or high-average reference + real noise): estimated n_eff vs true n_eff; predicted vs true r*(a) | To do |
 | Target insensitivity enables pooling | k = 1 vs k = 9 (done). Pooling sites with N = 2 vs N = 10 at equal total scans | Partly done |
 | Noise conditioning | Blind model (no σ) vs scalar σ vs noise-spectrum conditioning; within- and cross-dataset | To do |
@@ -210,8 +220,8 @@ subjects.
 
 ### 10. Order of work
 
-1. **Adaptive-r headroom (read-only, now):** compare a global r per a with a per-slice r and a per-region (spatial)
-   upper bound. This decides whether adaptive r becomes the centrepiece.
+1. ~~Adaptive-r headroom~~ (done 2026-10-29): adaptive r is a minor refinement; the depth-dependent r*(a) is the
+   centrepiece.
 2. **Decoder ablations and baselines on current data:** direct regressor and full generative sampling vs one-shot
    Tweedie. Settles what the method actually is, and where it stands against MP-PCA, Patch2Self and Noise2Score.
 3. **Synthetic validation** of the estimator and of r*(a).
@@ -227,3 +237,4 @@ subjects.
   form for r*(a) (note 3); recipe findings (note 6); draft roadmap (Part II).
 - 2026-10-29: resolution handling (linear-operator principle, voxel-size conditioning) and the generative-sampling
   ablation added after discussion with the user.
+- 2026-10-29: AR_HEADROOM folded into note 3; adaptive r demoted to a refinement.
