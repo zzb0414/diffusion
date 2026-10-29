@@ -1,0 +1,10 @@
+[21:48:30] START SM per_ds1 fold2
+[21:48:37] GROUND mode=per fold 2/5 datasets=[1] seed=101 target_k=None frac=1.0 aug=True | train slices=27 (indices [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 26, 27, 28, 29, 33]) held-out indices=[5, 12, 22, 25, 30, 31, 32] device=cuda
+[21:48:37] ladder 0.0123..0.40 (global min sigma_hat / 3)
+[21:50:45] iter   500 train=0.02814 heldout_l1(monitor)=0.02729
+[21:52:51] iter  1000 train=0.02810 heldout_l1(monitor)=0.02647
+[21:54:58] iter  1500 train=0.02640 heldout_l1(monitor)=0.02620
+[21:57:04] iter  2000 train=0.02765 heldout_l1(monitor)=0.02602
+[21:59:10] iter  2500 train=0.02715 heldout_l1(monitor)=0.02594
+[22:01:17] iter  3000 train=0.02676 heldout_l1(monitor)=0.02591
+[22:01:17] DONE fold 2: 3000 iterations in 12.6 min

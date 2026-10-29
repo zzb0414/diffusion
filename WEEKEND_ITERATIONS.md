@@ -1448,3 +1448,21 @@ Absolute n_eff at best r (iteration 3000), PER / SUB: ds1 ds1 a=1: 26.08 / 24.96
 Augmentation + ladder to σ̂/3 vs the existing PER recipe (iteration 2000, best r): dataset-1 training ds1 a=1 1.080× (24/34); dataset-1 training ds1 a=9 0.985× (15/34); pooled training ds1 a=1 0.891× (1/34); pooled training ds1 a=9 0.902× (1/34); pooled training ds2 a=1 0.940× (3/34); pooled training ds2 a=9 0.936× (2/34); pooled training ds3 a=1 0.820× (0/34); pooled training ds3 a=9 0.813× (6/33).
 
 **Data:** `runs/gr/{kr,sm}/`, `runs/gr/{kr_eval,sm_eval}/`, `runs/gr/report/summary.json`. **Commands:** `bash runs/gr/queue_a.sh`; `bash runs/gr/queue_b.sh`; `bash runs/gr/queue_eval.sh`; `python experiments/_gr_report.py`.
+
+---
+
+## HOUSEKEEPING 2026-10-29 — pruning before the new main
+
+- **Kept:** every script, pre-registration, log and text output behind a finding in `docs/RESEARCH_NOTES.md`
+  (R3 onward: RUNG_LABEL, R3_TOTAL, R4/R4b/R4c, CV_R3, CV_ABLATION, CV_RATIO, GEN, MX_CV, TQ, GROUND). Map of
+  scripts to experiments to findings: `experiments/README.md`. TQ and GROUND configs, training logs, stdout and the
+  queue scripts are now committed like the earlier experiments'.
+- **Removed:** the pre-R3 scripts and run folders (R0–R2, SR_SWEEP, FRONTIER, SRSTR_01, head-to-head and decode
+  probes), whose runs used legacy added-noise labels and a Re/Re–Im/Im channel pairing. Their sections above stay as
+  history. Untracked code snapshots in `Archive/*` that git history already covers were also removed. Copy of every
+  removed text file: `../diffusion_pruned_2026-10-29.tar.gz` (172 files, outside the repository).
+- **Checkpoints:** local checkpoints pruned to the iterations that reported results use (`experiments/_prune_runs.py`):
+  `runs/` 23 GB → 8.2 GB, 314 checkpoints kept.
+- **Moved:** the Shepp-Logan foundation demo (`demo.py`, `demo.ipynb`, `n2n.ipynb`, `fid.py`, `data_loader.py`, figures)
+  to `legacy/`; its weights (`legacy/saved_models/`) are no longer tracked. The encrypted R3/R4 PNGs are no longer
+  tracked (they remain in earlier commits).

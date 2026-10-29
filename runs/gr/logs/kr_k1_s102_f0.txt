@@ -1,0 +1,12 @@
+[11:26:59] START KR k1 s102 fold0
+[11:27:08] GROUND mode=per fold 0/5 datasets=[1] seed=102 target_k=1 frac=1.0 aug=False | train slices=27 (indices [0, 1, 2, 3, 4, 5, 7, 8, 10, 12, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 28, 30, 31, 32, 33]) held-out indices=[6, 9, 11, 13, 20, 27, 29] device=cuda
+[11:27:08] ladder 0.0368..0.40 (global min sigma_hat / 1)
+[11:32:36] iter   500 train=0.07604 heldout_l1(monitor)=0.02761
+[11:34:41] iter  1000 train=0.07620 heldout_l1(monitor)=0.02670
+[11:36:46] iter  1500 train=0.07419 heldout_l1(monitor)=0.02676
+[11:38:52] iter  2000 train=0.07599 heldout_l1(monitor)=0.02635
+[11:40:57] iter  2500 train=0.07239 heldout_l1(monitor)=0.02651
+[11:43:02] iter  3000 train=0.07386 heldout_l1(monitor)=0.02679
+[11:45:08] iter  3500 train=0.07302 heldout_l1(monitor)=0.02731
+[11:47:13] iter  4000 train=0.07507 heldout_l1(monitor)=0.02845
+[11:47:14] DONE fold 0: 4000 iterations in 20.1 min

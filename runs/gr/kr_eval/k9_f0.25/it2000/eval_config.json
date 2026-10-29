@@ -1,0 +1,8 @@
+{
+  "run": "runs/gr/kr/k9_f0.25",
+  "iter": 2000,
+  "mode": "per",
+  "datasets": [
+    1
+  ]
+}

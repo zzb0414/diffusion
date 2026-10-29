@@ -13,26 +13,22 @@ This folder implements three generative/denoising backbones — DDPM, DDIM, and 
 | [`dsm.py`](dsm.py) | `DSM` — Song & Ermon 2019: geometric sigma schedule, score matching, annealed predictor-corrector Langevin sampling. `DSMTrainer` for the multi-level batch regime. |
 | [`train.py`](train.py) | `DiffusionTrainer` — shared `loss(x)`-driven loop that trains either a DDPM or DSM model. |
 | [`n2n.py`](n2n.py) | `N2N_DDPM` / `N2N_DSM` — Tweedie Noise2Noise objectives on each backbone (total-noise labels, multi-realization and subset-averaging losses), plus `pack_pair`, `draw_pair_batch`, and denoise samplers (`denoise_to`, conditional/unconditional). |
-| [`fid.py`](fid.py) | FID metric via Inception-v3, with a symmetric square-root form for the covariance product. |
-| [`data_loader.py`](data_loader.py) | `ChannelImageDataset` template (subclass for your storage format) + DataLoader helpers. |
-| [`demo.py`](demo.py) | Standalone smoke test: trains DDPM & DSM on toy blobs, samples, reports FID. `python demo.py`. |
-| [`demo.ipynb`](demo.ipynb) | Notebook showcase of DDPM / DDIM / DSM on a Shepp-Logan phantom. |
-| [`n2n.ipynb`](n2n.ipynb) | Notebook for the Noise2Noise denoising pipeline. |
 | [`CHANGELOG.md`](CHANGELOG.md) | Design rationale and change history grouped per source function. |
-| [`saved_models/`](saved_models/) | Pretrained checkpoints (DDPM/DSM, and the N2N variants) from the phantom notebooks. |
-| `shepp_logan_*.png` | Sample outputs / loss plots from the notebooks. |
-| [`experiments/`](experiments/) | Scripts for the real-ASL N2N experiments (R3, R4, cross-validated proof, loss ablation) — see its [README](experiments/README.md). |
+| [`experiments/`](experiments/) | Scripts for the real-ASL N2N experiments, mapped to the findings they support — see its [README](experiments/README.md). |
+| [`docs/RESEARCH_NOTES.md`](docs/RESEARCH_NOTES.md) | **Start here.** Findings with status labels (established / supported / hypothesis) and the draft roadmap toward a full article. |
 | [`docs/ARGUMENT_N2N_vs_averaging.md`](docs/ARGUMENT_N2N_vs_averaging.md) | Evidence summary: averaging N2N-denoised acquisitions vs plain averaging, generated from the results. |
+| [`docs/ABSTRACT_draft.md`](docs/ABSTRACT_draft.md) | Generated draft of the ISMRM abstract (the submitted version is frozen). |
 | [`WEEKEND_ITERATIONS.md`](WEEKEND_ITERATIONS.md) | Experiment log (append-only; sections generated from result files). Entries before R3 used flawed training — see *Known limits*. |
+| [`legacy/`](legacy/) | The original Shepp-Logan foundation: `demo.py` / `demo.ipynb` (DDPM / DDIM / DSM showcase), `n2n.ipynb`, `fid.py`, `data_loader.py`, sample figures. Weights (`legacy/saved_models/`) stay local. Run from the repo root with `legacy/` on the path. |
 | `runs/`, `checkpoints/`, `Archive/` | Per-run configs, logs and stdout; checkpoint manifests with sha256; pre-registrations and verbatim stdout. Weights, CSVs and figures stay local (see `.gitignore`). |
 
 ## Quick start
 
 ```bash
-python demo.py        # trains DDPM + DSM briefly on toy blobs and reports FID
+PYTHONPATH=. python legacy/demo.py   # trains DDPM + DSM briefly on toy blobs and reports FID
 ```
 
-Then open the notebooks — `demo.ipynb` for the generative showcase, `n2n.ipynb` for Noise2Noise denoising.
+The real-ASL experiments start from [`experiments/README.md`](experiments/README.md).
 
 ## Models
 
@@ -61,7 +57,7 @@ A training input is already noisy (σ_y), so perturbing it by σ_add leaves **to
 - `N2N_DSM.loss_subset(x, sigma_y, ...)` — denoise the mean of a random m-subset; target = mean of the rest.
 - `noise_norm=True, sigma_ref=...` — per-sample weight (σ_ref/σ_tot)^p (p = 1 L1, 2 MSE) so errors at every noise level count equally.
 - `N2N_DDPM.loss(pair, sigma_y=...)` — the same fix for the DDPM backbone, in the VE-equivalent coordinate λ = √(1−ᾱ)/√ᾱ.
-- `denoise_to(y, sigma_task, target_ratio)` (both backbones) — evaluate at the map's own noise, nothing injected, and take one deterministic DDIM step to `target_ratio × sigma_task`: `out = x0_hat + target_ratio·(y − x0_hat)`. `target_ratio = 1/3` matches the noise floor of a leave-one-out mean of 9; `0` is the full Tweedie estimate.
+- `denoise_to(y, sigma_task, target_ratio)` (both backbones) — evaluate at the map's own noise, nothing injected, and take one deterministic DDIM step to `target_ratio × sigma_task`: `out = x0_hat + target_ratio·(y − x0_hat)`. `0` is the full Tweedie estimate. The best ratio depends on how many denoised maps are averaged afterwards, not on the training target (see `docs/RESEARCH_NOTES.md`, notes 2–4).
 
 Without `sigma_y` every loss falls back to the legacy behaviour (kept bit-identical so logged runs reproduce); legacy samplers are marked as such.
 
@@ -75,7 +71,7 @@ python experiments/_cv_report.py              # log section + argument document
 ```
 
 ## Data
-`data_loader.py` is a template for 2-channel images. Subclass `ChannelImageDataset` and implement `_load` to wire your own storage (npz, nifti, h5, folder of `.npy`); `build_dataloader` / `dataloader_from_dir` wrap it.
+The ASL data (`../asl_for_diffusion/dataset{1,2,3}.npy`) is not included. For other storage formats, `legacy/data_loader.py` is a template: subclass `ChannelImageDataset` and implement `_load` (npz, nifti, h5, folder of `.npy`); `build_dataloader` / `dataloader_from_dir` wrap it.
 
 ## Notes
 - Complex images are stored as two real channels (Real, Imag) in `[-1, 1]`.
@@ -83,8 +79,8 @@ python experiments/_cv_report.py              # log section + argument document
 - Run any notebook in this folder as its working directory so the modules import.
 
 ## Known limits
-- **Superseded runs.** Log entries before R3 (R0–R2, SR_SWEEP, FRONTIER, SRSTR_01) trained with legacy added-noise labels **and** a channel layout that paired Re/Re and Im/Im instead of Re/Im (`pack_joint` / `pack` built `[Re1..ReN, Im1..ImN]` where `loss_multireal` expects `[Re1, Im1, Re2, Im2, ...]`). Their conclusions do not carry over; the ASL notebooks still contain that `pack_joint`.
+- **Superseded runs.** Log entries before R3 (R0–R2, SR_SWEEP, FRONTIER, SRSTR_01) trained with legacy added-noise labels **and** a channel layout that paired Re/Re and Im/Im instead of Re/Im (`pack_joint` / `pack` built `[Re1..ReN, Im1..ImN]` where `loss_multireal` expects `[Re1, Im1, Re2, Im2, ...]`). Their conclusions do not carry over; their scripts and outputs were removed on 2026-10-29 (the log keeps their sections as history). The local ASL notebooks still contain that `pack_joint`.
 - **DDPM total-noise path** is implemented and unit-tested (rung mapping, forward-marginal lifting, decoders) but not yet trained or validated on data.
 - **Experiment scripts** hardcode the repo root as an absolute Windows path (`DIFF = r"..."` near the top) — edit it for your clone. The ASL data is not included.
-- **Encrypted figures.** The R3 / R4 figures under `runs/r3_total`, `runs/r4_subset` and `runs/r4b_subset` are committed exactly as stored on the originating workstation, which encrypts them at rest (E-SafeNet). They open only on machines with the company encryption client; elsewhere they are unreadable bytes. The same numbers are in the plain-text logs and `docs/`.
-- **Not committed:** model weights (sha256 in `checkpoints/*/MANIFEST.md`), per-slice CSVs, and figures of other runs — CSVs are likewise encrypted at rest.
+- **Not committed:** model weights (sha256 in `checkpoints/*/MANIFEST.md`), per-slice CSVs and figures. CSVs and PNGs written on the originating workstation are encrypted at rest (E-SafeNet) and unreadable elsewhere; every number is in the plain-text logs and `docs/`. Earlier commits contain encrypted R3/R4 figures; they are no longer tracked.
+- **Local checkpoints** were pruned on 2026-10-29 to the iterations that reported results use (rules in `experiments/_prune_runs.py`).

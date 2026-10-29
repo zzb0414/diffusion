@@ -1,0 +1,36 @@
+[13:11:22] START E2 pool_D self f2.0
+ds1 slice  6 fold 0 sigma 0.2507  noise@r=1/3 0.327  w_matched 0.84  a=1 signal n_eff r=1/3 8.41
+ds1 slice  9 fold 0 sigma 0.2791  noise@r=1/3 0.332  w_matched 0.85  a=1 signal n_eff r=1/3 8.06
+ds1 slice 11 fold 0 sigma 0.1662  noise@r=1/3 0.323  w_matched 0.89  a=1 signal n_eff r=1/3 8.70
+ds1 slice 13 fold 0 sigma 0.2094  noise@r=1/3 0.327  w_matched 0.89  a=1 signal n_eff r=1/3 8.34
+ds1 slice 20 fold 0 sigma 0.1161  noise@r=1/3 0.326  w_matched 0.99  a=1 signal n_eff r=1/3 8.55
+ds1 slice 27 fold 0 sigma 0.1271  noise@r=1/3 0.330  w_matched 0.99  a=1 signal n_eff r=1/3 8.71
+ds1 slice 29 fold 0 sigma 0.0737  noise@r=1/3 0.324  w_matched 1.04  a=1 signal n_eff r=1/3 8.68
+ds1 slice  3 fold 1 sigma 0.2113  noise@r=1/3 0.341  w_matched 0.85  a=1 signal n_eff r=1/3 8.01
+ds1 slice  4 fold 1 sigma 0.2563  noise@r=1/3 0.342  w_matched 0.83  a=1 signal n_eff r=1/3 7.95
+ds1 slice 10 fold 1 sigma 0.2824  noise@r=1/3 0.345  w_matched 0.83  a=1 signal n_eff r=1/3 7.71
+ds1 slice 16 fold 1 sigma 0.1178  noise@r=1/3 0.358  w_matched 0.84  a=1 signal n_eff r=1/3 7.01
+ds1 slice 17 fold 1 sigma 0.1669  noise@r=1/3 0.351  w_matched 0.86  a=1 signal n_eff r=1/3 7.43
+ds1 slice 23 fold 1 sigma 0.0853  noise@r=1/3 0.343  w_matched 1.06  a=1 signal n_eff r=1/3 7.60
+ds1 slice 26 fold 1 sigma 0.1277  noise@r=1/3 0.345  w_matched 0.94  a=1 signal n_eff r=1/3 7.87
+ds1 slice  5 fold 2 sigma 0.2565  noise@r=1/3 0.333  w_matched 0.84  a=1 signal n_eff r=1/3 8.12
+ds1 slice 12 fold 2 sigma 0.1729  noise@r=1/3 0.330  w_matched 0.88  a=1 signal n_eff r=1/3 8.38
+ds1 slice 22 fold 2 sigma 0.0939  noise@r=1/3 0.336  w_matched 1.03  a=1 signal n_eff r=1/3 8.09
+ds1 slice 25 fold 2 sigma 0.1184  noise@r=1/3 0.336  w_matched 1.04  a=1 signal n_eff r=1/3 8.21
+ds1 slice 30 fold 2 sigma 0.1378  noise@r=1/3 0.333  w_matched 0.89  a=1 signal n_eff r=1/3 8.46
+ds1 slice 31 fold 2 sigma 0.2855  noise@r=1/3 0.328  w_matched 0.91  a=1 signal n_eff r=1/3 8.70
+ds1 slice 32 fold 2 sigma 0.2259  noise@r=1/3 0.329  w_matched 0.97  a=1 signal n_eff r=1/3 8.47
+ds1 slice  0 fold 3 sigma 0.1880  noise@r=1/3 0.340  w_matched 0.87  a=1 signal n_eff r=1/3 8.18
+ds1 slice  1 fold 3 sigma 0.2711  noise@r=1/3 0.336  w_matched 0.88  a=1 signal n_eff r=1/3 8.22
+ds1 slice  2 fold 3 sigma 0.2280  noise@r=1/3 0.341  w_matched 0.87  a=1 signal n_eff r=1/3 7.96
+ds1 slice  7 fold 3 sigma 0.3112  noise@r=1/3 0.335  w_matched 0.82  a=1 signal n_eff r=1/3 7.93
+ds1 slice 15 fold 3 sigma 0.1239  noise@r=1/3 0.344  w_matched 0.86  a=1 signal n_eff r=1/3 7.63
+ds1 slice 18 fold 3 sigma 0.1589  noise@r=1/3 0.345  w_matched 0.88  a=1 signal n_eff r=1/3 7.48
+ds1 slice 21 fold 3 sigma 0.1126  noise@r=1/3 0.349  w_matched 0.94  a=1 signal n_eff r=1/3 7.45
+ds1 slice  8 fold 4 sigma 0.2723  noise@r=1/3 0.345  w_matched 0.82  a=1 signal n_eff r=1/3 7.66
+ds1 slice 14 fold 4 sigma 0.2092  noise@r=1/3 0.349  w_matched 0.83  a=1 signal n_eff r=1/3 7.48
+ds1 slice 19 fold 4 sigma 0.1618  noise@r=1/3 0.345  w_matched 0.88  a=1 signal n_eff r=1/3 7.49
+ds1 slice 24 fold 4 sigma 0.1161  noise@r=1/3 0.345  w_matched 1.02  a=1 signal n_eff r=1/3 7.63
+ds1 slice 28 fold 4 sigma 0.1241  noise@r=1/3 0.344  w_matched 0.94  a=1 signal n_eff r=1/3 7.90
+ds1 slice 33 fold 4 sigma 0.2384  noise@r=1/3 0.333  w_matched 0.89  a=1 signal n_eff r=1/3 8.39
+wrote runs/degrade/pool_D_self_f2.0 1190 rows; 102 band rows; self-checks passed

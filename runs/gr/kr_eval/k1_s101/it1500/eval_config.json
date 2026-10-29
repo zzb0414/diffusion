@@ -1,0 +1,8 @@
+{
+  "run": "runs/tq/A_k1",
+  "iter": 1500,
+  "mode": "per",
+  "datasets": [
+    1
+  ]
+}

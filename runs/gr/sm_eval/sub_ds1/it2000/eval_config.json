@@ -1,0 +1,8 @@
+{
+  "run": "runs/gr/sm/sub_ds1",
+  "iter": 2000,
+  "mode": "sub",
+  "datasets": [
+    1
+  ]
+}

@@ -1,0 +1,2 @@
+[00:40:43] START eval runs/cv_r3 it500 per
+wrote runs/gr/kr_eval/k9_s101/it500 408 rows

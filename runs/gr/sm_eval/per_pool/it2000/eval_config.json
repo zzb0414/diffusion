@@ -1,0 +1,10 @@
+{
+  "run": "runs/gr/sm/per_pool",
+  "iter": 2000,
+  "mode": "per",
+  "datasets": [
+    1,
+    2,
+    3
+  ]
+}

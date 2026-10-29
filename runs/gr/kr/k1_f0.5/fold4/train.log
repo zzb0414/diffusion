@@ -1,0 +1,7 @@
+[19:05:21] GROUND mode=per fold 4/5 datasets=[1] seed=101 target_k=1 frac=0.5 aug=False | train slices=14 (indices [1, 4, 5, 10, 13, 15, 17, 18, 26, 27, 29, 30, 31, 32]) held-out indices=[8, 14, 19, 24, 28, 33] device=cuda
+[19:05:21] ladder 0.0368..0.40 (global min sigma_hat / 1)
+[19:07:28] iter   500 train=0.07724 heldout_l1(monitor)=0.02842
+[19:09:34] iter  1000 train=0.07685 heldout_l1(monitor)=0.02722
+[19:11:40] iter  1500 train=0.07916 heldout_l1(monitor)=0.02724
+[19:13:47] iter  2000 train=0.07403 heldout_l1(monitor)=0.02796
+[19:13:47] DONE fold 4: 2000 iterations in 8.4 min

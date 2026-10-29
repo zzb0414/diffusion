@@ -1,0 +1,2 @@
+[01:05:06] START eval runs/gr/kr/k9_f0.5 it2000 per
+wrote runs/gr/kr_eval/k9_f0.5/it2000 408 rows

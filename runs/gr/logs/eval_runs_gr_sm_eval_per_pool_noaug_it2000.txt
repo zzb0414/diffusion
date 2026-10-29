@@ -1,0 +1,2 @@
+[01:20:06] START eval runs/mx_cv/A it2000 per
+wrote runs/gr/sm_eval/per_pool_noaug/it2000 1224 rows
