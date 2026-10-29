@@ -177,8 +177,15 @@ def main():
         recent = (recent + [l_])[-50:]
         if it % 50 == 0:
             hl = monitor()
-            with open(csv_path, "a", newline="") as f:
-                csv.writer(f).writerow([it, float(np.mean(recent)), hl, time.time() - t0])
+            for attempt in range(5):              # transient Windows I/O errors under memory pressure
+                try:
+                    with open(csv_path, "a", newline="") as f:
+                        csv.writer(f).writerow([it, float(np.mean(recent)), hl, time.time() - t0])
+                    break
+                except OSError:
+                    if attempt == 4:
+                        raise
+                    time.sleep(2.0)
         if it % CFG["CKPT_EVERY"] == 0 or it == args.iters:
             log(f"iter {it:>5} train={np.mean(recent):.5f} heldout_l1(monitor)={monitor():.5f}")
             torch.save({"state_dict": n2n.net.state_dict(), "cfg": ckpt_cfg, "train_iters": it},
