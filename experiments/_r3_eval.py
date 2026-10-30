@@ -48,9 +48,10 @@ def load(path, device):
     blob = torch.load(path, map_location=device, weights_only=False)
     c = blob["cfg"]
     assert c.get("noise_label") == "total", "not a total-noise checkpoint"
-    net = UNet(in_ch=2, out_ch=2, base_out=c["base_out"], emb_dim=c["emb_dim"]).to(device)
+    ch = c.get("ch", 2)                                   # 1 for the natural-image models (step 3)
+    net = UNet(in_ch=ch, out_ch=ch, base_out=c["base_out"], emb_dim=c["emb_dim"]).to(device)
     m = N2N_DSM(L=c["L"], sigma_min=c["sigma_min"], sigma_max=c["sigma_max"], backbone=net,
-                param=c.get("param", "score"), blind=c.get("blind", False))
+                param=c.get("param", "score"), blind=c.get("blind", False), ch=ch)
     m.net.load_state_dict(blob["state_dict"]); m.net.eval()
     return m, blob["train_iters"]
 

@@ -387,12 +387,13 @@ class N2N_DSM:
     """
 
     def __init__(self, L=10, sigma_min=0.01, sigma_max=50.0, backbone=UNet(),
-                 task_sigma=None, param="score", blind=False):
+                 task_sigma=None, param="score", blind=False, ch=2):
         # ``param`` / ``blind`` (DEC ablation): "score" (default) decodes x0_hat = x + sigma^2 net(x, sigma);
         # "direct" reads x0_hat = net(x, sigma). ``blind=True`` hides sigma from the net (constant level
         # coordinate 0). Defaults reproduce the original model exactly.
         assert param in ("score", "direct")
         self.param, self.blind = param, blind
+        self.ch = ch                      # channels per realization: 2 (Re/Im, default) or 1 (grayscale, step 3)
         # Tie the schedule to the real data's noise: if `task_sigma` is given (the
         # acquisition sigma = ref_mag/SNR), defaults sigma_min to it (keep the
         # finest detail that is not pure noise) and leaves sigma_max to the caller.
@@ -501,11 +502,11 @@ class N2N_DSM:
         uniform (equal-weight-per-rung) behavior exactly.
         """
         B, C, H, W = x0_stack.shape
-        N = C // 2
-        enss = x0_stack.view(B, N, 2, H, W)               # (B, N, 2, H, W)
+        N = C // self.ch
+        enss = x0_stack.view(B, N, self.ch, H, W)         # (B, N, ch, H, W)
         total = enss.sum(dim=1)                           # (B, 2, H, W) over all N
         # Flatten to B*N per-realization samples: each is ONE realization as input.
-        X = enss.reshape(B * N, 2, H, W)                  # inputs
+        X = enss.reshape(B * N, self.ch, H, W)            # inputs
         # Target = LEAVE-ONE-OUT mean of the OTHER N-1 realizations (realization k
         # excluded from its own target). Each sample k is regressed onto the mean of
         # the remaining N-1, so the (finite-N) self-noise leak is removed entirely:
@@ -513,9 +514,9 @@ class N2N_DSM:
         # which is what forces the shared net to actually denoise each realization
         # rather than collapse onto the all-N average it could copy from its input.
         tot_loo = total.unsqueeze(1) - enss               # (B, N, 2, H, W)
-        T = (tot_loo / (N - 1)).reshape(B * N, 2, H, W)
+        T = (tot_loo / (N - 1)).reshape(B * N, self.ch, H, W)
         if target_k is not None:
-            T = self._subset_target(enss, target_k).reshape(B * N, 2, H, W)
+            T = self._subset_target(enss, target_k).reshape(B * N, self.ch, H, W)
         if sigma_y is not None:
             assert weights is None, "level weights belong to the legacy path"
             sy = torch.as_tensor(sigma_y, dtype=X.dtype,
@@ -657,10 +658,10 @@ class N2N_DSM:
         single-realization LOO objective of ``loss_multireal``.
         """
         B, C, H, W = x0_stack.shape
-        N = C // 2
+        N = C // self.ch
         m_max = N - 1 if m_max is None else m_max
         dev = x0_stack.device
-        enss = x0_stack.view(B, N, 2, H, W).repeat_interleave(N, dim=0)  # (K,N,2,H,W)
+        enss = x0_stack.view(B, N, self.ch, H, W).repeat_interleave(N, dim=0)  # (K,N,ch,H,W)
         K = B * N
         if m is None:
             m = torch.randint(1, m_max + 1, (K,), device=dev, generator=rng)
