@@ -17,7 +17,14 @@ RGRID = (0.0, 1 / 12, 1 / 6, 0.25, 1 / 3, 0.5)
 NETS = {"ours": {101: ("runs/cv_ablation/mse_norm", "mse"), 102: ("runs/dec/A/dsm_s102", "mse"),
                  103: ("runs/dec/A/dsm_s103", "mse")},
         "n2s": {101: ("runs/base/n2s2/s101", "n2s"), 102: ("runs/base/n2s2/s102", "n2s"),
-                103: ("runs/base/n2s2/s103", "n2s")}}
+                103: ("runs/base/n2s2/s103", "n2s")},
+        "n2n": {sd: (f"runs/dec/A/blind_s{sd}", "mse") for sd in (101, 102, 103)},        # classic N2N (DEC BLIND)
+        "n2n_sigma": {sd: (f"runs/dec/A/dirn_s{sd}", "mse") for sd in (101, 102, 103)},   # N2N + sigma (DEC DIR_N)
+        "ne2ne": {sd: (f"runs/base/ne2ne/s{sd}", "ne2ne") for sd in (101, 102, 103)},
+        "r2r": {sd: (f"runs/base/r2r/s{sd}", "r2r") for sd in (101, 102, 103)},
+        "n2self": {sd: (f"runs/base/n2self/s{sd}", "n2self") for sd in (101, 102, 103)}}
+R2R_DRAWS, R2R_ALPHA = 8, 0.5
+ITER = 2000                                                  # evaluated iteration (fixed in advance)
 _G = {}
 
 
@@ -61,15 +68,21 @@ def _networks(method, datasets, device):
     for seed, (run, loss) in NETS[method].items():
         for k in range(5):
             cfg = json.load(open(os.path.join(run, f"fold{k}", "config.json"), encoding="utf-8"))
-            model = load(os.path.join(run, f"fold{k}", "ckpt", "%s_%06d.pkl" % (loss, 2000)), device)[0]
+            model = load(os.path.join(run, f"fold{k}", "ckpt", "%s_%06d.pkl" % (loss, ITER)), device)[0]
             for i, (d, s) in enumerate(meta):
                 if folds[s] != k:
                     continue
                 assert s not in cfg["train_slices"]
                 ens = x[i]; sg = float(sig[i])
                 with torch.no_grad():
-                    x0 = model.denoise_to(torch.from_numpy(ens).float(), sg, target_ratio=0.0,
-                                          device=device).double().cpu().numpy()
+                    yt = torch.from_numpy(ens).float()
+                    if method == "r2r":                  # published inference: mean of f(y + alpha z) over draws
+                        g = torch.Generator().manual_seed(20261030 + 1000 * d + s)
+                        x0 = torch.stack([model.denoise_to(yt + R2R_ALPHA * sg * torch.randn(yt.shape, generator=g), sg,
+                                                           target_ratio=0.0, device=device).cpu()
+                                          for _ in range(R2R_DRAWS)]).mean(0).double().numpy()
+                    else:
+                        x0 = model.denoise_to(yt, sg, target_ratio=0.0, device=device).double().cpu().numpy()
                 sc = SliceScorer(ens)
                 for a in A_EVAL:
                     for r in RGRID:
