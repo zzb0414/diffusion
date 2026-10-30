@@ -116,6 +116,52 @@ noise alone.
 - **Reproducibility:** GPU training is not bit-reproducible, so every seed is an independent draw. Claims need
   several seeds.
 
+### 6b. What the method is: decoder and parametrization ablations (established, DEC)
+
+Pre-registered, seeds 101–103, MSE noise-normalized, dataset-1 training (`Archive/DEC`).
+- **Generative sampling hurts.** One posterior sample (20-step ancestral walk) vs one-shot Tweedie, dataset 1, single
+  map: 0.73× overall and **0.70× in the finest band**. The finest band is where recovered detail would show.
+  - Sampling below the trained noise floor is far worse (0.24–0.36×).
+  - Under distribution shift (datasets 2–3), averaged samples or a deterministic multi-step walk beat one-shot Tweedie
+    without the dial (up to 1.2×). With the dial tuned, at most about 5% remains.
+  - N2N cannot learn the score below the quietest acquisition noise, which limits sampling by construction.
+- **Score parametrization vs a plain regressor.** A classic σ-conditioned N2N regressor is worse once outputs are
+  averaged (0.875× at a = 9, 90% CI 0.85–0.90) but better for a single map (1.13×).
+  - **Mechanism:** the score parametrization (x̂₀ = x̃ + σ² net) halves the bias² (0.031 vs 0.046–0.048 σ²) at about
+    three times the per-map variance. Averaging removes variance, not bias. Principle: **when outputs will be averaged,
+    prefer the low-bias estimator.**
+  - **Noise-ladder training** matters little in-distribution but gives robustness under shift: without it, datasets
+    2–3 lose 11–24%.
+  - **σ conditioning** helps only together with the ladder: a native-only regressor is better blind (+3% dataset 1,
+    +16% dataset 2).
+- **Candidate method (untested):** a loss on the error of the averaged estimate, targeting low bias directly.
+
+### 6c. Baselines (established, BASE)
+
+Pre-registered, all methods on the same splits, every parameter cross-fitted (`Archive/BASE`, code `baselines/`).
+- **Dataset 1, a = 9, ours vs each baseline:** all eight are significantly worse (Holm).
+
+  | Baseline | Ours / baseline |
+  |---|---|
+  | BM3D | 1.29× |
+  | Gaussian blur | 1.36× |
+  | Non-local means | 1.43× |
+  | Patch2Self | 1.65× |
+  | MP-PCA / LPCA | 2.6× |
+  | Plain averaging | 4.3× |
+  | Noise2Score | 11.2× |
+
+- **Joint-across-repetitions methods** (MP-PCA, LPCA) hardly improve with more repetitions. The signal is identical
+  across repetitions, so they offer little beyond averaging.
+- **Noise2Score fails on real data because ASL noise is coloured.** A synthetic check with known ground truth
+  (`baselines/_n2s_validate.py`) shows it denoises white noise but is worse than the input with dataset-1-coloured
+  noise (1.25× the noise variance), where N2N is unaffected (0.002×). Pair-based training needs no noise model;
+  score-from-noisy-data methods do.
+- **Soft spot:** on dataset 2 (low-SNR, fine-grained noise, model trained on dataset 1) a tuned Gaussian blur ties
+  ours (62.3 vs 60.7 at a = 9). Generalization across coils is the open problem.
+- **Not yet compared:** Neighbor2Neighbor / Blind2Unblind, Recorrupted-to-Recorrupted, DDM2, and a supervised upper
+  bound (needs ground truth; planned with step 3).
+
 ---
 
 ## Part II — Draft roadmap (for discussion, 2026-10-29)
@@ -124,8 +170,8 @@ noise alone.
 
 | Component | Choice | Basis |
 |---|---|---|
-| Model | Small U-Net conditioned on the total noise level, s_θ(y, σ); one model for all slices, SNRs and datasets | Notes 1, 4 |
-| Decoding | One-shot Tweedie estimate per repetition, blended with r, then averaged ("PER"). One network pass per repetition | Notes 2, 5 |
+| Model | Small U-Net conditioned on the total noise level, score parametrization x̂₀ = y + σ² s_θ(y, σ) (low bias), trained on the noise ladder (robust to shift); one model for all slices, SNRs and datasets | Notes 1, 4, 6b |
+| Decoding | One-shot Tweedie estimate per repetition, blended with r, then averaged ("PER"). One network pass per repetition; no sampling (6b) | Notes 2, 5, 6b |
 | Strength | r chosen for the averaging depth a: r*(a) from the closed form, or one r per a chosen on other slices. Optional: r by local signal level (+3–8% at large a) | Note 3 |
 | Loss | MSE, noise-normalized | Note 6 |
 | Targets | Leave-one-out mean where N ≥ 3 (equivalent and lower variance); single other repetition when N = 2 | Note 4 |
@@ -193,15 +239,15 @@ insensitivity (N2N theory).
 
 | Claim | Ablation | Status |
 |---|---|---|
-| Score + Tweedie decoding is needed | Same network trained as a direct N2N regressor (x̂ = f(y, σ)), decoded with the same dial. If equal, simplify the framing to "any noise-conditional N2N denoiser + dial" | To do |
-| Generative sampling recovers detail from the learned prior | Full reverse diffusion (sampling to σ = 0) vs one-shot Tweedie (posterior mean) vs direct regressor, scored overall and on the finest-frequency n_eff bands. See the note below the table | To do |
+| Score + Tweedie decoding is needed | Same network trained as a direct N2N regressor (x̂ = f(y, σ)), decoded with the same dial | Done (DEC A): score parametrization wins when averaging (lower bias), regressor wins for single maps (note 6b) |
+| Generative sampling recovers detail from the learned prior | Full reverse diffusion (sampling to σ = 0) vs one-shot Tweedie (posterior mean) vs direct regressor, scored overall and on the finest-frequency n_eff bands. See the note below the table | Done (DEC B): refuted, sampling is worse overall and in the finest band (note 6b) |
 | Dial for averaging | r = 0 (Noise2Score-like), fixed r = 1/3, global r*(a), per-slice r, signal-dependent r, spatial r map; for a = 1…N | Headroom done (AR_HEADROOM, note 3); confirm on new data |
 | Ground-truth-free estimator | Synthetic data with known ground truth (digital phantom or high-average reference + real noise): estimated n_eff vs true n_eff; predicted vs true r*(a) | To do |
 | Target insensitivity enables pooling | k = 1 vs k = 9 (done). Pooling sites with N = 2 vs N = 10 at equal total scans | Partly done |
-| Noise conditioning | Blind model (no σ) vs scalar σ vs noise-spectrum conditioning; within- and cross-dataset | To do |
+| Noise conditioning | Blind model (no σ) vs scalar σ vs noise-spectrum conditioning; within- and cross-dataset | Partly done (DEC A): σ conditioning helps only with ladder training; spectrum conditioning to do |
 | Pooling heterogeneous data | Single-site vs pooled training; noise-normalized vs plain loss | Partly done (MX_CV) |
 | Resolution handling | (a) linear k-space resampling + noise-spectrum conditioning; (c) native-resolution fully convolutional model without resolution conditioning; (c') the same with voxel-size conditioning; nonlinear autoencoder latent as a negative control for the linear-operator principle. Within-site and leave-one-site-out | Needs multi-resolution data |
-| Comparison | All baselines in note 8 at matched a, scored with the same n_eff estimator, plus a reader-independent structure metric (per-band n_eff) | To do |
+| Comparison | All baselines in note 8 at matched a, scored with the same n_eff estimator, plus a reader-independent structure metric (per-band n_eff) | Done for classical + Noise2Score (note 6c); further DL baselines to do |
 | Generality | A second application with repetitions (e.g., multi-average DWI or low-field MRI) and several subjects | Needs data |
 
 **On generative sampling (user's motivation, 2026-10-29).** Our data are exactly the kind diffusion models are trained
@@ -222,8 +268,8 @@ subjects.
 
 1. ~~Adaptive-r headroom~~ (done 2026-10-29): adaptive r is a minor refinement; the depth-dependent r*(a) is the
    centrepiece.
-2. **Decoder ablations and baselines on current data:** direct regressor and full generative sampling vs one-shot
-   Tweedie. Settles what the method actually is, and where it stands against MP-PCA, Patch2Self and Noise2Score.
+2. ~~Decoder ablations and baselines on current data~~ (done 2026-10-30, notes 6b–6c). Remaining from this step:
+   further DL baselines (Neighbor2Neighbor / Blind2Unblind, Recorrupted-to-Recorrupted, DDM2).
 3. **Synthetic validation** of the estimator and of r*(a).
 4. **Recipe clean-up for pooled data:** separate augmentation from ladder; select checkpoints by validation n_eff.
 5. **Multi-subject, multi-site data:** resolution handling (linear operators; with vs without voxel-size
@@ -238,3 +284,4 @@ subjects.
 - 2026-10-29: resolution handling (linear-operator principle, voxel-size conditioning) and the generative-sampling
   ablation added after discussion with the user.
 - 2026-10-29: AR_HEADROOM folded into note 3; adaptive r demoted to a refinement.
+- 2026-10-30: step 2 results (DEC, BASE) added as notes 6b–6c; roadmap rows updated.

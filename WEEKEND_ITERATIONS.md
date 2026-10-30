@@ -1588,3 +1588,71 @@ Averaging removes variance but not bias, so DSM wins at a = 9 (primary 0.875× f
 models win for a single map (1.13–1.14×). The same mechanism orders the arms on datasets 2–3, where direct-with-ladder
 has the lowest bias. Design implication: when outputs will be averaged, prefer the low-bias estimator. A loss
 targeting the error of the averaged estimate is a candidate method (not tested).
+
+---
+
+## RUN 2026-10-30 — BASE: the method vs conventional and self-supervised baselines
+
+Pre-registered (`Archive/BASE/PREREGISTRATION.md`). Ours = DSM, MSE noise-normalized, dataset-1 training, seeds 101–103, one-shot Tweedie + dial. Every method sees only the A half of each split; all methods are scored on the SAME fixed subset of 10 splits per a (unbiased, paired); every parameter is cross-fitted over the other folds' slices. Code: `baselines/`. The dry run gave 1.000.
+
+**Deviation from the pre-registration (Noise2Score).** The first implementation (annealed perturbation, network conditioned on σ̂ only) failed its sanity check: n_eff 0.03, i.e. far worse than the noisy input, with a final loss of 0.98 against 1.0 for no learning (runs kept in `runs/base/n2s_v1*`). Version 2 conditions the network on the total noise √(σ̂² + δ²) of the perturbed input with δ log-uniform in [0.05, 2]·σ̂; the AR-DAE objective is unchanged. It was validated on synthetic data with known ground truth (`baselines/_n2s_validate.py`, `runs/base/report/n2s_validation.txt`): it denoises white noise at SNR 1 and 0.1, also from a fixed set of 10 realizations, but with noise coloured like dataset 1 it is WORSE than the noisy input (error 1.25× the noise variance), while a Noise2Noise model on the same data is unaffected (0.002×). Noise2Score's Tweedie step assumes white noise of known σ; real ASL noise is coloured. The Noise2Score rows below are version 2.
+
+**PRIMARY (dataset 1, a = 9; n_eff ours / baseline, Holm over 8):**
+
+- vs Plain averaging: 4.328× (95% CI 3.933–4.779; ours better on 34/34), p = 1.2e-10, Holm 9.3e-10 → **ours better**
+- vs Gaussian blur: 1.362× (95% CI 1.278–1.452; ours better on 33/34), p = 2e-08, Holm 3.2e-08 → **ours better**
+- vs Non-local means: 1.426× (95% CI 1.295–1.587; ours better on 31/34), p = 3.8e-09, Holm 1.2e-08 → **ours better**
+- vs BM3D: 1.288× (95% CI 1.189–1.402; ours better on 31/34), p = 1.6e-08, Holm 3.2e-08 → **ours better**
+- vs MP-PCA: 2.565× (95% CI 2.316–2.824; ours better on 34/34), p = 1.2e-10, Holm 9.3e-10 → **ours better**
+- vs LPCA: 2.643× (95% CI 2.323–2.971; ours better on 34/34), p = 1.2e-10, Holm 9.3e-10 → **ours better**
+- vs Patch2Self: 1.646× (95% CI 1.515–1.790; ours better on 33/34), p = 2.3e-10, Holm 9.3e-10 → **ours better**
+- vs Noise2Score (r = 0): 11.207× (95% CI 9.726–12.817; ours better on 34/34), p = 1.2e-10, Holm 9.3e-10 → **ours better**
+
+Geometric-mean n_eff (signal region) by method:
+
+| method | ds1 a=1 | ds1 a=3 | ds1 a=5 | ds1 a=9 | ds2 a=1 | ds2 a=3 | ds2 a=5 | ds2 a=9 | ds3 a=1 | ds3 a=3 | ds3 a=5 | ds3 a=9 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Ours (DSM + dial) | 21.68 | 31.94 | 34.34 | 38.95 | 40.07 | 53.86 | 61.37 | 60.66 | 28.65 | 41.30 | 59.56 | 56.63 |
+| Plain averaging | 1.00 | 3.02 | 5.17 | 9.00 | 1.00 | 3.02 | 5.02 | 9.00 | 1.00 | 2.93 | 5.12 | 9.00 |
+| Gaussian blur | 16.72 | 22.20 | 23.37 | 28.60 | 39.75 | 59.34 | 62.95 | 62.30 | 24.87 | 38.44 | 51.60 | 50.77 |
+| Non-local means | 13.39 | 19.55 | 23.13 | 27.32 | 32.25 | 49.34 | 52.86 | 54.85 | 15.92 | 24.89 | 37.24 | 40.97 |
+| BM3D | 14.71 | 21.77 | 25.67 | 30.24 | 35.50 | 53.68 | 56.76 | 61.89 | 18.96 | 28.48 | 42.19 | 45.08 |
+| MP-PCA | 13.85 | 13.60 | 13.66 | 15.19 | 35.69 | 36.19 | 36.77 | 35.91 | 22.67 | 18.19 | 21.43 | 23.17 |
+| LPCA | 13.91 | 15.32 | 14.44 | 14.74 | 37.31 | 43.96 | 44.57 | 41.89 | 20.59 | 23.44 | 25.85 | 23.74 |
+| Patch2Self | 12.04 | 16.71 | 19.05 | 23.67 | 34.01 | 36.55 | 39.80 | 44.03 | 27.87 | 24.74 | 30.09 | 33.02 |
+| Noise2Score (r = 0) | 0.44 | 1.27 | 2.06 | 3.48 | 0.68 | 1.97 | 3.15 | 5.23 | 0.42 | 1.19 | 2.00 | 3.36 |
+| Noise2Score + dial | 1.06 | 3.13 | 5.18 | 8.81 | 1.28 | 3.82 | 6.24 | 10.82 | 0.98 | 2.82 | 4.87 | 8.29 |
+
+Ours / baseline, overall and finest band (geometric mean, slices where ours is better):
+
+| baseline | dataset | a = 1 | a = 3 | a = 5 | a = 9 | finest band a = 1 / 9 |
+|---|---:|---|---|---|---|---|
+| Plain averaging | 1 | 21.678 (34/34) | 10.575 (34/34) | 6.646 (34/34) | 4.328 (34/34) | 49.055 / 7.039 |
+| Plain averaging | 2 | 40.067 (34/34) | 17.814 (34/34) | 12.225 (34/34) | 6.740 (34/34) | 129.012 / 15.534 |
+| Plain averaging | 3 | 28.649 (34/34) | 14.086 (34/34) | 11.635 (34/34) | 6.293 (34/34) | 75.692 / 12.688 |
+| Gaussian blur | 1 | 1.296 (31/34) | 1.438 (33/34) | 1.470 (33/34) | 1.362 (33/34) | 0.769 / 0.986 |
+| Gaussian blur | 2 | 1.008 (13/34) | 0.908 (13/34) | 0.975 (15/34) | 0.974 (15/34) | 0.620 / 0.680 |
+| Gaussian blur | 3 | 1.152 (26/34) | 1.074 (24/34) | 1.154 (26/34) | 1.116 (25/34) | 0.497 / 0.726 |
+| Non-local means | 1 | 1.619 (33/34) | 1.634 (32/34) | 1.485 (31/34) | 1.426 (31/34) | 1.048 / 0.972 |
+| Non-local means | 2 | 1.243 (25/34) | 1.092 (23/34) | 1.161 (23/34) | 1.106 (22/34) | 0.979 / 0.772 |
+| Non-local means | 3 | 1.799 (31/34) | 1.659 (30/34) | 1.600 (32/34) | 1.382 (34/34) | 1.266 / 0.889 |
+| BM3D | 1 | 1.473 (32/34) | 1.467 (32/34) | 1.338 (30/34) | 1.288 (31/34) | 0.861 / 0.872 |
+| BM3D | 2 | 1.129 (22/34) | 1.003 (22/34) | 1.081 (23/34) | 0.980 (11/34) | 0.681 / 0.758 |
+| BM3D | 3 | 1.511 (28/34) | 1.450 (27/34) | 1.412 (29/34) | 1.256 (31/34) | 0.810 / 0.831 |
+| MP-PCA | 1 | 1.565 (31/34) | 2.349 (33/34) | 2.514 (34/34) | 2.565 (34/34) | 0.864 / 1.021 |
+| MP-PCA | 2 | 1.123 (25/34) | 1.488 (34/34) | 1.669 (34/34) | 1.689 (34/34) | 0.798 / 0.772 |
+| MP-PCA | 3 | 1.264 (29/34) | 2.270 (34/34) | 2.780 (34/34) | 2.444 (34/34) | 0.724 / 1.036 |
+| LPCA | 1 | 1.559 (31/34) | 2.085 (33/34) | 2.379 (34/34) | 2.643 (34/34) | 0.825 / 1.066 |
+| LPCA | 2 | 1.074 (21/34) | 1.225 (27/34) | 1.377 (30/34) | 1.448 (31/34) | 0.669 / 0.761 |
+| LPCA | 3 | 1.392 (33/34) | 1.762 (34/34) | 2.304 (34/34) | 2.385 (34/34) | 0.780 / 1.149 |
+| Patch2Self | 1 | 1.801 (32/34) | 1.911 (33/34) | 1.802 (33/34) | 1.646 (33/34) | 0.802 / 1.103 |
+| Patch2Self | 2 | 1.178 (22/34) | 1.474 (34/34) | 1.542 (34/34) | 1.378 (34/34) | 0.640 / 1.276 |
+| Patch2Self | 3 | 1.028 (18/34) | 1.669 (32/34) | 1.980 (34/34) | 1.715 (34/34) | 0.539 / 1.452 |
+| Noise2Score (r = 0) | 1 | 49.258 (34/34) | 25.077 (34/34) | 16.706 (34/34) | 11.207 (34/34) | 151.080 / 22.667 |
+| Noise2Score (r = 0) | 2 | 58.612 (34/34) | 27.314 (34/34) | 19.451 (34/34) | 11.588 (34/34) | 262.024 / 33.144 |
+| Noise2Score (r = 0) | 3 | 68.771 (34/34) | 34.727 (34/34) | 29.854 (34/34) | 16.839 (34/34) | 257.870 / 45.403 |
+| Noise2Score + dial | 1 | 20.432 (34/34) | 10.212 (34/34) | 6.631 (34/34) | 4.423 (34/34) | 52.920 / 7.840 |
+| Noise2Score + dial | 2 | 31.324 (34/34) | 14.113 (34/34) | 9.833 (34/34) | 5.608 (34/34) | 112.391 / 13.841 |
+| Noise2Score + dial | 3 | 29.101 (34/34) | 14.660 (34/34) | 12.219 (34/34) | 6.830 (34/34) | 90.276 / 15.686 |
+
+**Data:** `runs/base/{classical,ours,n2s_eval}/neff.csv`, `runs/base/report/summary.json`. **Commands:** `python baselines/evaluate.py --methods ...`; `bash runs/base/n2s_queue.sh`; `python baselines/report.py`.
