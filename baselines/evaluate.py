@@ -16,8 +16,8 @@ from _common import A_EVAL, SliceScorer
 RGRID = (0.0, 1 / 12, 1 / 6, 0.25, 1 / 3, 0.5)
 NETS = {"ours": {101: ("runs/cv_ablation/mse_norm", "mse"), 102: ("runs/dec/A/dsm_s102", "mse"),
                  103: ("runs/dec/A/dsm_s103", "mse")},
-        "n2s": {101: ("runs/base/n2s/s101", "n2s"), 102: ("runs/base/n2s/s102", "n2s"),
-                103: ("runs/base/n2s/s103", "n2s")}}
+        "n2s": {101: ("runs/base/n2s2/s101", "n2s"), 102: ("runs/base/n2s2/s102", "n2s"),
+                103: ("runs/base/n2s2/s103", "n2s")}}
 _G = {}
 
 

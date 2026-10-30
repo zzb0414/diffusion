@@ -1,0 +1,6 @@
+Noise2Score implementation check (baselines/_n2s_validate.py), 2026-10-30; held-out MSE / sigma^2, noisy input = 1.0
+SNR 1.0: sigma 0.0303; held-out MSE / sigma^2 (noisy input = 1.0): Noise2Score 0.038, Noise2Noise 0.050
+SNR 0.1: sigma 0.3031; held-out MSE / sigma^2 (noisy input = 1.0): Noise2Score 0.003, Noise2Noise 0.001
+SNR 0.1 fixed_reps=10 colored=False: sigma 0.3031; held-out MSE / sigma^2 (noisy input = 1.0): Noise2Score 0.005, Noise2Noise 0.003
+SNR 0.1 fixed_reps=0 colored=True: sigma 0.3031; held-out MSE / sigma^2 (noisy input = 1.0): Noise2Score 1.254, Noise2Noise 0.002
+Real data, fold 0 held-out slices, a=1, r=0, n_eff (higher is better; 1 = noisy input): v1 0.03, v2 0.51, ours 13.74

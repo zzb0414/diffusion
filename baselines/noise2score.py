@@ -6,15 +6,22 @@ amortized residual denoising auto-encoder (AR-DAE) objective
 
     L = E || u + delta_t * s(y + delta_t * u, sigma_hat) ||^2,   u ~ N(0, I),
 
-where delta_t is annealed toward 0 so that s approaches the score of p(y) itself, and decodes with Tweedie's
-formula for Gaussian noise, x_hat = y + sigma_hat^2 s(y). Every repetition is treated as an independent noisy
-image. To serve slices of different noise, the network is conditioned on each slice's sigma_hat through the same
-level coordinate as our model (``N2N_DSM.level_coord``), so a checkpoint loads with ``_r3_eval.load`` and decodes
-with ``N2N_DSM.denoise_to`` (score parametrization). Same folds, U-Net, optimizer, batch and iterations as ours.
+and decodes with Tweedie's formula for Gaussian noise, x_hat = y + sigma_hat^2 s(y). Every repetition is treated
+as an independent noisy image.
+
+Version 2 (2026-10-30). The perturbed input y + delta u carries TOTAL noise sigma_tot = sqrt(sigma_hat^2 + delta^2)
+around the clean image, and the AR-DAE optimum is exactly the score of the noisy data smoothed by delta, i.e. the
+score at total noise sigma_tot. The network is therefore conditioned on sigma_tot (``N2N_DSM.level_coord``), with
+delta drawn log-uniformly in [DELTA_LO, DELTA_HI] x sigma_hat, so one model learns the whole family and is evaluated
+at delta -> 0 (sigma_tot = sigma_hat), where the score of p(y) is what Tweedie needs. Version 1 (delta annealed
+toward 0, net conditioned on sigma_hat only) failed its sanity check: the learned score was noise-dominated
+(final loss 0.98 vs 1.0 for no learning) and its estimates were ~50x worse than the noisy input. A checkpoint loads
+with ``_r3_eval.load`` and decodes with ``N2N_DSM.denoise_to``. Same folds, U-Net, optimizer, batch and iterations
+as ours.
 
     python baselines/noise2score.py --fold 0 --seed 101 --outdir runs/base/n2s/s101
 """
-import os, sys, time, json, argparse, csv
+import os, sys, time, json, argparse, csv, math
 import numpy as np
 import torch
 import _common
@@ -24,7 +31,7 @@ from n2n import N2N_DSM                                      # noqa: E402
 from _r3_train import pack                                   # noqa: E402
 
 CFG = dict(L=40, SIGMA_MAX=0.4, ITERS=2000, BATCH=8, LR=1e-3, GRAD_CLIP=1.0, NET_BASE=32, NET_EMB=32,
-           DELTA_HI=0.5, DELTA_LO=0.02, CKPT_EVERY=500)        # delta_t = sigma_hat * DELTA, log-annealed hi -> lo
+           DELTA_HI=2.0, DELTA_LO=0.05, CKPT_EVERY=500)        # delta = sigma_hat * U_log[DELTA_LO, DELTA_HI]
 
 
 def main():
@@ -55,7 +62,7 @@ def main():
     opt = torch.optim.Adam(net.parameters(), lr=CFG["LR"])
     ckpt_cfg = dict(net_type="N2N_DSM", noise_label="total", objective="noise2score_ardae", N=N, L=CFG["L"],
                     sigma_min=sigma_min, sigma_max=CFG["SIGMA_MAX"], base_out=CFG["NET_BASE"], emb_dim=CFG["NET_EMB"],
-                    loss="n2s", fold=args.fold, held_out=held, seed=args.seed, datasets=[1])
+                    loss="n2s", version=2, fold=args.fold, held_out=held, seed=args.seed, datasets=[1])
     json.dump(dict(cfg=CFG, ckpt_cfg=ckpt_cfg, held_out=held, train_slices=train_idx, seed=args.seed),
               open(os.path.join(RUN, "config.json"), "w"), indent=2)
     log = open(os.path.join(RUN, "train.log"), "a", encoding="utf-8")
@@ -63,22 +70,22 @@ def main():
         csv.writer(f).writerow(["iter", "loss_avg50", "delta_rel", "sec"])
     recent, t0 = [], time.time()
     for it in range(1, args.iters + 1):
-        rel = CFG["DELTA_HI"] * (CFG["DELTA_LO"] / CFG["DELTA_HI"]) ** ((it - 1) / max(1, args.iters - 1))
         pick = torch.randint(0, len(tr), (CFG["BATCH"],), device=DEVICE)
         y = x_train[pick].reshape(-1, 2, *x.shape[-2:])                       # all N repetitions, independent
         s = sy[pick].repeat_interleave(N)
-        delta = (rel * s).view(-1, 1, 1, 1)
+        rel = torch.exp(math.log(CFG["DELTA_LO"]) + torch.rand_like(s) * math.log(CFG["DELTA_HI"] / CFG["DELTA_LO"]))
+        d = rel * s
         u = torch.randn_like(y)
-        score = net(y + delta * u, m.level_coord(s))
-        loss = ((u + delta * score) ** 2).mean()
+        score = net(y + d.view(-1, 1, 1, 1) * u, m.level_coord(torch.sqrt(s ** 2 + d ** 2)))
+        loss = ((u + d.view(-1, 1, 1, 1) * score) ** 2).mean()
         opt.zero_grad(); loss.backward()
         torch.nn.utils.clip_grad_norm_(net.parameters(), CFG["GRAD_CLIP"]); opt.step()
         recent = (recent + [loss.item()])[-50:]
         if it % 50 == 0:
             with open(os.path.join(RUN, "train.csv"), "a", newline="") as f:
-                csv.writer(f).writerow([it, float(np.mean(recent)), rel, time.time() - t0])
+                csv.writer(f).writerow([it, float(np.mean(recent)), float(rel.mean()), time.time() - t0])
         if it % CFG["CKPT_EVERY"] == 0 or it == args.iters:
-            line = f"[{time.strftime('%H:%M:%S')}] iter {it} loss={np.mean(recent):.5f} delta_rel={rel:.4f}"
+            line = f"[{time.strftime('%H:%M:%S')}] iter {it} loss={np.mean(recent):.5f}"
             print(line, flush=True); log.write(line + "\n"); log.flush()
             torch.save({"state_dict": net.state_dict(), "cfg": ckpt_cfg, "train_iters": it},
                        os.path.join(RUN, "ckpt", f"n2s_{it:06d}.pkl"))

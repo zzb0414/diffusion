@@ -27,7 +27,7 @@ BASELINES = ("avg", "blur", "nlm", "bm3d", "mppca", "lpca", "p2s", "n2s")
 rng = np.random.default_rng(0)
 
 T = {}                                                   # (method, seed, d, s, a, param) -> (n_eff, band3, fold)
-for tag in ("classical", "ours", "n2s_eval"):
+for tag in ("classical", "ours", "n2s2_eval"):        # n2s2 = Noise2Score version 2 (v1 failed its check)
     if not os.path.exists(f"runs/base/{tag}/neff.csv"):
         print(f"(missing runs/base/{tag}: its methods are skipped)")
         continue
@@ -101,6 +101,15 @@ L = ["", "---", "", HEAD, "",
      "101–103, one-shot Tweedie + dial. Every method sees only the A half of each split; all methods are scored on the "
      "SAME fixed subset of 10 splits per a (unbiased, paired); every parameter is cross-fitted over the other folds' "
      "slices. Code: `baselines/`. The dry run gave 1.000.", "",
+     "**Deviation from the pre-registration (Noise2Score).** The first implementation (annealed perturbation, network "
+     "conditioned on σ̂ only) failed its sanity check: n_eff 0.03, i.e. far worse than the noisy input, with a final loss "
+     "of 0.98 against 1.0 for no learning (runs kept in `runs/base/n2s_v1*`). Version 2 conditions the network on the "
+     "total noise √(σ̂² + δ²) of the perturbed input with δ log-uniform in [0.05, 2]·σ̂; the AR-DAE objective is unchanged. "
+     "It was validated on synthetic data with known ground truth (`baselines/_n2s_validate.py`, "
+     "`runs/base/report/n2s_validation.txt`): it denoises white noise at SNR 1 and 0.1, also from a fixed set of 10 "
+     "realizations, but with noise coloured like dataset 1 it is WORSE than the noisy input (error 1.25× the noise "
+     "variance), while a Noise2Noise model on the same data is unaffected (0.002×). Noise2Score's Tweedie step assumes "
+     "white noise of known σ; real ASL noise is coloured. The Noise2Score rows below are version 2.", "",
      "**PRIMARY (dataset 1, a = 9; n_eff ours / baseline, Holm over %d):**" % len(BASELINES), ""]
 for b in BASELINES:
     r = prim[b]
