@@ -15,7 +15,7 @@ Check progress: `ls runs/base/dl_eval runs/nat/eval/*`, the `train.log` files, `
 GPU job while one runs (8 GB card: two trainings page and crawl; a memory squeeze once killed a run).
 
 ## Gate to release (do this first)
-`runs/nat/_ch_verified` is created ONLY after the CPU determinism check of the `N2N_DSM(ch=...)` change passes:
+`runs/nat/_ch_verified` (RELEASED 2026-10-30: check passed, loss identical) is created ONLY after the CPU determinism check of the `N2N_DSM(ch=...)` change passes:
 run (CPU, single thread, CUDA_VISIBLE_DEVICES=-1, `torch.use_deterministic_algorithms(True)`)
 `experiments/_cv_train.py --fold 0 --iters 50` and confirm iteration-50 `train_loss_avg50` == `0.08874751314520836`.
 If it passed: `touch runs/nat/_ch_verified`. If not: do NOT release; fix `n2n.py` (diff vs commit before the change).
