@@ -24,10 +24,10 @@ If it passed: `touch runs/nat/_ch_verified`. If not: do NOT release; fix `n2n.py
 1. **BASE-DL report** when `runs/base/dl_eval/neff.csv` exists: `cd baselines && python report.py --set dl --dry`
    (must print DRY RUN OK), then `python report.py --set dl` (logs its section). Pre-registration:
    `Archive/BASE/PREREGISTRATION_DL.md` (primary: ours vs each baseline + dial, dataset 1, a = 9, Holm over 5).
-2. **NAT report** — `natural/report.py` is NOT written yet. Implement P1–P4 exactly as in
-   `Archive/NAT/PREREGISTRATION.md` from `runs/nat/eval/<cond>/<method>.csv` (columns split,image,method,r,a,mse_gt,
-   psnr,mse_sh,s2). r selection: grid r maximizing summed split-half n_eff (= s2/mse_sh) on Set12, per method/a; oracle
-   r = best mean PSNR on BSD68. Add a dry run (comparator := each method gives 0 dB / ratio 1), log a section.
+2. **NAT report** — `natural/report.py` (written, compiles, NOT yet run on data): when `runs/nat/gpu.done` and
+   `runs/nat/cpu.done` exist, run `python natural/report.py --dry` (must print DRY RUN OK), then
+   `python natural/report.py` (logs its section only when all conditions x methods are present). Sanity-check its
+   numbers before trusting them (e.g. plain averaging PSNR must match σ²/a).
 3. **Verify** protected hashes: `sha256sum -c Archive/NAT/protected_before.sha256` (and BASE's); report mismatches.
 4. **Commit** text outputs only (code, logs, json, md; never csv/png/pkl/npy), on branch `dev`. Do not push without
    asking.
