@@ -1495,3 +1495,96 @@ higher in high-signal ones). Its ceiling is set by learnable structure, not by p
 **Verbatim outputs:** `runs/ar/headroom/stdout_headroom.txt` (all rules, models A and D, datasets 1–3, a = 1–9) and
 `runs/ar/headroom/stdout_crosshalf.txt` (honesty check, model A); `runs/ar/headroom/summary.json`. **Commands:**
 `python experiments/_ar_headroom.py`; `cd experiments && python _ar_crosshalf.py`.
+
+---
+
+## RUN 2026-10-29 — DEC part B: generative sampling vs one-shot Tweedie
+
+Pre-registered (`Archive/DEC/PREREGISTRATION.md`). DSM models (MSE, noise-normalized; seeds 101–103, iteration 2000), every held-out slice of datasets 1–3 decoded per repetition by: one-shot Tweedie (TW); a 20-step deterministic reverse walk (ODE); a 20-step ancestral walk = one posterior sample (ANC); the mean of 8 samples (ANC8); and ANC extrapolated below the trained noise floor to σ̂/10 (ANCX, off-distribution). The stochastic walk stops at the ladder bottom σ_floor = 0.0368: N2N never trains below the quietest acquisition. Per slice, ratios are geometric means over the 3 seeds. The dry run gave 1.000.
+
+**PRIMARY (dataset 1, a = 1, r = 0; n_eff ANC / TW, Holm over 2):**
+
+- overall (signal region): 0.729× (95% CI 0.670–0.792; 2/34 better), p = 1.8e-06, Holm 1.8e-06 → **sampling worse**
+- finest band (0.25–0.75 cycles/pixel): 0.695× (95% CI 0.612–0.775; 1/34 better), p = 6.5e-07, Holm 1.3e-06 → **sampling worse**
+
+Decoder / TW, overall n_eff (geometric mean, slices better); r = 0 and each decoder at its cross-fitted r(a):
+
+| decoder | dataset | a=1, r=0 | a=5, r=0 | a=9, r=0 | a=1, cf r | a=5, cf r | a=9, cf r |
+|---|---:|---|---|---|---|---|---|
+| ANC | 1 | 0.729 (2/34) | 0.701 (1/34) | 0.699 (1/34) | 0.729 (2/34) | 0.653 (2/34) | 0.605 (0/34) |
+| ANC | 2 | 0.941 (13/34) | 0.970 (12/34) | 0.978 (13/34) | 0.941 (13/34) | 0.893 (8/34) | 0.848 (7/34) |
+| ANC | 3 | 0.957 (15/34) | 0.914 (7/34) | 0.913 (8/34) | 0.957 (15/34) | 0.837 (4/34) | 0.799 (3/34) |
+| ANC8 | 1 | 0.872 (12/34) | 0.741 (1/34) | 0.725 (2/34) | 0.872 (12/34) | 0.756 (0/34) | 0.806 (0/34) |
+| ANC8 | 2 | 1.178 (28/34) | 1.030 (16/34) | 1.012 (15/34) | 1.178 (28/34) | 0.972 (14/34) | 0.981 (14/34) |
+| ANC8 | 3 | 1.226 (29/34) | 0.992 (13/34) | 0.961 (11/34) | 1.226 (29/34) | 0.923 (8/34) | 0.898 (3/34) |
+| ODE | 1 | 0.843 (9/34) | 0.818 (2/34) | 0.819 (3/34) | 0.843 (9/34) | 0.807 (1/34) | 0.839 (0/34) |
+| ODE | 2 | 1.073 (23/34) | 1.107 (27/34) | 1.118 (27/34) | 1.073 (23/34) | 1.045 (23/34) | 1.055 (25/34) |
+| ODE | 3 | 1.040 (24/34) | 1.000 (15/34) | 1.001 (13/34) | 1.040 (24/34) | 0.936 (8/34) | 0.943 (6/34) |
+| ANCX | 1 | 0.258 (0/34) | 0.473 (0/34) | 0.565 (0/34) | 0.258 (0/34) | 0.435 (0/34) | 0.501 (0/34) |
+| ANCX | 2 | 0.362 (0/34) | 0.658 (1/34) | 0.766 (3/34) | 0.362 (0/34) | 0.605 (0/34) | 0.663 (0/34) |
+| ANCX | 3 | 0.242 (0/34) | 0.473 (0/34) | 0.595 (0/34) | 0.242 (0/34) | 0.433 (0/34) | 0.516 (0/34) |
+
+Finest band, decoder / TW at r = 0, a = 1 / 5 / 9: ANC ds1: 0.695 / 0.865 / 0.908; ANC ds2: 0.728 / 0.959 / 1.020; ANC ds3: 0.721 / 0.934 / 1.003; ANC8 ds1: 1.015 / 0.987 / 0.990; ANC8 ds2: 1.280 / 1.178 / 1.164; ANC8 ds3: 1.229 / 1.155 / 1.153; ODE ds1: 0.841 / 0.986 / 1.025; ODE ds2: 1.001 / 1.119 / 1.166; ODE ds3: 0.892 / 1.049 / 1.100.
+Walk length (dataset 1, a = 1, r = 0): median σ̂/σ_floor 2.31; ANC/TW on short vs long walks: 0.764 vs 0.695; ODE/TW: 0.874 vs 0.813.
+
+**Data:** `runs/dec/B/s{101,102,103}/neff.csv`, `runs/dec/report/summary.json`. **Commands:** `bash runs/dec/queue.sh`; `python experiments/_dec_report.py --part B`.
+
+---
+
+## RUN 2026-10-30 — DEC part A: regressor vs diffusion
+
+Pre-registered (`Archive/DEC/PREREGISTRATION.md`). Dataset-1 training, MSE noise-normalized, 2000 iterations, seeds 101–103, four arms: DSM (x̂₀ = x̃ + σ² net, noise ladder), DIR_L (x̂₀ = net, same ladder), DIR_N (direct, native noise only: a classic σ-conditioned N2N regressor), BLIND (DIR_N without σ input). All decoded one-shot and scored at each arm's cross-fitted r(a). Per slice, geometric means over the 3 seeds. The dry run gave 1.000.
+
+**PRIMARY (DIR_N / DSM, dataset 1, a = 9):** 0.875× (90% CI 0.848–0.903; 2/34 better) → **regressor worse (diffusion training contributes)**.
+
+Ratios (geometric mean, 90% CI; overall n_eff at cross-fitted r):
+
+| comparison | dataset | a = 1 | a = 5 | a = 9 |
+|---|---:|---|---|---|
+| DIR_N / DSM | 1 | 1.135 (1.053–1.241) | 0.891 (0.859–0.924) | 0.875 (0.847–0.903) |
+| DIR_N / DSM | 2 | 1.025 (0.927–1.127) | 0.879 (0.810–0.945) | 0.872 (0.815–0.928) |
+| DIR_N / DSM | 3 | 1.358 (1.236–1.503) | 0.981 (0.926–1.039) | 0.934 (0.889–0.979) |
+| DIR_L / DSM | 1 | 1.138 (1.052–1.253) | 0.887 (0.850–0.929) | 0.870 (0.837–0.906) |
+| DIR_L / DSM | 2 | 1.350 (1.255–1.459) | 1.100 (1.061–1.141) | 1.059 (1.027–1.092) |
+| DIR_L / DSM | 3 | 1.590 (1.447–1.762) | 1.117 (1.066–1.175) | 1.047 (1.009–1.089) |
+| DIR_N / DIR_L | 1 | 0.998 (0.970–1.023) | 1.004 (0.982–1.024) | 1.006 (0.985–1.024) |
+| DIR_N / DIR_L | 2 | 0.760 (0.705–0.811) | 0.799 (0.746–0.848) | 0.824 (0.777–0.867) |
+| DIR_N / DIR_L | 3 | 0.854 (0.809–0.897) | 0.878 (0.835–0.921) | 0.892 (0.852–0.929) |
+| BLIND / DIR_N | 1 | 1.033 (1.011–1.057) | 1.036 (1.019–1.056) | 1.034 (1.018–1.052) |
+| BLIND / DIR_N | 2 | 1.183 (1.124–1.249) | 1.179 (1.124–1.242) | 1.160 (1.114–1.212) |
+| BLIND / DIR_N | 3 | 1.093 (1.041–1.149) | 1.114 (1.069–1.164) | 1.105 (1.065–1.149) |
+
+Finest band, a = 1 / 9: DIR_N/DSM ds1: 1.332 / 0.966; DIR_N/DSM ds2: 1.523 / 0.987; DIR_N/DSM ds3: 1.808 / 1.042; DIR_L/DSM ds1: 1.339 / 0.963; DIR_L/DSM ds2: 1.571 / 1.102; DIR_L/DSM ds3: 1.923 / 1.060; DIR_N/DIR_L ds1: 0.995 / 1.003; DIR_N/DIR_L ds2: 0.905 / 0.896; DIR_N/DIR_L ds3: 0.940 / 0.984; BLIND/DIR_N ds1: 1.004 / 1.004; BLIND/DIR_N ds2: 1.020 / 1.106; BLIND/DIR_N ds3: 1.011 / 1.008.
+Absolute n_eff (geometric mean over slices and seeds), a = 1 / 9: DSM ds1 21.68 / 38.95; DSM ds2 40.07 / 60.66; DSM ds3 28.65 / 56.63; DIR_L ds1 24.67 / 33.90; DIR_L ds2 54.07 / 64.21; DIR_L ds3 45.56 / 59.28; DIR_N ds1 24.62 / 34.09; DIR_N ds2 41.08 / 52.91; DIR_N ds3 38.89 / 52.87; BLIND ds1 25.43 / 35.25; BLIND ds2 48.58 / 61.39; BLIND ds3 42.51 / 58.44.
+
+**Data:** `runs/dec/A/<arm>_s<seed>/`, `runs/dec/A/eval/`, `runs/dec/report/summary.json`. **Commands:** `bash runs/dec/queue.sh`; `python experiments/_dec_report.py --part A`.
+
+---
+
+## EXPLORATORY 2026-10-30 — DEC part A: why the score parametrization wins when averaging
+
+Not pre-registered. Per-slice bias² b, per-map variance v and noise covariance c of each arm's one-shot estimate,
+from the exact decomposition of the all-splits estimator (`experiments/_dec_bvc.py`). Output, verbatim:
+
+```
+median over slices x seeds 101-103; b = bias^2, v = per-map variance, c = noise covariance (units of sigma^2)
+ds1 dsm   b 0.0311  v 0.0152  c 0.0189   single map 1/(b+v) = 21.6   a -> inf limit 1/b = 32.2
+ds1 dirl  b 0.0481  v 0.0046  c 0.0286   single map 1/(b+v) = 19.0   a -> inf limit 1/b = 20.8
+ds1 dirn  b 0.0457  v 0.0051  c 0.0314   single map 1/(b+v) = 19.7   a -> inf limit 1/b = 21.9
+ds1 blind b 0.0434  v 0.0055  c 0.0316   single map 1/(b+v) = 20.5   a -> inf limit 1/b = 23.1
+ds2 dsm   b 0.0213  v 0.0049  c 0.0023   single map 1/(b+v) = 38.1   a -> inf limit 1/b = 46.9
+ds2 dirl  b 0.0173  v 0.0020  c 0.0200   single map 1/(b+v) = 51.9   a -> inf limit 1/b = 57.9
+ds2 dirn  b 0.0223  v 0.0036  c 0.0273   single map 1/(b+v) = 38.7   a -> inf limit 1/b = 44.9
+ds2 blind b 0.0174  v 0.0038  c 0.0268   single map 1/(b+v) = 47.3   a -> inf limit 1/b = 57.6
+ds3 dsm   b 0.0210  v 0.0154  c 0.0063   single map 1/(b+v) = 27.5   a -> inf limit 1/b = 47.7
+ds3 dirl  b 0.0199  v 0.0043  c 0.0252   single map 1/(b+v) = 41.4   a -> inf limit 1/b = 50.3
+ds3 dirn  b 0.0241  v 0.0053  c 0.0270   single map 1/(b+v) = 34.1   a -> inf limit 1/b = 41.6
+ds3 blind b 0.0198  v 0.0060  c 0.0270   single map 1/(b+v) = 38.7   a -> inf limit 1/b = 50.4
+```
+
+**Reading:** on dataset 1 the score parametrization (x̂₀ = x̃ + σ² net) halves the bias² relative to the direct
+parametrizations (0.031 vs 0.046–0.048) at the price of three times the per-map variance (0.015 vs 0.005).
+Averaging removes variance but not bias, so DSM wins at a = 9 (primary 0.875× for the regressor) while the direct
+models win for a single map (1.13–1.14×). The same mechanism orders the arms on datasets 2–3, where direct-with-ladder
+has the lowest bias. Design implication: when outputs will be averaged, prefer the low-bias estimator. A loss
+targeting the error of the averaged estimate is a candidate method (not tested).

@@ -1,0 +1,13 @@
+median over slices x seeds 101-103; b = bias^2, v = per-map variance, c = noise covariance (units of sigma^2)
+ds1 dsm   b 0.0311  v 0.0152  c 0.0189   single map 1/(b+v) = 21.6   a -> inf limit 1/b = 32.2
+ds1 dirl  b 0.0481  v 0.0046  c 0.0286   single map 1/(b+v) = 19.0   a -> inf limit 1/b = 20.8
+ds1 dirn  b 0.0457  v 0.0051  c 0.0314   single map 1/(b+v) = 19.7   a -> inf limit 1/b = 21.9
+ds1 blind b 0.0434  v 0.0055  c 0.0316   single map 1/(b+v) = 20.5   a -> inf limit 1/b = 23.1
+ds2 dsm   b 0.0213  v 0.0049  c 0.0023   single map 1/(b+v) = 38.1   a -> inf limit 1/b = 46.9
+ds2 dirl  b 0.0173  v 0.0020  c 0.0200   single map 1/(b+v) = 51.9   a -> inf limit 1/b = 57.9
+ds2 dirn  b 0.0223  v 0.0036  c 0.0273   single map 1/(b+v) = 38.7   a -> inf limit 1/b = 44.9
+ds2 blind b 0.0174  v 0.0038  c 0.0268   single map 1/(b+v) = 47.3   a -> inf limit 1/b = 57.6
+ds3 dsm   b 0.0210  v 0.0154  c 0.0063   single map 1/(b+v) = 27.5   a -> inf limit 1/b = 47.7
+ds3 dirl  b 0.0199  v 0.0043  c 0.0252   single map 1/(b+v) = 41.4   a -> inf limit 1/b = 50.3
+ds3 dirn  b 0.0241  v 0.0053  c 0.0270   single map 1/(b+v) = 34.1   a -> inf limit 1/b = 41.6
+ds3 blind b 0.0198  v 0.0060  c 0.0270   single map 1/(b+v) = 38.7   a -> inf limit 1/b = 50.4
