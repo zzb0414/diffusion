@@ -21,7 +21,7 @@ run (CPU, single thread, CUDA_VISIBLE_DEVICES=-1, `torch.use_deterministic_algor
 If it passed: `touch runs/nat/_ch_verified`. If not: do NOT release; fix `n2n.py` (diff vs commit before the change).
 
 ## Then, in order
-1. **BASE-DL report** when `runs/base/dl_eval/neff.csv` exists: `cd baselines && python report.py --set dl --dry`
+1. ~~DONE 2026-10-31 03:05 (logged; ours wins all 5 at a = 9; classic N2N wins single maps and datasets 2–3)~~ **BASE-DL report** when `runs/base/dl_eval/neff.csv` exists: `cd baselines && python report.py --set dl --dry`
    (must print DRY RUN OK), then `python report.py --set dl` (logs its section). Pre-registration:
    `Archive/BASE/PREREGISTRATION_DL.md` (primary: ours vs each baseline + dial, dataset 1, a = 9, Holm over 5).
 2. **NAT report** — `natural/report.py` (written, compiles, NOT yet run on data): when `runs/nat/gpu.done` and

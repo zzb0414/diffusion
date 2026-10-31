@@ -1656,3 +1656,70 @@ Ours / baseline, overall and finest band (geometric mean, slices where ours is b
 | Noise2Score + dial | 3 | 29.101 (34/34) | 14.660 (34/34) | 12.219 (34/34) | 6.830 (34/34) | 90.276 / 15.686 |
 
 **Data:** `runs/base/{classical,ours,n2s_eval}/neff.csv`, `runs/base/report/summary.json`. **Commands:** `python baselines/evaluate.py --methods ...`; `bash runs/base/n2s_queue.sh`; `python baselines/report.py`.
+
+---
+
+## RUN 2026-10-31 — BASE-DL: the method vs self-supervised deep-learning baselines
+
+Pre-registered (`Archive/BASE/PREREGISTRATION_DL.md`); same splits, scoring and cross-fitting as BASE. Baselines trained like ours (same U-Net, folds, seeds 101–103, 2000 iterations; code `baselines/dl_selfsup.py`; the two Noise2Noise arms are the DEC runs re-scored). Primary = each baseline with the dial. Pre-registered (`Archive/BASE/PREREGISTRATION.md`). Ours = DSM, MSE noise-normalized, dataset-1 training, seeds 101–103, one-shot Tweedie + dial. Every method sees only the A half of each split; all methods are scored on the SAME fixed subset of 10 splits per a (unbiased, paired); every parameter is cross-fitted over the other folds' slices. Code: `baselines/`. The dry run gave 1.000.
+
+**PRIMARY (dataset 1, a = 9; n_eff ours / baseline, Holm over 5):**
+
+- vs Noise2Noise (classic) + dial: 1.105× (95% CI 1.053–1.155; ours better on 28/34), p = 9.1e-06, Holm 9.1e-06 → **ours better**
+- vs Noise2Noise + σ + dial: 1.142× (95% CI 1.100–1.187; ours better on 32/34), p = 8.9e-08, Holm 1.8e-07 → **ours better**
+- vs Neighbor2Neighbor + dial: 2.020× (95% CI 1.896–2.158; ours better on 34/34), p = 1.2e-10, Holm 5.8e-10 → **ours better**
+- vs Recorrupted-to-Recorrupted + dial: 1.847× (95% CI 1.708–2.003; ours better on 34/34), p = 1.2e-10, Holm 5.8e-10 → **ours better**
+- vs Noise2Self + dial: 1.543× (95% CI 1.432–1.664; ours better on 34/34), p = 1.2e-10, Holm 5.8e-10 → **ours better**
+
+Geometric-mean n_eff (signal region) by method:
+
+| method | ds1 a=1 | ds1 a=3 | ds1 a=5 | ds1 a=9 | ds2 a=1 | ds2 a=3 | ds2 a=5 | ds2 a=9 | ds3 a=1 | ds3 a=3 | ds3 a=5 | ds3 a=9 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Ours (DSM + dial) | 21.68 | 31.94 | 34.34 | 38.95 | 40.07 | 53.86 | 61.37 | 60.66 | 28.65 | 41.30 | 59.56 | 56.63 |
+| Noise2Noise (classic) + dial | 25.43 | 30.51 | 30.50 | 35.25 | 48.58 | 59.35 | 63.49 | 61.39 | 42.51 | 48.73 | 67.11 | 58.44 |
+| Noise2Noise + σ + dial | 24.62 | 29.31 | 29.54 | 34.09 | 41.08 | 48.16 | 53.22 | 52.91 | 38.89 | 42.47 | 58.08 | 52.87 |
+| Neighbor2Neighbor + dial | 7.82 | 13.54 | 15.31 | 19.28 | 11.86 | 25.82 | 32.58 | 38.29 | 9.31 | 18.11 | 25.79 | 29.77 |
+| Recorrupted-to-Recorrupted + dial | 3.97 | 10.01 | 14.73 | 21.09 | 5.15 | 13.74 | 19.92 | 28.80 | 4.12 | 9.90 | 16.46 | 23.50 |
+| Noise2Self + dial | 4.94 | 12.34 | 17.48 | 25.25 | 7.66 | 20.29 | 29.52 | 41.53 | 5.86 | 14.31 | 24.27 | 33.83 |
+| Noise2Noise (classic) (r = 0, as published) | 25.43 | 28.86 | 27.32 | 28.65 | 48.58 | 59.35 | 61.34 | 56.83 | 42.51 | 48.73 | 62.98 | 54.06 |
+| Noise2Noise + σ (r = 0, as published) | 24.62 | 27.62 | 26.23 | 27.35 | 41.08 | 48.32 | 50.39 | 47.17 | 38.89 | 43.22 | 54.34 | 47.77 |
+| Neighbor2Neighbor (r = 0, as published) | 7.82 | 13.54 | 15.43 | 17.42 | 11.86 | 25.82 | 32.58 | 38.29 | 9.31 | 18.11 | 25.79 | 29.87 |
+| Recorrupted-to-Recorrupted (r = 0, as published) | 3.96 | 9.68 | 13.51 | 17.99 | 5.15 | 13.74 | 19.84 | 27.97 | 4.12 | 9.89 | 16.10 | 22.02 |
+| Noise2Self (r = 0, as published) | 4.83 | 11.61 | 15.57 | 21.02 | 7.66 | 20.19 | 28.75 | 39.48 | 5.86 | 14.34 | 23.69 | 32.39 |
+
+Ours / baseline, overall and finest band (geometric mean, slices where ours is better):
+
+| baseline | dataset | a = 1 | a = 3 | a = 5 | a = 9 | finest band a = 1 / 9 |
+|---|---:|---|---|---|---|---|
+| Noise2Noise (classic) + dial | 1 | 0.853 (7/34) | 1.047 (25/34) | 1.126 (27/34) | 1.105 (28/34) | 0.747 / 1.031 |
+| Noise2Noise (classic) + dial | 2 | 0.825 (8/34) | 0.908 (12/34) | 0.967 (12/34) | 0.988 (12/34) | 0.690 / 0.916 |
+| Noise2Noise (classic) + dial | 3 | 0.674 (0/34) | 0.847 (3/34) | 0.888 (8/34) | 0.969 (13/34) | 0.547 / 0.952 |
+| Noise2Noise + σ + dial | 1 | 0.881 (9/34) | 1.090 (29/34) | 1.162 (31/34) | 1.142 (32/34) | 0.751 / 1.035 |
+| Noise2Noise + σ + dial | 2 | 0.975 (17/34) | 1.118 (24/34) | 1.153 (23/34) | 1.146 (26/34) | 0.653 / 1.013 |
+| Noise2Noise + σ + dial | 3 | 0.737 (4/34) | 0.973 (16/34) | 1.025 (19/34) | 1.071 (23/34) | 0.553 / 0.959 |
+| Neighbor2Neighbor + dial | 1 | 2.772 (33/34) | 2.360 (34/34) | 2.244 (34/34) | 2.020 (34/34) | 3.834 / 2.287 |
+| Neighbor2Neighbor + dial | 2 | 3.377 (34/34) | 2.086 (34/34) | 1.884 (34/34) | 1.584 (34/34) | 7.790 / 2.082 |
+| Neighbor2Neighbor + dial | 3 | 3.078 (34/34) | 2.280 (34/34) | 2.310 (34/34) | 1.903 (34/34) | 5.768 / 2.961 |
+| Recorrupted-to-Recorrupted + dial | 1 | 5.465 (34/34) | 3.192 (34/34) | 2.332 (34/34) | 1.847 (34/34) | 10.967 / 2.031 |
+| Recorrupted-to-Recorrupted + dial | 2 | 7.781 (34/34) | 3.921 (34/34) | 3.080 (34/34) | 2.106 (34/34) | 23.969 / 3.309 |
+| Recorrupted-to-Recorrupted + dial | 3 | 6.951 (34/34) | 4.173 (34/34) | 3.620 (34/34) | 2.410 (34/34) | 16.097 / 3.211 |
+| Noise2Self + dial | 1 | 4.388 (34/34) | 2.588 (34/34) | 1.965 (34/34) | 1.543 (34/34) | 7.344 / 1.640 |
+| Noise2Self + dial | 2 | 5.234 (34/34) | 2.655 (34/34) | 2.079 (34/34) | 1.460 (34/34) | 12.404 / 2.027 |
+| Noise2Self + dial | 3 | 4.891 (34/34) | 2.885 (34/34) | 2.454 (34/34) | 1.674 (34/34) | 8.311 / 1.931 |
+| Noise2Noise (classic) (r = 0, as published) | 1 | 0.853 (7/34) | 1.107 (27/34) | 1.257 (28/34) | 1.359 (28/34) | 0.747 / 0.913 |
+| Noise2Noise (classic) (r = 0, as published) | 2 | 0.825 (8/34) | 0.908 (12/34) | 1.000 (18/34) | 1.067 (24/34) | 0.690 / 0.653 |
+| Noise2Noise (classic) (r = 0, as published) | 3 | 0.674 (0/34) | 0.847 (3/34) | 0.946 (18/34) | 1.048 (27/34) | 0.547 / 0.732 |
+| Noise2Noise + σ (r = 0, as published) | 1 | 0.881 (9/34) | 1.156 (31/34) | 1.309 (31/34) | 1.424 (32/34) | 0.751 / 0.919 |
+| Noise2Noise + σ (r = 0, as published) | 2 | 0.975 (17/34) | 1.115 (22/34) | 1.218 (27/34) | 1.286 (28/34) | 0.653 / 0.662 |
+| Noise2Noise + σ (r = 0, as published) | 3 | 0.737 (4/34) | 0.956 (17/34) | 1.096 (23/34) | 1.186 (27/34) | 0.553 / 0.739 |
+| Neighbor2Neighbor (r = 0, as published) | 1 | 2.772 (33/34) | 2.360 (34/34) | 2.225 (34/34) | 2.237 (34/34) | 3.834 / 1.826 |
+| Neighbor2Neighbor (r = 0, as published) | 2 | 3.377 (34/34) | 2.086 (34/34) | 1.884 (34/34) | 1.584 (34/34) | 7.790 / 2.082 |
+| Neighbor2Neighbor (r = 0, as published) | 3 | 3.078 (34/34) | 2.280 (34/34) | 2.310 (34/34) | 1.896 (34/34) | 5.768 / 2.839 |
+| Recorrupted-to-Recorrupted (r = 0, as published) | 1 | 5.473 (34/34) | 3.299 (34/34) | 2.542 (34/34) | 2.166 (34/34) | 11.376 / 2.316 |
+| Recorrupted-to-Recorrupted (r = 0, as published) | 2 | 7.781 (34/34) | 3.921 (34/34) | 3.094 (34/34) | 2.169 (34/34) | 23.969 / 3.399 |
+| Recorrupted-to-Recorrupted (r = 0, as published) | 3 | 6.951 (34/34) | 4.175 (34/34) | 3.700 (34/34) | 2.572 (34/34) | 16.097 / 3.442 |
+| Noise2Self (r = 0, as published) | 1 | 4.489 (34/34) | 2.750 (34/34) | 2.206 (34/34) | 1.853 (34/34) | 8.314 / 2.128 |
+| Noise2Self (r = 0, as published) | 2 | 5.234 (34/34) | 2.668 (34/34) | 2.134 (34/34) | 1.537 (34/34) | 12.404 / 2.250 |
+| Noise2Self (r = 0, as published) | 3 | 4.891 (34/34) | 2.879 (34/34) | 2.514 (34/34) | 1.748 (34/34) | 8.311 / 2.170 |
+
+**Data:** `runs/base/{classical,ours,n2s_eval}/neff.csv`, `runs/base/report_dl/summary.json`. **Commands:** `python baselines/evaluate.py --methods ...`; `bash runs/base/n2s_queue.sh`; `python baselines/report.py`.

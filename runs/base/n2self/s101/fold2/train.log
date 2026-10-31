@@ -1,0 +1,5 @@
+[23:22:52] iter 500 loss=0.002639
+[23:25:46] iter 1000 loss=0.002519
+[23:28:41] iter 1500 loss=0.002267
+[23:31:35] iter 2000 loss=0.002174
+DONE fold 2: 2000 iterations in 11.8 min

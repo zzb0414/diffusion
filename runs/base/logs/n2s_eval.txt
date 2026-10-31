@@ -1,0 +1,17 @@
+[11:09:42] START N2S eval
+n2s seed 101 fold 0 done
+n2s seed 101 fold 1 done
+n2s seed 101 fold 2 done
+n2s seed 101 fold 3 done
+n2s seed 101 fold 4 done
+n2s seed 102 fold 0 done
+n2s seed 102 fold 1 done
+n2s seed 102 fold 2 done
+n2s seed 102 fold 3 done
+n2s seed 102 fold 4 done
+n2s seed 103 fold 0 done
+n2s seed 103 fold 1 done
+n2s seed 103 fold 2 done
+n2s seed 103 fold 3 done
+n2s seed 103 fold 4 done
+wrote runs/base/n2s_eval 7344 rows 1.8 min
