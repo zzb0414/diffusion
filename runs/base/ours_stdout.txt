@@ -1,0 +1,16 @@
+ours seed 101 fold 0 done
+ours seed 101 fold 1 done
+ours seed 101 fold 2 done
+ours seed 101 fold 3 done
+ours seed 101 fold 4 done
+ours seed 102 fold 0 done
+ours seed 102 fold 1 done
+ours seed 102 fold 2 done
+ours seed 102 fold 3 done
+ours seed 102 fold 4 done
+ours seed 103 fold 0 done
+ours seed 103 fold 1 done
+ours seed 103 fold 2 done
+ours seed 103 fold 3 done
+ours seed 103 fold 4 done
+wrote runs/base/ours 7344 rows 2.0 min

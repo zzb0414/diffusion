@@ -1,0 +1,81 @@
+{
+  "cfg": {
+    "L": 40,
+    "SIGMA_MAX": 0.4,
+    "ITERS": 2000,
+    "BATCH": 8,
+    "LR": 0.001,
+    "GRAD_CLIP": 1.0,
+    "NET_BASE": 32,
+    "NET_EMB": 32,
+    "DELTA_HI": 2.0,
+    "DELTA_LO": 0.05,
+    "CKPT_EVERY": 500
+  },
+  "ckpt_cfg": {
+    "net_type": "N2N_DSM",
+    "noise_label": "total",
+    "objective": "noise2score_ardae",
+    "N": 10,
+    "L": 40,
+    "sigma_min": 0.03680604323744774,
+    "sigma_max": 0.4,
+    "base_out": 32,
+    "emb_dim": 32,
+    "loss": "n2s",
+    "version": 2,
+    "fold": 0,
+    "held_out": [
+      6,
+      9,
+      11,
+      13,
+      20,
+      27,
+      29
+    ],
+    "seed": 103,
+    "datasets": [
+      1
+    ]
+  },
+  "held_out": [
+    6,
+    9,
+    11,
+    13,
+    20,
+    27,
+    29
+  ],
+  "train_slices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    8,
+    10,
+    12,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    28,
+    30,
+    31,
+    32,
+    33
+  ],
+  "seed": 103
+}

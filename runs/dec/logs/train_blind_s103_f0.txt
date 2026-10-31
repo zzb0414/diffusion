@@ -1,0 +1,8 @@
+[00:23:29] START A train blind s103 fold0
+[00:32:01] GROUND mode=per fold 0/5 datasets=[1] seed=103 target_k=None frac=1.0 aug=False | train slices=27 (indices [0, 1, 2, 3, 4, 5, 7, 8, 10, 12, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 28, 30, 31, 32, 33]) held-out indices=[6, 9, 11, 13, 20, 27, 29] device=cuda
+[00:32:01] ladder 0.0368..0.40 (global min sigma_hat / 1)
+[00:39:28] iter   500 train=0.00112 heldout_l1(monitor)=0.02636
+[00:42:34] iter  1000 train=0.00107 heldout_l1(monitor)=0.02588
+[00:45:39] iter  1500 train=0.00103 heldout_l1(monitor)=0.02560
+[00:48:45] iter  2000 train=0.00101 heldout_l1(monitor)=0.02548
+[00:48:47] DONE fold 0: 2000 iterations in 12.5 min

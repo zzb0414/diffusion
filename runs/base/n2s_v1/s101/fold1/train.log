@@ -1,0 +1,5 @@
+[08:48:12] iter 500 loss=0.87645 delta_rel=0.2239
+[08:50:19] iter 1000 loss=0.93823 delta_rel=0.1001
+[08:52:25] iter 1500 loss=0.96420 delta_rel=0.0447
+[08:54:31] iter 2000 loss=0.97989 delta_rel=0.0200
+DONE fold 1: 2000 iterations in 8.4 min
