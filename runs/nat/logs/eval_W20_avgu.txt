@@ -1,0 +1,2 @@
+[05:22:12] START eval W20 avgu
+W20 avgu: 1920 rows in 3.3 min

@@ -1,0 +1,2 @@
+[23:57:10] START eval W50 bm3d
+W50 bm3d: 320 rows in 125.9 min

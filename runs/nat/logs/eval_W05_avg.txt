@@ -1,0 +1,2 @@
+[17:33:27] START eval W05 avg
+W05 avg: 320 rows in 0.2 min

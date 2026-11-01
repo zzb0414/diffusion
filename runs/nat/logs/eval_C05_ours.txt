@@ -1,0 +1,2 @@
+[04:34:41] START eval C05 ours
+C05 ours: 1920 rows in 3.3 min

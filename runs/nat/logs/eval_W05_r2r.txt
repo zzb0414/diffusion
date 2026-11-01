@@ -1,0 +1,2 @@
+[04:16:00] START eval W05 r2r
+W05 r2r: 1920 rows in 15.0 min

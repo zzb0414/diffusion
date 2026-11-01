@@ -1,0 +1,2 @@
+[21:49:08] START eval W20 avg
+W20 avg: 320 rows in 0.2 min

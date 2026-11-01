@@ -1,0 +1,4 @@
+[03:23:13] iter 1000 loss=0.039475
+[03:41:54] iter 2000 loss=0.038128
+[04:00:36] iter 3000 loss=0.038062
+DONE ours W05: 3000 iterations in 56.1 min

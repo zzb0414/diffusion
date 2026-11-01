@@ -1,0 +1,2 @@
+[04:12:30] START eval W05 ne2ne
+W05 ne2ne: 1920 rows in 3.3 min

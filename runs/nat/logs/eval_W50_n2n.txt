@@ -1,0 +1,2 @@
+[06:08:45] START eval W50 n2n
+W50 n2n: 1920 rows in 3.3 min

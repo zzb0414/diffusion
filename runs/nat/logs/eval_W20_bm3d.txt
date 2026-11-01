@@ -1,0 +1,2 @@
+[21:49:26] START eval W20 bm3d
+W20 bm3d: 320 rows in 127.3 min

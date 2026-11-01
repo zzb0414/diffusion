@@ -1,0 +1,2 @@
+[17:33:46] START eval W05 bm3d
+W05 bm3d: 320 rows in 127.9 min

@@ -1723,3 +1723,59 @@ Ours / baseline, overall and finest band (geometric mean, slices where ours is b
 | Noise2Self (r = 0, as published) | 3 | 4.891 (34/34) | 2.879 (34/34) | 2.514 (34/34) | 1.748 (34/34) | 8.311 / 2.170 |
 
 **Data:** `runs/base/{classical,ours,n2s_eval}/neff.csv`, `runs/base/report_dl/summary.json`. **Commands:** `python baselines/evaluate.py --methods ...`; `bash runs/base/n2s_queue.sh`; `python baselines/report.py`.
+
+---
+
+## RUN 2026-11-01 — NAT: step 3, ground-truth validation on natural images
+
+Pre-registered (`Archive/NAT/PREREGISTRATION.md`). Train400 → BSD68 (320×480 crops), 10 fixed noisy copies per image; conditions W50 (σ 50/255), W05 (σ 0.5), W20 (σ 2.0), C05 (σ 0.5, ASL-coloured). Same 1-channel U-Net and budget for every learned method (3000 iterations, seed 101; code `natural/`). r chosen WITHOUT ground truth on Set12 (split-half n_eff); all scores on BSD68 with exact ground truth. The dry run gave 0 dB everywhere.
+
+**P1 — is the split-half estimator unbiased?** Relative bias of the estimated MSE (ours, r = 0):
+
+- W05, a = 1: +0.02% (95% CI -0.77 to +0.88%) → **unbiased in practice**
+- W05, a = 9: +0.13% (95% CI -1.14 to +1.56%) → **unbiased in practice**
+- C05, a = 1: -0.04% (95% CI -0.51 to +0.45%) → **unbiased in practice**
+- C05, a = 9: -0.01% (95% CI -0.77 to +0.81%) → **unbiased in practice**
+- W20, a = 1: -2.26% (95% CI -4.34 to -0.10%) → **unbiased in practice**
+- W20, a = 9: -4.87% (95% CI -8.97 to -0.83%) → **biased beyond ±5%**
+- W50, a = 1: -0.05% (95% CI -0.24 to +0.15%) → **unbiased in practice**
+- W50, a = 9: -0.07% (95% CI -0.35 to +0.24%) → **unbiased in practice**
+
+**P2 — choosing r without ground truth** (ours, a = 9; PSNR loss vs the BSD68 oracle r):
+
+- W05: r chosen 0.083 vs oracle 0.083, loss 0.000 dB → **ground-truth-free selection suffices**
+- C05: r chosen 0.083 vs oracle 0.083, loss 0.000 dB → **ground-truth-free selection suffices**
+- W20: r chosen 0.000 vs oracle 0.000, loss 0.000 dB → **ground-truth-free selection suffices**
+- W50: r chosen 0.167 vs oracle 0.250, loss 0.126 dB → **loss above 0.1 dB**
+
+**P3 — ours vs baselines (W05, a = 9; PSNR(ours) − PSNR(baseline), Holm over 6):**
+
+- vs Noise2Noise (classic): +0.43 dB (95% CI +0.38 to +0.48; 68/68 images), p = 7.6e-13, Holm 4.6e-12
+- vs Neighbor2Neighbor: +0.62 dB (95% CI +0.54 to +0.73; 68/68 images), p = 7.6e-13, Holm 4.6e-12
+- vs Recorrupted-to-Recorrupted: +0.41 dB (95% CI +0.36 to +0.47; 68/68 images), p = 7.6e-13, Holm 4.6e-12
+- vs Noise2Score: +0.37 dB (95% CI +0.32 to +0.43; 67/68 images), p = 8e-13, Holm 4.6e-12
+- vs Plain averaging: +8.31 dB (95% CI +7.71 to +8.95; 68/68 images), p = 7.6e-13, Holm 4.6e-12
+- vs BM3D: -1.85 dB (95% CI -1.97 to -1.72; 0/68 images), p = 7.6e-13, Holm 4.6e-12
+
+**P4 — averaging-aware loss (W05; PSNR(method) − PSNR(ours), Holm over 3):**
+
+- Averaging-aware loss, a = 9 at a = 9: -0.36 dB (95% CI -0.70 to -0.06; 34/68 images), p = 0.31, Holm 0.31
+- Averaging-aware loss, a ~ U{1..9} at a = 1: -2.30 dB (95% CI -2.53 to -2.07; 0/68 images), p = 7.6e-13, Holm 2.3e-12
+- Averaging-aware loss, a ~ U{1..9} at a = 9: +0.59 dB (95% CI +0.50 to +0.67; 64/68 images), p = 3.4e-11, Holm 6.7e-11
+
+Mean PSNR on BSD68 (dB; learned methods at their ground-truth-free r):
+
+| method | W05 a=1 | W05 a=9 | C05 a=1 | C05 a=9 | W20 a=1 | W20 a=9 | W50 a=1 | W50 a=9 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Ours (DSM + dial) | 22.55 | 24.48 | 22.14 | 24.21 | 17.77 | 19.98 | 25.84 | 28.55 |
+| Averaging-aware loss, a = 9 | 17.24 | 24.12 | 17.12 | 24.27 | 13.91 | 19.61 | 20.59 | 28.41 |
+| Averaging-aware loss, a ~ U{1..9} | 20.26 | 25.07 | 19.97 | 24.70 | 16.19 | 20.16 | 23.20 | 29.39 |
+| Supervised (upper bound) | 22.61 | 24.48 | 22.17 | 24.28 | 17.58 | 19.78 | 25.86 | 28.62 |
+| Noise2Noise (classic) | 22.67 | 24.05 | 22.34 | 23.94 | 18.88 | 20.33 | 25.76 | 28.28 |
+| Neighbor2Neighbor | 22.20 | 23.86 | 16.51 | 23.26 | 17.78 | 18.98 | 25.43 | 27.98 |
+| Recorrupted-to-Recorrupted | 22.49 | 24.07 | 14.87 | 21.53 | 18.88 | 20.09 | 25.26 | 27.71 |
+| Noise2Score | 22.30 | 24.11 | 10.10 | 17.36 | 17.81 | 19.55 | 25.91 | 28.57 |
+| Plain averaging | 9.12 | 16.17 | 9.12 | 16.16 | 5.96 | 8.02 | 14.91 | 23.90 |
+| BM3D | 22.26 | 26.33 | 21.50 | 26.04 | 16.41 | 21.19 | 25.69 | 30.60 |
+
+**Data:** `runs/nat/eval/<cond>/<method>.csv`, `runs/nat/report/summary.json`. **Commands:** `bash runs/nat/queue_gpu.sh`; `bash runs/nat/queue_cpu.sh`; `python natural/report.py`.

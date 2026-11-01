@@ -1,0 +1,2 @@
+[04:38:17] START eval C05 avg9
+C05 avg9: 1920 rows in 3.3 min

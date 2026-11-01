@@ -1,0 +1,38 @@
+{
+  "cfg": {
+    "L": 40,
+    "ITERS": 3000,
+    "BATCH": 8,
+    "CROP": 96,
+    "LR": 0.001,
+    "GRAD_CLIP": 1.0,
+    "NET_BASE": 32,
+    "NET_EMB": 32,
+    "P_RAW": 0.5,
+    "LADDER_TOP": 5.0,
+    "CKPT_EVERY": 1000
+  },
+  "ckpt_cfg": {
+    "net_type": "N2N_DSM",
+    "noise_label": "total",
+    "objective": "avg9",
+    "N": 10,
+    "L": 40,
+    "ch": 1,
+    "sigma_min": 0.19607843137254902,
+    "sigma_max": 0.9803921568627451,
+    "base_out": 32,
+    "emb_dim": 32,
+    "loss": "avg9",
+    "param": "score",
+    "blind": false,
+    "cond": "W50",
+    "seed": 101,
+    "alpha": 0.5
+  },
+  "cond": "W50",
+  "sigma": 0.19607843137254902,
+  "colored": false,
+  "seed": 101,
+  "iters": 3000
+}

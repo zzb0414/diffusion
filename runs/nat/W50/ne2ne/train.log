@@ -1,0 +1,4 @@
+[02:02:13] iter 1000 loss=0.118696
+[02:06:00] iter 2000 loss=0.119741
+[02:09:47] iter 3000 loss=0.120647
+DONE ne2ne W50: 3000 iterations in 11.3 min

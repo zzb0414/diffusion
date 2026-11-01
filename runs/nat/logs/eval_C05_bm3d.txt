@@ -1,0 +1,2 @@
+[19:42:30] START eval C05 bm3d
+C05 bm3d: 320 rows in 126.4 min

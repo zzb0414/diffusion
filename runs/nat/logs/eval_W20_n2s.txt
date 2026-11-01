@@ -1,0 +1,2 @@
+[05:51:18] START eval W20 n2s
+W20 n2s: 1920 rows in 3.4 min

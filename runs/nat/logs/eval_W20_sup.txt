@@ -1,0 +1,2 @@
+[05:25:40] START eval W20 sup
+W20 sup: 1920 rows in 3.3 min

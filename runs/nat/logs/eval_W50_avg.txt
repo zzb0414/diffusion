@@ -1,0 +1,2 @@
+[23:56:51] START eval W50 avg
+W50 avg: 320 rows in 0.2 min

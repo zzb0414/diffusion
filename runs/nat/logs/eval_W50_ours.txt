@@ -1,0 +1,2 @@
+[05:54:50] START eval W50 ours
+W50 ours: 1920 rows in 3.3 min

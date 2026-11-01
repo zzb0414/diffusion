@@ -1,0 +1,2 @@
+[05:11:38] START eval C05 n2s
+C05 n2s: 1920 rows in 3.3 min
