@@ -1779,3 +1779,46 @@ Mean PSNR on BSD68 (dB; learned methods at their ground-truth-free r):
 | BM3D | 22.26 | 26.33 | 21.50 | 26.04 | 16.41 | 21.19 | 25.69 | 30.60 |
 
 **Data:** `runs/nat/eval/<cond>/<method>.csv`, `runs/nat/report/summary.json`. **Commands:** `bash runs/nat/queue_gpu.sh`; `bash runs/nat/queue_cpu.sh`; `python natural/report.py`.
+
+---
+
+## READING 2026-11-01 — NAT and BASE-DL: what the weekend results mean (interpretation, not pre-registered)
+
+**Integrity.** Protected-hash re-checks: NAT 3 of 2811 entries changed, all in `runs/_ch_verify/` (a temporary
+verification folder that was running when the snapshot was taken and was deleted on purpose afterwards); BASE 1 of
+2086, `docs/RESEARCH_NOTES.md` (deliberate step-2 update). No result file changed.
+
+**Sanity.** For every condition, plain averaging gives exactly the theoretical error σ²/a (e.g. W05 a = 9: 0.02776 vs
+0.02778) and the split-half estimate matches it, so the NAT numbers are trustworthy.
+
+**What holds.**
+- **Estimator (P1):** the ground-truth-free split-half error estimate is unbiased to within 1% at σ = 50/255, 0.5
+  (white and coloured). At the extreme σ = 2.0 it reads 2–5% low (CI excludes 0 at a = 9). There the true error is
+  about 0.25% of the reference noise variance being subtracted, so precision suffers. The ASL regime (n_eff ≈ 40, true
+  error ≈ 2.5% of it) is ten times easier.
+- **Dial without ground truth (P2):** r chosen on Set12 by the split-half estimate equals the BSD68 oracle in three of
+  four conditions (0 dB loss); 0.13 dB at σ = 50/255.
+- **Noise-model robustness:** with ASL-coloured noise (C05), Neighbor2Neighbor, R2R and Noise2Score collapse (single
+  map 16.5 / 14.9 / 10.1 dB vs ours 22.1 dB). Ours and classic Noise2Noise are unaffected. Same mechanism as on ASL.
+- **Self-supervision is not the bottleneck:** ours matches the SUPERVISED per-copy upper bound (W05 a = 9: 24.48 vs
+  24.48 dB; a = 1: 22.55 vs 22.61).
+
+**What does not hold, and why it matters.**
+- **BM3D on the mean of the copies beats every per-copy method at a = 9** (W05: 26.33 vs ours 24.48 dB, 0/68 images;
+  the same in all conditions), while ours is better or equal for a single copy (except σ = 2.0 a = 1).
+- Since even the supervised per-copy model stops at 24.48 dB, the limit is the "denoise each copy, then average"
+  architecture, not the training signal. Each copy is denoised from one copy's information, and averaging afterwards
+  cannot recover what each step discarded.
+- This is the sufficiency argument of research note 5, now supported where data is ample (400 training images). On
+  ASL (34 slices, SNR 0.04–0.13) the subset-mean model was data-limited and BM3D lost to ours (1.29×).
+- **Averaging-aware loss (P4):** training on the error of the averaged estimate with a ~ U{1..9} gains +0.59 dB at
+  a = 9 (64/68 images) but loses 2.3 dB for a single copy. The fixed a = 9 variant is not significantly different at
+  a = 9 and much worse for single copies. The bias/variance lever is real, but it closes only a third of the gap to
+  BM3D.
+- **Classic Noise2Noise** (pairs, no σ input) beats ours for single maps at σ = 2.0 and, on ASL, on datasets 2–3. It is
+  consistently the most robust learned competitor.
+
+**Implication.** For averaged estimates, the method should see all copies, not denoise them one by one: denoise the
+copy mean (SUB, conditioned on σ/√a) or take the copies jointly. Natural images have the data to train that. This is
+the most important next experiment, and it may change the method's architecture. The per-copy model plus the
+depth-dependent dial remains the right choice for single maps and in the data-poor ASL regime.

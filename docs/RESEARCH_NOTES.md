@@ -159,8 +159,26 @@ Pre-registered, all methods on the same splits, every parameter cross-fitted (`A
   score-from-noisy-data methods do.
 - **Soft spot:** on dataset 2 (low-SNR, fine-grained noise, model trained on dataset 1) a tuned Gaussian blur ties
   ours (62.3 vs 60.7 at a = 9). Generalization across coils is the open problem.
-- **Not yet compared:** Neighbor2Neighbor / Blind2Unblind, Recorrupted-to-Recorrupted, DDM2, and a supervised upper
-  bound (needs ground truth; planned with step 3).
+- **Self-supervised DL baselines (BASE-DL, dataset 1, a = 9):** ours beats classic Noise2Noise (1.11×), N2N + σ
+  (1.14×), Noise2Self (1.54×), R2R (1.85×) and Neighbor2Neighbor (2.02×). Classic Noise2Noise beats ours for single
+  maps and on datasets 2–3 at most depths: it is the most robust competitor. DDM2 not implemented (limitation).
+
+### 6d. Step 3: ground truth on natural images (established, NAT; reading supported)
+
+Pre-registered (`Archive/NAT`): Train400 → BSD68, 10 fixed noisy copies, σ = 50/255, 0.5, 2.0 (white) and 0.5
+(ASL-coloured); all learned methods with the same U-Net and budget (code `natural/`).
+- **The ground-truth-free estimator is validated:** unbiased to within 1% except at σ = 2.0 (2–5% low, precision
+  limit). Choosing r without ground truth matches the oracle in three of four conditions (≤ 0.13 dB loss).
+- **Noise-model robustness confirmed:** with ASL-coloured noise, Neighbor2Neighbor, R2R and Noise2Score collapse; ours
+  and classic Noise2Noise do not.
+- **Ours reaches the supervised per-copy bound** (24.48 vs 24.48 dB, σ = 0.5, a = 9) and beats every learned baseline
+  there (+0.37 to +0.62 dB).
+- **But BM3D on the copy mean beats every per-copy method at a = 9 by 1.85 dB.** The limit is the "denoise each copy,
+  then average" architecture, not the training. This supports note 5's sufficiency argument where data is ample.
+- **The averaging-aware loss** (a ~ U{1..9}) gains +0.59 dB at a = 9 and loses 2.3 dB for single copies. The lever is
+  real but partial.
+- **Next:** a model that sees all copies (denoise the σ/√a-conditioned copy mean, or joint input) on natural images,
+  then on ASL as data grows.
 
 ---
 
@@ -270,7 +288,8 @@ subjects.
    centrepiece.
 2. ~~Decoder ablations and baselines on current data~~ (done 2026-10-30, notes 6b–6c). Remaining from this step:
    further DL baselines (Neighbor2Neighbor / Blind2Unblind, Recorrupted-to-Recorrupted, DDM2).
-3. **Synthetic validation** of the estimator and of r*(a).
+3. ~~Synthetic validation~~ (done 2026-11-01, note 6d). It opened a new priority: a model that sees all copies
+   (note 5 revisited with ample data).
 4. **Recipe clean-up for pooled data:** separate augmentation from ladder; select checkpoints by validation n_eff.
 5. **Multi-subject, multi-site data:** resolution handling (linear operators; with vs without voxel-size
    conditioning), noise-spectrum conditioning, second application.
@@ -285,3 +304,4 @@ subjects.
   ablation added after discussion with the user.
 - 2026-10-29: AR_HEADROOM folded into note 3; adaptive r demoted to a refinement.
 - 2026-10-30: step 2 results (DEC, BASE) added as notes 6b–6c; roadmap rows updated.
+- 2026-11-01: BASE-DL folded into 6c; step 3 (NAT) added as note 6d.

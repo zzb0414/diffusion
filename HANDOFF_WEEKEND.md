@@ -24,14 +24,14 @@ If it passed: `touch runs/nat/_ch_verified`. If not: do NOT release; fix `n2n.py
 1. ~~DONE 2026-10-31 03:05 (logged; ours wins all 5 at a = 9; classic N2N wins single maps and datasets 2–3)~~ **BASE-DL report** when `runs/base/dl_eval/neff.csv` exists: `cd baselines && python report.py --set dl --dry`
    (must print DRY RUN OK), then `python report.py --set dl` (logs its section). Pre-registration:
    `Archive/BASE/PREREGISTRATION_DL.md` (primary: ours vs each baseline + dial, dataset 1, a = 9, Holm over 5).
-2. **NAT report** — `natural/report.py` (written, compiles, NOT yet run on data): when `runs/nat/gpu.done` and
+2. ~~DONE 2026-11-01~~ **NAT report** — `natural/report.py` (written, compiles, NOT yet run on data): when `runs/nat/gpu.done` and
    `runs/nat/cpu.done` exist, run `python natural/report.py --dry` (must print DRY RUN OK), then
    `python natural/report.py` (logs its section only when all conditions x methods are present). Sanity-check its
    numbers before trusting them (e.g. plain averaging PSNR must match σ²/a).
-3. **Verify** protected hashes: `sha256sum -c Archive/NAT/protected_before.sha256` (and BASE's); report mismatches.
+3. ~~DONE (benign: _ch_verify scratch, RESEARCH_NOTES edit)~~ **Verify** protected hashes: `sha256sum -c Archive/NAT/protected_before.sha256` (and BASE's); report mismatches.
 4. **Commit** text outputs only (code, logs, json, md; never csv/png/pkl/npy), on branch `dev`. Do not push without
    asking.
-5. **Monday summary:** update `docs/RESEARCH_NOTES.md` (step 3 results, notes; NO venue, NO data plan — user's
+5. (2026-11-01: NAT report logged, reading logged, notes 6c/6d updated; only the user summary remains) **Monday summary:** update `docs/RESEARCH_NOTES.md` (step 3 results, notes; NO venue, NO data plan — user's
    request) and give the user a decision-ready summary: estimator validated?, GT-free r selection good enough?,
    ours vs baselines with exact PSNR, does the averaging-aware loss beat ours?
 
