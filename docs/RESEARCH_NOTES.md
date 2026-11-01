@@ -87,7 +87,7 @@ noise alone.
 - **Practical value:** data with only 2 repetitions, and sites with different N, can be pooled without changing the
   recipe.
 
-### 5. Denoising the mean is not better at this scale (hypothesis, not supported)
+### 5. Denoising the mean: not better on ASL at this scale, but right with ample data (see note 6d)
 
 - **Theory:** with i.i.d. Gaussian noise the mean is a sufficient statistic, so E[x | mean] is the minimum-MSE
   estimate. Averaging per-repetition estimates generally is not.
@@ -177,8 +177,16 @@ Pre-registered (`Archive/NAT`): Train400 → BSD68, 10 fixed noisy copies, σ = 
   then average" architecture, not the training. This supports note 5's sufficiency argument where data is ample.
 - **The averaging-aware loss** (a ~ U{1..9}) gains +0.59 dB at a = 9 and loses 2.3 dB for single copies. The lever is
   real but partial.
-- **Next:** a model that sees all copies (denoise the σ/√a-conditioned copy mean, or joint input) on natural images,
-  then on ASL as data grows.
+- **Seeing all copies fixes it (NAT-SUB, exploratory, pre-registered):** a model that denoises the copy mean (SUB,
+  conditioned on σ/√m, N2N target) gains +1.59 dB at a = 9 over the per-copy model (68/68 images; +1.52 dB with
+  coloured noise). That closes 86% of the gap to BM3D, which still leads by 0.26 dB.
+  - SUB reaches its supervised bound exactly (26.07 vs 26.07 dB), so self-supervision costs nothing.
+  - For single copies the per-copy model stays marginally best.
+- **Consequence for note 5:** "denoise the mean" is right in principle and wins whenever data suffices. The ASL failure
+  (GROUND SM) was data-limited, not wrong.
+- **Implied method:** "denoise each, then average" plus the dial for single maps; denoise-the-mean for averaged
+  estimates. The open questions are making SUB work with few training slices (pooled multi-site data) and closing the
+  last 0.26 dB to BM3D (capacity, iterations).
 
 ---
 
@@ -304,4 +312,4 @@ subjects.
   ablation added after discussion with the user.
 - 2026-10-29: AR_HEADROOM folded into note 3; adaptive r demoted to a refinement.
 - 2026-10-30: step 2 results (DEC, BASE) added as notes 6b–6c; roadmap rows updated.
-- 2026-11-01: BASE-DL folded into 6c; step 3 (NAT) added as note 6d.
+- 2026-11-01: BASE-DL folded into 6c; step 3 (NAT) added as note 6d; NAT-SUB revives note 5.

@@ -1,0 +1,2 @@
+[09:58:56] START eval W05 sub
+W05 sub: 1920 rows in 7.8 min

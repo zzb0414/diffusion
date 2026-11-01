@@ -1,0 +1,2 @@
+[10:14:57] START eval C05 sub
+C05 sub: 1920 rows in 7.8 min

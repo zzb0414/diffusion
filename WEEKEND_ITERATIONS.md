@@ -1822,3 +1822,26 @@ verification folder that was running when the snapshot was taken and was deleted
 copy mean (SUB, conditioned on σ/√a) or take the copies jointly. Natural images have the data to train that. This is
 the most important next experiment, and it may change the method's architecture. The per-copy model plus the
 depth-dependent dial remains the right choice for single maps and in the data-poor ASL regime.
+
+---
+
+## RUN 2026-11-01 — NAT-SUB (exploratory): does denoising the copy mean close the gap to BM3D?
+
+Pre-registered as exploratory (`Archive/NAT/PREREGISTRATION_SUB.md`). SUB denoises the mean of m ~ U{1..9} copies (conditioned on σ/√m, N2N target = mean of the other copies); SUBSUP is the same with the clean target. Same U-Net, data and budget as NAT; r chosen without ground truth on Set12; scores on BSD68. The dry run gave 0 dB.
+
+**PRIMARY (W05, a = 9): PSNR(SUB) − PSNR(ours) = +1.59 dB (95% CI +1.47 to +1.71; 68/68 images), p = 7.6e-13.**
+
+Mean PSNR on BSD68 (dB; chosen r in brackets):
+
+| method | W05 a=1 | W05 a=3 | W05 a=5 | W05 a=9 | C05 a=1 | C05 a=3 | C05 a=5 | C05 a=9 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Ours (per copy + dial) | 22.55 (0.00) | 23.63 (0.00) | 24.08 (0.08) | 24.48 (0.08) | 22.14 (0.00) | 23.34 (0.00) | 23.75 (0.08) | 24.21 (0.08) |
+| Supervised, per copy | 22.61 (0.00) | 23.71 (0.00) | 23.97 (0.00) | 24.48 (0.08) | 22.17 (0.00) | 23.37 (0.00) | 23.85 (0.08) | 24.28 (0.08) |
+| SUB: denoise the mean (N2N) | 22.47 (0.00) | 24.20 (0.00) | 25.08 (0.00) | 26.07 (0.00) | 21.91 (0.00) | 23.79 (0.00) | 24.76 (0.00) | 25.73 (0.00) |
+| SUBSUP: denoise the mean (supervised) | 22.36 (0.00) | 24.19 (0.00) | 25.12 (0.00) | 26.07 (0.00) | 22.09 (0.00) | 23.93 (0.00) | 24.89 (0.00) | 25.86 (0.00) |
+| BM3D on the mean | 22.26 | 24.24 | 25.18 | 26.33 | 21.50 | 23.78 | 24.82 | 26.04 |
+| Plain averaging | 9.12 | 12.16 | 13.94 | 16.17 | 9.12 | 12.16 | 13.93 | 16.16 |
+
+Differences (paired over 68 images): W05 SUB−OURS a=1: -0.08 dB (22/68); W05 SUB−OURS a=9: +1.59 dB (68/68); W05 SUB−BM3D a=1: +0.21 dB (61/68); W05 SUB−BM3D a=9: -0.26 dB (18/68); W05 SUBSUP−SUP a=1: -0.24 dB (2/68); W05 SUBSUP−SUP a=9: +1.60 dB (68/68); C05 SUB−OURS a=1: -0.22 dB (2/68); C05 SUB−OURS a=9: +1.52 dB (68/68); C05 SUB−BM3D a=1: +0.41 dB (65/68); C05 SUB−BM3D a=9: -0.31 dB (16/68); C05 SUBSUP−SUP a=1: -0.07 dB (17/68); C05 SUBSUP−SUP a=9: +1.59 dB (68/68).
+
+**Data:** `runs/nat/eval/{W05,C05}/{sub,subsup}.csv`, `runs/nat/report/summary_sub.json`. **Commands:** `bash runs/nat/queue_sub.sh`; `python natural/report_sub.py`.

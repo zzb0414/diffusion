@@ -1,0 +1,4 @@
+[07:51:43] iter 1000 loss=0.009290
+[08:07:41] iter 2000 loss=0.007598
+[08:23:27] iter 3000 loss=0.007702
+DONE subsup W05: 3000 iterations in 47.6 min
