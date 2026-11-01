@@ -24,13 +24,14 @@ from n2n import N2N_DSM                                      # noqa: E402
 
 CFG = dict(L=40, ITERS=3000, BATCH=8, CROP=96, LR=1e-3, GRAD_CLIP=1.0, NET_BASE=32, NET_EMB=32, P_RAW=0.5,
            LADDER_TOP=5.0, CKPT_EVERY=1000)
-METHODS = ("ours", "avg9", "avgu", "sup", "n2n", "ne2ne", "r2r", "n2s")
+METHODS = ("ours", "avg9", "avgu", "sup", "n2n", "ne2ne", "r2r", "n2s", "sub", "subsup")   # sub*: NAT-SUB addendum
 
 
 def build(method, sigma, dev):
     direct = method in ("n2n", "ne2ne", "r2r")
     net = UNet(in_ch=1, out_ch=1, base_out=CFG["NET_BASE"], emb_dim=CFG["NET_EMB"]).to(dev)
-    m = N2N_DSM(L=CFG["L"], sigma_min=sigma, sigma_max=CFG["LADDER_TOP"] * sigma, backbone=net, ch=1,
+    bottom = sigma / 3 if method in ("sub", "subsup") else sigma          # mean of up to 9 copies: sigma/3
+    m = N2N_DSM(L=CFG["L"], sigma_min=bottom, sigma_max=CFG["LADDER_TOP"] * sigma, backbone=net, ch=1,
                 param="direct" if direct else "score", blind=direct)
     return net, m
 
@@ -44,6 +45,16 @@ def step_loss(method, m, net, y, clean, sigma):
         return m.loss_multireal(y, loss="mse", sigma_y=sy, p_raw=CFG["P_RAW"])
     if method == "n2n":
         return m.loss_multireal(y, loss="mse", sigma_y=sy, p_raw=1.0, target_k=1)
+    if method == "sub":                   # denoise the mean of m ~ U{1..9} copies; target: mean of the rest
+        return m.loss_subset(y, sy, loss="mse", p_raw=CFG["P_RAW"])
+    if method == "subsup":                # same input, clean target
+        K = B * N
+        mm = torch.randint(1, N, (K,), device=dev)
+        rank = torch.rand(K, N, device=dev).argsort(1).argsort(1)
+        wA = (rank < mm[:, None]).float() / mm[:, None]
+        X = (wA[:, :, None, None] * y.repeat_interleave(N, dim=0)).sum(1, keepdim=True)
+        x0, _ = m._tweedie_total(X, sigma / mm.float().sqrt(), None, CFG["P_RAW"])
+        return ((x0[:, 0] - clean.repeat_interleave(N, dim=0)) ** 2).mean()
     X = y.reshape(B * N, 1, h, w)
     syN = sy.repeat_interleave(N)
     if method in ("avg9", "avgu", "sup"):
@@ -89,7 +100,7 @@ def main():
     net, m = build(args.method, sigma, dev)
     opt = torch.optim.Adam(net.parameters(), lr=CFG["LR"])
     ckpt_cfg = dict(net_type="N2N_DSM", noise_label="total", objective=args.method, N=D.N, L=CFG["L"], ch=1,
-                    sigma_min=sigma, sigma_max=CFG["LADDER_TOP"] * sigma, base_out=CFG["NET_BASE"],
+                    sigma_min=float(m.dsm.sigmas[0]), sigma_max=CFG["LADDER_TOP"] * sigma, base_out=CFG["NET_BASE"],
                     emb_dim=CFG["NET_EMB"], loss=args.method, param=m.param, blind=m.blind, cond=args.cond,
                     seed=args.seed, alpha=0.5)
     json.dump(dict(cfg=CFG, ckpt_cfg=ckpt_cfg, cond=args.cond, sigma=sigma, colored=colored, seed=args.seed,

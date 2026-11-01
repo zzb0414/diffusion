@@ -18,7 +18,8 @@ from _common import splits                                   # baselines/_common
 
 A_EVAL = (1, 3, 5, 9)
 RGRID = (0.0, 1 / 12, 1 / 6, 0.25, 1 / 3, 0.5)
-LEARNED = ("ours", "avg9", "avgu", "sup", "n2n", "ne2ne", "r2r", "n2s")
+LEARNED = ("ours", "avg9", "avgu", "sup", "n2n", "ne2ne", "r2r", "n2s", "sub", "subsup")
+MEAN_MODE = ("sub", "subsup")             # NAT-SUB: denoise the a-copy mean once at sigma/sqrt(a)
 _G = {}
 
 
@@ -67,6 +68,28 @@ def _classical(task):
     return rows
 
 
+def mean_mode(model, x, y, sigma, device):
+    """rows (r, a, mse_gt, psnr, mse_sh, s2): each subset's mean denoised once at sigma/sqrt(a), blended with r."""
+    import torch
+    N = y.shape[0]
+    s2 = float((((y - y.mean(0)) ** 2).sum(0) / (N - 1)).mean())
+    out = []
+    for a in A_EVAL:
+        sub = splits(a, N)
+        means = np.stack([y[list(c)].mean(0) for c in sub])
+        refs = [y[[j for j in range(N) if j not in c]].mean(0) for c in sub]
+        with torch.no_grad():
+            x0 = model.denoise_to(torch.from_numpy(means[:, None]).float(), sigma / np.sqrt(a), target_ratio=0.0,
+                                  device=device).cpu()[:, 0].numpy().astype(np.float64)
+        for r in RGRID:
+            est = x0 + r * (means - x0)
+            g = [float(((e - x) ** 2).mean()) for e in est]
+            p = [float(10 * np.log10(1.0 / ((np.clip(e, 0, 1) - x) ** 2).mean())) for e in est]
+            h = [float(((e - ref) ** 2).mean()) - s2 / (N - a) for e, ref in zip(est, refs)]
+            out.append((round(r, 4), a, float(np.mean(g)), float(np.mean(p)), float(np.mean(h)), s2))
+    return out
+
+
 def _init(cond):
     os.chdir(D.REPO)
     _G["cond"] = cond
@@ -84,6 +107,10 @@ def learned(method, cond, run, device):
     for split in ("set12", "bsd68"):
         ims, ys = _G[split]
         for i, (x, y) in enumerate(zip(ims, ys)):
+            if method in MEAN_MODE:
+                rows += [(split, i, method) + v for v in mean_mode(model, x.astype(np.float64), y.astype(np.float64),
+                                                                    sigma, device)]
+                continue
             yt = torch.from_numpy(y[:, None])
             with torch.no_grad():
                 if method == "r2r":

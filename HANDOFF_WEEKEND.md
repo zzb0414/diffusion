@@ -35,6 +35,13 @@ If it passed: `touch runs/nat/_ch_verified`. If not: do NOT release; fix `n2n.py
    request) and give the user a decision-ready summary: estimator validated?, GT-free r selection good enough?,
    ours vs baselines with exact PSNR, does the averaging-aware loss beat ours?
 
+## Added 2026-11-01 07:30 — NAT-SUB (exploratory; pre-registration `Archive/NAT/PREREGISTRATION_SUB.md`)
+NAT showed BM3D on the copy mean beats every per-copy method at a = 9 by 1.85 dB. Test whether a model that denoises
+the copy mean (SUB; SUBSUP = supervised version) closes the gap. Queue: `bash runs/nat/queue_sub.sh` (resumable) →
+`runs/nat/sub.done`. Then compare from `runs/nat/eval/{W05,C05}/{sub,subsup}.csv` with ours/bm3d/sup (BSD68, r chosen
+on Set12 as in `natural/report.py`; extend the report or add a short script), log a section, mention in the Monday
+summary.
+
 ## Context for whoever resumes
 - Research notes: `docs/RESEARCH_NOTES.md`; experiment log: `WEEKEND_ITERATIONS.md`; baselines: `baselines/README.md`.
 - Natural images: `../natural_images/{train400,bsd68,set12}` (DnCNN split; source in `SOURCE.txt`).
