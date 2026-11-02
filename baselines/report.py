@@ -17,22 +17,24 @@ import _common
 os.chdir(_common.REPO)
 ap = argparse.ArgumentParser()
 ap.add_argument("--dry", action="store_true")
-ap.add_argument("--set", default="base", choices=["base", "dl"])
+ap.add_argument("--set", default="base", choices=["base", "dl", "ddm2"])
 A = ap.parse_args()
 DRY, SET = A.dry, A.set
 OUT, MD = "runs/base/report" + ("" if SET == "base" else "_dl"), "WEEKEND_ITERATIONS.md"
 HEAD = {"base": "## RUN 2026-10-30 — BASE: the method vs conventional and self-supervised baselines",
-        "dl": "## RUN 2026-10-31 — BASE-DL: the method vs self-supervised deep-learning baselines"}[SET]
+        "dl": "## RUN 2026-10-31 — BASE-DL: the method vs self-supervised deep-learning baselines",
+        "ddm2": "## RUN 2026-11-02 — BASE-DDM2: the method vs a DDM2-like baseline"}[SET]
 A_EVAL, DS, S34, NBOOT = _common.A_EVAL, (1, 2, 3), list(range(34)), 10000
 NAMES = {"ours": "Ours (DSM + dial)", "avg": "Plain averaging", "blur": "Gaussian blur", "nlm": "Non-local means",
          "bm3d": "BM3D", "mppca": "MP-PCA", "lpca": "LPCA", "p2s": "Patch2Self", "n2s": "Noise2Score (r = 0)",
          "n2s_dial": "Noise2Score + dial", "n2n": "Noise2Noise (classic) + dial", "n2n_sigma": "Noise2Noise + σ + dial",
          "ne2ne": "Neighbor2Neighbor + dial", "r2r": "Recorrupted-to-Recorrupted + dial", "n2self": "Noise2Self + dial"}
-for _m in ("n2n", "n2n_sigma", "ne2ne", "r2r", "n2self"):
+NAMES.update(ddm2="DDM2-like + dial", ddm2_tw="DDM2-like stage III, one-shot (no sampling) + dial")
+for _m in ("n2n", "n2n_sigma", "ne2ne", "r2r", "n2self", "ddm2", "ddm2_tw"):
     NAMES[_m + "@0"] = NAMES[_m].replace(" + dial", "") + " (r = 0, as published)"
 BASELINES = {"base": ("avg", "blur", "nlm", "bm3d", "mppca", "lpca", "p2s", "n2s"),
-             "dl": ("n2n", "n2n_sigma", "ne2ne", "r2r", "n2self")}[SET]
-TAGS = {"base": ("classical", "ours", "n2s2_eval"), "dl": ("ours", "dl_eval")}[SET]
+             "dl": ("n2n", "n2n_sigma", "ne2ne", "r2r", "n2self"), "ddm2": ("ddm2", "ddm2_tw")}[SET]
+TAGS = {"base": ("classical", "ours", "n2s2_eval"), "dl": ("ours", "dl_eval"), "ddm2": ("ours", "ddm2_eval")}[SET]
 rng = np.random.default_rng(0)
 
 T = {}                                                   # (method, seed, d, s, a, param) -> (n_eff, band3, fold)
@@ -97,9 +99,14 @@ V = {(m, d, s, a, c): value(m, d, s, a, c) for m in methods for d in DS for s in
 ours = lambda b: b if DRY else "ours"
 cmp = {(b, d, a, c): stat([V[(ours(b), d, s, a, c)] / V[(b, d, s, a, c)] for s in S34])
        for b in methods[1:] for d in DS for a in A_EVAL for c in (0, 1)}
-prim = {b: cmp[(b, 1, 9, 0)] for b in BASELINES}
-for b, q in zip(BASELINES, holm([prim[b]["p"] for b in BASELINES])):
-    prim[b]["p_holm"] = float(q)
+if SET == "ddm2":                     # PREREGISTRATION_DDM2: ours vs DDM2 + dial at a = 1 and 9, Holm over 2
+    prim = {f"ddm2 a={a}": cmp[("ddm2", 1, a, 0)] for a in (1, 9)}
+    for b, q in zip(list(prim), holm([v["p"] for v in prim.values()])):
+        prim[b]["p_holm"] = float(q)
+else:
+    prim = {b: cmp[(b, 1, 9, 0)] for b in BASELINES}
+    for b, q in zip(BASELINES, holm([prim[b]["p"] for b in BASELINES])):
+        prim[b]["p_holm"] = float(q)
 if DRY:
     assert all(abs(v["gmean"] - 1) < 1e-12 for v in cmp.values())
     print("DRY RUN OK: ours := each baseline gives 1.000")
@@ -115,12 +122,16 @@ verdict = lambda r: ("ours better" if r["p_holm"] < 0.05 and r["gmean"] > 1 else
 L = ["", "---", "", HEAD, "",
      ("Pre-registered (`Archive/BASE/PREREGISTRATION_DL.md`); same splits, scoring and cross-fitting as BASE. Baselines "
       "trained like ours (same U-Net, folds, seeds 101–103, 2000 iterations; code `baselines/dl_selfsup.py`; the two "
-      "Noise2Noise arms are the DEC runs re-scored). Primary = each baseline with the dial. " if SET == "dl" else "") +
+      "Noise2Noise arms are the DEC runs re-scored). Primary = each baseline with the dial. " if SET == "dl" else
+      "Pre-registered (`Archive/BASE/PREREGISTRATION_DDM2.md`); same splits, scoring and cross-fitting as BASE. DDM2-like "
+      "pipeline (`baselines/ddm2.py`): stage I = classic Noise2Noise (self, per repetition; deviation: DDM2 uses the other "
+      "volumes), stage II = residual noise level, stage III = score network trained on stage-I outputs, reverse-sampled "
+      "from the matched level (DDM2) or decoded one-shot (DDM2-TW). " if SET == "ddm2" else "") +
      "Pre-registered (`Archive/BASE/PREREGISTRATION.md`). Ours = DSM, MSE noise-normalized, dataset-1 training, seeds "
      "101–103, one-shot Tweedie + dial. Every method sees only the A half of each split; all methods are scored on the "
      "SAME fixed subset of 10 splits per a (unbiased, paired); every parameter is cross-fitted over the other folds' "
      "slices. Code: `baselines/`. The dry run gave 1.000.", "",
-     *([] if SET == "dl" else [
+     *([] if SET != "base" else [
      "**Deviation from the pre-registration (Noise2Score).** The first implementation (annealed perturbation, network "
      "conditioned on σ̂ only) failed its sanity check: n_eff 0.03, i.e. far worse than the noisy input, with a final loss "
      "of 0.98 against 1.0 for no learning (runs kept in `runs/base/n2s_v1*`). Version 2 conditions the network on the "
@@ -130,11 +141,12 @@ L = ["", "---", "", HEAD, "",
      "realizations, but with noise coloured like dataset 1 it is WORSE than the noisy input (error 1.25× the noise "
      "variance), while a Noise2Noise model on the same data is unaffected (0.002×). Noise2Score's Tweedie step assumes "
      "white noise of known σ; real ASL noise is coloured. The Noise2Score rows below are version 2.", ""]),
-     "**PRIMARY (dataset 1, a = 9; n_eff ours / baseline, Holm over %d):**" % len(BASELINES), ""]
-for b in BASELINES:
+     ("**PRIMARY (dataset 1, a = 1 and 9; n_eff ours / DDM2-like + dial, Holm over 2):**" if SET == "ddm2" else
+      "**PRIMARY (dataset 1, a = 9; n_eff ours / baseline, Holm over %d):**" % len(BASELINES)), ""]
+for b in prim:
     r = prim[b]
     L.append("- vs %s: %.3f× (95%% CI %.3f–%.3f; ours better on %d/%d), p = %.2g, Holm %.2g → **%s**" % (
-        NAMES[b], r["gmean"], r["ci_lo"], r["ci_hi"], r["wins"], r["n"], r["p"], r["p_holm"], verdict(r)))
+        NAMES.get(b, b), r["gmean"], r["ci_lo"], r["ci_hi"], r["wins"], r["n"], r["p"], r["p_holm"], verdict(r)))
 L += ["", "Geometric-mean n_eff (signal region) by method:", "",
       "| method | " + " | ".join(f"ds{d} a={a}" for d in DS for a in A_EVAL) + " |",
       "|---|" + "---:|" * (len(DS) * len(A_EVAL))]

@@ -22,7 +22,9 @@ NETS = {"ours": {101: ("runs/cv_ablation/mse_norm", "mse"), 102: ("runs/dec/A/ds
         "n2n_sigma": {sd: (f"runs/dec/A/dirn_s{sd}", "mse") for sd in (101, 102, 103)},   # N2N + sigma (DEC DIR_N)
         "ne2ne": {sd: (f"runs/base/ne2ne/s{sd}", "ne2ne") for sd in (101, 102, 103)},
         "r2r": {sd: (f"runs/base/r2r/s{sd}", "r2r") for sd in (101, 102, 103)},
-        "n2self": {sd: (f"runs/base/n2self/s{sd}", "n2self") for sd in (101, 102, 103)}}
+        "n2self": {sd: (f"runs/base/n2self/s{sd}", "n2self") for sd in (101, 102, 103)},
+        "ddm2": {sd: (f"runs/base/ddm2/s{sd}", "ddm2") for sd in (101, 102, 103)},       # DDM2-like, one sample
+        "ddm2_tw": {sd: (f"runs/base/ddm2/s{sd}", "ddm2") for sd in (101, 102, 103)}}    # same net, one-shot Tweedie
 R2R_DRAWS, R2R_ALPHA = 8, 0.5
 ITER = 2000                                                  # evaluated iteration (fixed in advance)
 _G = {}
@@ -69,6 +71,9 @@ def _networks(method, datasets, device):
         for k in range(5):
             cfg = json.load(open(os.path.join(run, f"fold{k}", "config.json"), encoding="utf-8"))
             model = load(os.path.join(run, f"fold{k}", "ckpt", "%s_%06d.pkl" % (loss, ITER)), device)[0]
+            if method.startswith("ddm2"):
+                import ddm2
+                m1 = ddm2.stage1(seed, k, device)
             for i, (d, s) in enumerate(meta):
                 if folds[s] != k:
                     continue
@@ -76,7 +81,19 @@ def _networks(method, datasets, device):
                 ens = x[i]; sg = float(sig[i])
                 with torch.no_grad():
                     yt = torch.from_numpy(ens).float()
-                    if method == "r2r":                  # published inference: mean of f(y + alpha z) over draws
+                    if method.startswith("ddm2"):          # stage I -> II (sigma_m) -> III, per repetition
+                        phi, sig_m = ddm2.stage12(m1, yt, device)
+                        g = torch.Generator(device=device).manual_seed(20261102 + 1000 * d + s)
+                        outs = []
+                        for j in range(yt.shape[0]):
+                            if method == "ddm2":
+                                o = model.walk_to(yt[j], float(sig_m[j]), 0.0, steps=ddm2.CFG["WALK_STEPS"], eta=1.0,
+                                                  sigma_floor=ddm2.CFG["SIG_LO"], generator=g, device=device)
+                            else:
+                                o = model.denoise_to(yt[j], float(sig_m[j]), target_ratio=0.0, device=device)
+                            outs.append(o.cpu())
+                        x0 = torch.cat(outs).double().numpy()
+                    elif method == "r2r":                  # published inference: mean of f(y + alpha z) over draws
                         g = torch.Generator().manual_seed(20261030 + 1000 * d + s)
                         x0 = torch.stack([model.denoise_to(yt + R2R_ALPHA * sg * torch.randn(yt.shape, generator=g), sg,
                                                            target_ratio=0.0, device=device).cpu()
