@@ -62,7 +62,7 @@ def main():
     ap.add_argument("--ladder-div", type=float, default=1.0)
     ap.add_argument("--loss", default="l1", choices=["l1", "mse"])
     ap.add_argument("--noise-norm", action="store_true", help="weight by (sigma_ref/sigma_tot)^p (DEC)")
-    ap.add_argument("--param", default="score", choices=["score", "direct"], help="DEC: x0 parametrization")
+    ap.add_argument("--param", default="score", choices=["score", "direct", "residual"], help="DEC / C2: x0 parametrization")
     ap.add_argument("--blind", action="store_true", help="DEC: hide sigma from the net")
     ap.add_argument("--p-raw", type=float, default=None, help="DEC: probability of no added noise (default 0.5)")
     args = ap.parse_args()

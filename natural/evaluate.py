@@ -98,10 +98,10 @@ def _init(cond):
         _G[split] = (ims, D.copies(ims, cond, split))
 
 
-def learned(method, cond, run, device):
+def learned(method, cond, run, device, it=3000):
     import torch
     from _r3_eval import load
-    model = load(os.path.join(run, "ckpt", f"{method}_003000.pkl"), device)[0]
+    model = load(os.path.join(run, "ckpt", f"{method}_{it:06d}.pkl"), device)[0]
     sigma = D.CONDITIONS[cond][0]
     rows = []
     for split in ("set12", "bsd68"):
@@ -131,16 +131,20 @@ def main():
     ap.add_argument("--methods", nargs="+", required=True)
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--iter", type=int, default=3000, help="checkpoint iteration (learning curve)")
+    ap.add_argument("--run-root", default=None, help="training run folder root (default runs/nat/<cond>)")
+    ap.add_argument("--out-dir", default=None, help="default runs/nat/eval/<cond>")
     args = ap.parse_args()
     _init(args.cond)
-    out_dir = os.path.join("runs", "nat", "eval", args.cond)
+    out_dir = args.out_dir or os.path.join("runs", "nat", "eval", args.cond)
     os.makedirs(out_dir, exist_ok=True)
     for method in args.methods:
         path = os.path.join(out_dir, f"{method}.csv")
         assert not os.path.exists(path), "refusing to overwrite " + path
         t0 = time.time()
         if method in LEARNED:
-            rows = learned(method, args.cond, os.path.join("runs", "nat", args.cond, method), args.device)
+            rows = learned(method, args.cond, os.path.join(args.run_root or os.path.join("runs", "nat", args.cond), method),
+                           args.device, args.iter)
         else:
             from multiprocessing import Pool
             tasks = [(sp, i, method) for sp in ("set12", "bsd68") for i in range(len(_G[sp][0]))]

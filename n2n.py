@@ -391,7 +391,7 @@ class N2N_DSM:
         # ``param`` / ``blind`` (DEC ablation): "score" (default) decodes x0_hat = x + sigma^2 net(x, sigma);
         # "direct" reads x0_hat = net(x, sigma). ``blind=True`` hides sigma from the net (constant level
         # coordinate 0). Defaults reproduce the original model exactly.
-        assert param in ("score", "direct")
+        assert param in ("score", "direct", "residual")     # residual (C2 ablation): x0_hat = x + net(x, sigma)
         self.param, self.blind = param, blind
         self.ch = ch                      # channels per realization: 2 (Re/Im, default) or 1 (grayscale, step 3)
         # Tie the schedule to the real data's noise: if `task_sigma` is given (the
@@ -634,6 +634,8 @@ class N2N_DSM:
         out = self.net(x, lev)
         if self.param == "direct":
             return out
+        if self.param == "residual":
+            return x + out
         return x + sigma.square().view(-1, 1, 1, 1) * out
 
     def loss_subset(self, x0_stack, sigma_y, rng=None, loss="l1", huber_delta=0.05,

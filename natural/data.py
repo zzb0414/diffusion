@@ -17,7 +17,8 @@ for p in (REPO, os.path.join(REPO, "experiments"), os.path.join(REPO, "baselines
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
 N = 10
-CONDITIONS = {"W50": (50 / 255, False), "W05": (0.5, False), "W20": (2.0, False), "C05": (0.5, True)}
+CONDITIONS = {"W50": (50 / 255, False), "W05": (0.5, False), "W20": (2.0, False), "C05": (0.5, True),
+              "W035": (0.35, False), "W07": (0.7, False)}   # last two: test-only noise shift (C3); appended so earlier seeds stay
 SEED = 20261031
 SPLIT_ID = {"train": 0, "set12": 1, "bsd68": 2}
 PROFILE_CACHE = os.path.join(REPO, "runs", "_cache", "asl_noise_profile.npz")

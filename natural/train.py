@@ -87,7 +87,11 @@ def main():
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--seed", type=int, default=101)
     ap.add_argument("--iters", type=int, default=CFG["ITERS"])
+    ap.add_argument("--n-train", type=int, default=0, help="C7: use only the first n training images (0 = all 400)")
+    ap.add_argument("--p-raw", type=float, default=None, help="C3: 1.0 = no noise ladder (native noise only)")
     args = ap.parse_args()
+    if args.p_raw is not None:
+        CFG["P_RAW"] = args.p_raw
     os.chdir(D.REPO)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     assert not os.path.exists(os.path.join(args.outdir, "train.csv")), "refusing to overwrite " + args.outdir
@@ -95,6 +99,8 @@ def main():
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     sigma, colored = D.CONDITIONS[args.cond]
     ims = D.load_split("train")
+    if args.n_train:
+        ims = ims[:args.n_train]
     Y = torch.from_numpy(np.stack(D.copies(ims, args.cond, "train"))).to(dev)        # (400, N, 180, 180)
     Xc = torch.from_numpy(np.stack(ims)).to(dev)                                      # clean (sup only)
     net, m = build(args.method, sigma, dev)
@@ -102,7 +108,7 @@ def main():
     ckpt_cfg = dict(net_type="N2N_DSM", noise_label="total", objective=args.method, N=D.N, L=CFG["L"], ch=1,
                     sigma_min=float(m.dsm.sigmas[0]), sigma_max=CFG["LADDER_TOP"] * sigma, base_out=CFG["NET_BASE"],
                     emb_dim=CFG["NET_EMB"], loss=args.method, param=m.param, blind=m.blind, cond=args.cond,
-                    seed=args.seed, alpha=0.5)
+                    seed=args.seed, alpha=0.5, n_train=len(ims), p_raw=CFG["P_RAW"])
     json.dump(dict(cfg=CFG, ckpt_cfg=ckpt_cfg, cond=args.cond, sigma=sigma, colored=colored, seed=args.seed,
                    iters=args.iters), open(os.path.join(args.outdir, "config.json"), "w"), indent=2)
     log = open(os.path.join(args.outdir, "train.log"), "a", encoding="utf-8")
