@@ -1845,3 +1845,55 @@ Mean PSNR on BSD68 (dB; chosen r in brackets):
 Differences (paired over 68 images): W05 SUB−OURS a=1: -0.08 dB (22/68); W05 SUB−OURS a=9: +1.59 dB (68/68); W05 SUB−BM3D a=1: +0.21 dB (61/68); W05 SUB−BM3D a=9: -0.26 dB (18/68); W05 SUBSUP−SUP a=1: -0.24 dB (2/68); W05 SUBSUP−SUP a=9: +1.60 dB (68/68); C05 SUB−OURS a=1: -0.22 dB (2/68); C05 SUB−OURS a=9: +1.52 dB (68/68); C05 SUB−BM3D a=1: +0.41 dB (65/68); C05 SUB−BM3D a=9: -0.31 dB (16/68); C05 SUBSUP−SUP a=1: -0.07 dB (17/68); C05 SUBSUP−SUP a=9: +1.59 dB (68/68).
 
 **Data:** `runs/nat/eval/{W05,C05}/{sub,subsup}.csv`, `runs/nat/report/summary_sub.json`. **Commands:** `bash runs/nat/queue_sub.sh`; `python natural/report_sub.py`.
+
+---
+
+## RUN 2026-11-02 — CLAIMS LC: were the natural-image models still improving at 3000 iterations?
+
+Descriptive (`Archive/CLAIMS/PREREGISTRATION.md`). W05, BSD68 mean PSNR (dB) at the r chosen without ground truth, checkpoints 1000 / 2000 / 3000:
+
+| model | a = 1 | a = 9 |
+|---|---|---|
+| ours | 22.03 / 22.34 / 22.55 | 24.05 / 24.14 / 24.48 |
+| sup | 21.85 / 22.43 / 22.61 | 24.16 / 24.22 / 24.48 |
+| sub | 21.86 / 22.25 / 22.47 | 24.93 / 25.74 / 26.07 |
+| subsup | 21.59 / 22.35 / 22.36 | 24.91 / 25.88 / 26.07 |
+
+---
+
+## RUN 2026-11-02 — CLAIMS C3: does training across noise levels give robustness to shift?
+
+Pre-registered (`Archive/CLAIMS/PREREGISTRATION.md`). Trained at W05 (σ 0.5 white); OURS = with the noise ladder, NOLADDER = native noise only, N2N = classic Noise2Noise. Tested in distribution (W05) and shifted (W035 σ 0.35, W07 σ 0.7, C05 ASL-coloured).
+
+**PRIMARY (PSNR(OURS) − PSNR(NOLADDER), Holm over 4):**
+
+- W07, a = 1: +2.92 dB (95% CI +2.59 to +3.27; 68/68 images), p = 7.6e-13, Holm 3.1e-12
+- W07, a = 9: -0.74 dB (95% CI -0.85 to -0.62; 6/68 images), p = 3.8e-11, Holm 3.8e-11
+- C05, a = 1: -0.26 dB (95% CI -0.31 to -0.22; 0/68 images), p = 7.6e-13, Holm 3.1e-12
+- C05, a = 9: +0.29 dB (95% CI +0.25 to +0.34; 64/68 images), p = 1e-11, Holm 2e-11
+
+Mean BSD68 PSNR (dB), a = 1 / a = 9:
+
+| test set | OURS (ladder) | NOLADDER | N2N (classic) |
+|---|---|---|---|
+| W05 | 22.55 / 24.48 | 22.72 / 24.17 | 22.67 / 24.05 |
+| W035 | 16.38 / 23.91 | 15.46 / 23.27 | 22.57 / 24.10 |
+| W07 | 21.59 / 23.26 | 18.67 / 24.00 | 18.17 / 23.33 |
+| C05 | 22.06 / 24.49 | 22.32 / 24.20 | 22.27 / 24.09 |
+
+---
+
+## RUN 2026-11-02 — CLAIMS C2: residual parametrization (x̂₀ = x̃ + net) vs score (x̃ + σ² net)
+
+Pre-registered (`Archive/CLAIMS/PREREGISTRATION.md`). ASL, dataset-1 training, MSE noise-normalized, noise ladder, seeds 101–103, 2000 iterations; DSM and DIR_L from DEC part A.
+
+**PRIMARY (RESID / DSM, dataset 1, a = 9):** 0.857× (90% CI 0.825–0.893; 3/34 better) → **σ² scaling contributes (residual worse)**.
+
+| comparison | dataset | a = 1 | a = 9 |
+|---|---:|---|---|
+| RESID / DSM | 1 | 1.096 (1.014–1.205) | 0.857 (0.825–0.893) |
+| RESID / DSM | 2 | 1.323 (1.233–1.428) | 1.066 (1.036–1.098) |
+| RESID / DSM | 3 | 1.512 (1.391–1.650) | 1.035 (0.999–1.074) |
+| RESID / DIRL | 1 | 0.963 (0.953–0.972) | 0.985 (0.978–0.992) |
+| RESID / DIRL | 2 | 0.981 (0.967–0.993) | 1.007 (0.999–1.015) |
+| RESID / DIRL | 3 | 0.951 (0.930–0.971) | 0.988 (0.977–0.999) |

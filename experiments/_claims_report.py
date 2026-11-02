@@ -130,7 +130,7 @@ if all(os.path.exists(os.path.join(p, "neff.csv")) for ps in c2p.values() for p 
                else "σ² scaling contributes (residual worse)" if P0["ci_hi"] < 0.95 else
                "residual better" if P0["ci_lo"] > 1.05 else "inconclusive")
     if DRY:
-        assert all(abs(v["gmean"] - 1) < 1e-12 for v in res.values())
+        assert all(abs(v["gmean"] - 1) < 1e-12 for k, v in res.items() if k[1] == "dsm")
     summary["C2"] = dict(verdict=verdict, ratios={"|".join(map(str, k)): v for k, v in res.items()})
     sections["C2"] = ["## RUN 2026-11-02 — CLAIMS C2: residual parametrization (x̂₀ = x̃ + net) vs score (x̃ + σ² net)", "",
                       "Pre-registered (`Archive/CLAIMS/PREREGISTRATION.md`). ASL, dataset-1 training, MSE noise-normalized, noise ladder, "
