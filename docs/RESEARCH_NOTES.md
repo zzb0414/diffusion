@@ -290,17 +290,47 @@ subjects.
   to the posterior mean.
 - **If wrong:** if sampling wins in the finest bands, that is a striking result and deserves its own section.
 
-### 10. Order of work
+### 10. Claims ledger: intuition → theory → evidence (backbone of the article, 2026-11-02)
 
-1. ~~Adaptive-r headroom~~ (done 2026-10-29): adaptive r is a minor refinement; the depth-dependent r*(a) is the
-   centrepiece.
-2. ~~Decoder ablations and baselines on current data~~ (done 2026-10-30, notes 6b–6c). Remaining from this step:
-   further DL baselines (Neighbor2Neighbor / Blind2Unblind, Recorrupted-to-Recorrupted, DDM2).
-3. ~~Synthetic validation~~ (done 2026-11-01, note 6d). It opened a new priority: a model that sees all copies
-   (note 5 revisited with ample data).
-4. **Recipe clean-up for pooled data:** separate augmentation from ladder; select checkpoints by validation n_eff.
-5. **Multi-subject, multi-site data:** resolution handling (linear operators; with vs without voxel-size
-   conditioning), noise-spectrum conditioning, second application.
+Principle (user, 2026-11-02): no claim is guessed. Each claim gets an intuition, a theoretical argument or proof of
+concept, and pre-registered evidence. A claim is article-ready only when all three legs stand.
+
+| Claim | Intuition | Theory / proof of concept | Evidence | Gap |
+|---|---|---|---|---|
+| **C1** The strength r should be set by the averaging depth a | Averaging removes variance, not bias | Exact decomposition of the split-half error; closed-form r*(a) (note 3) ✓ | ASL sweeps; natural images with r chosen without ground truth (6d) ✓ | Write as a proposition |
+| **C2** The score parametrization x̂₀ = y + σ² net lowers bias, so it wins when outputs are averaged | The network only adds a σ²-scaled correction; its default is the input itself | **Missing:** a linear-Gaussian toy, the same estimator class in two parametrizations under finite training / regularization | DEC A: bias² halved at 3× variance (6b) ✓ | Toy derivation; residual-without-σ² ablation |
+| **C3** Training across noise levels (the ladder) gives robustness to shift | The model covers more noise conditions, so it extrapolates less | **Weak:** coverage argument only | DEC A on datasets 2–3 (6b) ✓, one training site | Toy with shifted noise; multi-site data |
+| **C4** Pair-based training needs no noise model; score-from-noisy-data methods do | E[target \| input] = E[clean \| input] for any zero-mean independent noise | Exact Tweedie needs the noise covariance (x̂ = y + Σ∇log p); a white-noise assumption is wrong for coloured noise ✓ | Noise2Score validation; natural images C05 (6c, 6d) ✓ | Write up |
+| **C5** The quality of the training target is marginal | Same identity as C4 | ✓ (note 4) | KR equivalence, 3 seeds (note 4) ✓ | — |
+| **C6** Generative sampling hurts | A sample carries the posterior variance on top | Two independent posterior draws differ by 2 tr Cov ✓ | DEC B, including the finest band (6b) ✓ | Write up |
+| **C7** With enough data, denoising the copy mean beats denoising each copy | The mean holds all the information (sufficiency) | Sufficiency ✓; **missing:** *when* per-copy + dial wins (data size × SNR regime) | Natural images +1.59 dB ✓; ASL data-limited (note 5) ✓ | Regime theory, or a controlled data-size × SNR sweep |
+| **C8** The ground-truth-free split-half estimator is unbiased | Independent halves | Proof by linearity ✓ | Natural images: within 1% (6d) ✓ | Write up |
+
+"Diffusion is better" is NOT a claim in this ledger. The evidence supports two narrower mechanisms: C2
+(parametrization → bias) and C3 (multi-noise training → robustness).
+
+### 11. Order of work (priority, 2026-11-02)
+
+1. **Learning-curve check on the natural-image models** (free: saved checkpoints at 1000 / 2000 / 3000 iterations).
+   Shows whether the 0.26 dB gap to BM3D is training budget. Natural images are a controlled sandbox (equal-budget
+   comparisons), not a leaderboard; no tuning against BM3D.
+2. **C2, theory and ablation.**
+   - A linear-Gaussian toy: an analytic derivation plus a small simulation of how parametrization and finite training
+     set bias and variance.
+   - The residual-without-σ² parametrization (x̂₀ = y + net) next to DSM and the direct regressor, to separate
+     "residual learning" from "σ² scaling".
+3. **Theory write-up of the closed legs (C1, C4, C6, C8)** as propositions with short proofs (a theory draft document).
+4. **C7 regime map:** natural images, per-copy + dial vs denoise-the-mean across training-set size and SNR, at equal
+   budget. Tells us when each mode wins, and where ASL sits.
+5. **C3:** a controlled noise-shift toy (train on one noise level / colour, test on others), with and without the
+   ladder.
+6. **Data-dependent, when the multi-subject ASL arrives:** denoise-the-mean on the larger ASL pool (re-running it on
+   current data is low priority); then the resolution study (fastMRI); recipe clean-up for pooled data (augmentation
+   vs ladder; checkpoint selection by validation n_eff).
+7. **Deferred:** tuning model size / training against BM3D; Blind2Unblind and DDM2 baselines.
+
+Done: adaptive-r headroom (note 3); decoder ablations and baselines (6b–6c); synthetic validation and the copy-mean
+test (6d).
 
 ---
 
@@ -313,3 +343,4 @@ subjects.
 - 2026-10-29: AR_HEADROOM folded into note 3; adaptive r demoted to a refinement.
 - 2026-10-30: step 2 results (DEC, BASE) added as notes 6b–6c; roadmap rows updated.
 - 2026-11-01: BASE-DL folded into 6c; step 3 (NAT) added as note 6d; NAT-SUB revives note 5.
+- 2026-11-02: claims ledger (note 10, intuition → theory → evidence, user's principle) and new priority order (note 11).
