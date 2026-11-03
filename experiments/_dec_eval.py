@@ -86,6 +86,7 @@ def main():
     ap.add_argument("--decoders", nargs="+", default=["tw"])
     ap.add_argument("--out", required=True)
     ap.add_argument("--check", default=None)
+    ap.add_argument("--sigma-scale", type=float, default=1.0, help="feed c * sigma_hat as the noise label (label sweep)")
     a_ = ap.parse_args()
     assert not os.path.exists(os.path.join(a_.out, "neff.csv")), "refusing to overwrite " + a_.out
     os.makedirs(a_.out, exist_ok=True)
@@ -102,7 +103,7 @@ def main():
             if folds[s] != k:
                 continue
             assert s not in cfg["train_slices"], "model trained on this slice index"
-            ens_t = x[i].to(device); sg = float(sig[i])
+            ens_t = x[i].to(device); sg = float(sig[i]) * a_.sigma_scale
             ens = ens_t.double().cpu().numpy()
             N, _, H, W = ens.shape
             mean10 = ens.mean(0); dev_ = ens - mean10
@@ -119,7 +120,7 @@ def main():
                                       seed=20261029 + 100000 * d + 1000 * s + int(round(r * 120))).double().cpu().numpy()
                     res = score(ens, outs, masks, s2, pn, f_r)
                     for a in A_SIZES:
-                        row = dict(dataset=d, slice=s, fold=k, sigma_hat=sg, walk=sg / floor, decoder=dec,
+                        row = dict(dataset=d, slice=s, fold=k, sigma_hat=float(sig[i]), sigma_scale=a_.sigma_scale, walk=sg / floor, decoder=dec,
                                    r=round(r, 4), a=a, neff_signal=res[(a, "signal")], neff_all=res[(a, "all")])
                         for b in range(4):
                             row[f"band{b}"] = res.get((a, f"band{b}"), "")

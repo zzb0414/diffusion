@@ -1976,3 +1976,33 @@ Ours / baseline, overall and finest band (geometric mean, slices where ours is b
 | DDM2-like stage III, one-shot (no sampling) (r = 0, as published) | 3 | 0.891 (6/34) | 1.036 (22/34) | 1.114 (26/34) | 1.139 (28/34) | 0.724 / 0.820 |
 
 **Data:** `runs/base/{classical,ours,n2s_eval}/neff.csv`, `runs/base/report_dl/summary.json`. **Commands:** `python baselines/evaluate.py --methods ...`; `bash runs/base/n2s_queue.sh`; `python baselines/report.py`.
+
+---
+
+## EXPLORATORY 2026-11-03 — LABEL SWEEP: does a mis-stated σ label recover datasets 2–3?
+
+Not pre-registered. The dataset-1 DSM models (seeds 101–103, DEC A) are fed c·σ̂ as the noise label
+(`experiments/_dec_eval.py --sigma-scale c`, queue `runs/label_sweep/queue.sh`, report
+`experiments/_label_sweep_report.py`); r cross-fitted as usual. c = 1 reproduces `runs/dec/A/eval` exactly.
+
+Geometric-mean n_eff (signal region):
+
+| dataset, a | c 0.6 | 0.75 | 0.9 | 1.0 | 1.15 | 1.3 | 1.5 | best c vs c = 1 | c cross-fitted vs c = 1 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| 1, a = 1 | 7.0 | 14.9 | 21.0 | 21.7 | 22.6 | 22.8 | 22.4 | 1.30: 1.052 (1.016–1.101) | 1.040 (1.004–1.090) |
+| 1, a = 9 | 30.6 | 36.6 | 39.1 | 39.0 | 39.4 | 38.1 | 37.3 | 1.15: 1.012 (0.988–1.048) | 0.988 (0.972–1.003) |
+| 2, a = 1 | 14.7 | 29.2 | 39.2 | 40.1 | 41.3 | 44.6 | 44.1 | 1.30: 1.112 (1.090–1.135) | 1.097 (1.070–1.125) |
+| 2, a = 9 | 54.6 | 59.5 | 59.4 | 60.7 | 61.2 | 59.6 | 61.1 | 1.15: 1.009 (0.998–1.020) | 1.000 (0.987–1.012) |
+| 3, a = 1 | 8.0 | 17.9 | 27.5 | 28.7 | 29.8 | 31.2 | 32.4 | 1.50: 1.133 (1.092–1.173) | 1.133 (1.093–1.173) |
+| 3, a = 9 | 39.8 | 50.2 | 54.4 | 56.6 | 56.1 | 55.8 | 56.3 | 1.00: 1.000 | 1.000 |
+
+(90% slice-bootstrap CIs.) **Reading:**
+- Over-stating the noise helps single maps everywhere, including dataset 1 (+5%), and more on datasets 2–3
+  (+11%, +13%; dataset 3 still rising at the grid edge). At a = 9 the label does nothing.
+- Against classic N2N at a = 1 (48.6 / 42.5), the best label closes about half of the dataset-2 gap (1.21× → 1.09×)
+  and about a third of the dataset-3 gap (1.48× → 1.31×). **The scalar label is not the main culprit.**
+- A larger label = stronger denoising, i.e. an effective dial r < 0, which the grid (r ≥ 0) does not allow. The
+  dataset-1 gain says the one-shot Tweedie estimate under-smooths single maps (consistent with C2: DSM = low bias,
+  high variance). The extra gain on datasets 2–3 is the part attributable to the label/noise mismatch.
+- Next: extend the dial below 0 (cheap, no training) to separate "needs more smoothing" from "wrong label"; then
+  the colour-matched ladder (C9).
