@@ -1936,3 +1936,43 @@ Not pre-registered. DEC networks (dataset 1, seeds 102–103; DSM vs direct-with
 | 1000 | 0.0386 / 0.0084 | 0.0539 / 0.0058 |
 | 1500 | 0.0329 / 0.0102 | 0.0511 / 0.0052 |
 | 2000 | 0.0316 / 0.0161 | 0.0480 / 0.0047 |
+
+---
+
+## RUN 2026-11-02 — BASE-DDM2: the method vs a DDM2-like baseline
+
+Pre-registered (`Archive/BASE/PREREGISTRATION_DDM2.md`); same splits, scoring and cross-fitting as BASE. DDM2-like pipeline (`baselines/ddm2.py`): stage I = classic Noise2Noise (self, per repetition; deviation: DDM2 uses the other volumes), stage II = residual noise level, stage III = score network trained on stage-I outputs, reverse-sampled from the matched level (DDM2) or decoded one-shot (DDM2-TW). Pre-registered (`Archive/BASE/PREREGISTRATION.md`). Ours = DSM, MSE noise-normalized, dataset-1 training, seeds 101–103, one-shot Tweedie + dial. Every method sees only the A half of each split; all methods are scored on the SAME fixed subset of 10 splits per a (unbiased, paired); every parameter is cross-fitted over the other folds' slices. Code: `baselines/`. The dry run gave 1.000.
+
+**PRIMARY (dataset 1, a = 1 and 9; n_eff ours / DDM2-like + dial, Holm over 2):**
+
+- vs ddm2 a=1: 0.954× (95% CI 0.843–1.045; ours better on 18/34), p = 0.76, Holm 0.76 → **no significant difference**
+- vs ddm2 a=9: 1.138× (95% CI 1.076–1.195; ours better on 29/34), p = 3.2e-06, Holm 6.4e-06 → **ours better**
+
+Geometric-mean n_eff (signal region) by method:
+
+| method | ds1 a=1 | ds1 a=3 | ds1 a=5 | ds1 a=9 | ds2 a=1 | ds2 a=3 | ds2 a=5 | ds2 a=9 | ds3 a=1 | ds3 a=3 | ds3 a=5 | ds3 a=9 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Ours (DSM + dial) | 21.68 | 31.94 | 34.34 | 38.95 | 40.07 | 53.86 | 61.37 | 60.66 | 28.65 | 41.30 | 59.56 | 56.63 |
+| DDM2-like + dial | 22.73 | 28.79 | 29.37 | 34.24 | 50.59 | 62.02 | 66.98 | 64.32 | 37.41 | 43.78 | 63.82 | 58.20 |
+| DDM2-like stage III, one-shot (no sampling) + dial | 22.24 | 28.37 | 29.18 | 33.96 | 47.78 | 60.86 | 65.83 | 63.81 | 32.16 | 39.74 | 55.84 | 53.94 |
+| DDM2-like (r = 0, as published) | 22.73 | 26.35 | 25.12 | 26.63 | 50.59 | 60.82 | 62.10 | 57.49 | 37.41 | 44.11 | 59.52 | 52.54 |
+| DDM2-like stage III, one-shot (no sampling) (r = 0, as published) | 22.24 | 26.81 | 25.87 | 27.40 | 47.78 | 61.84 | 63.38 | 59.18 | 32.16 | 39.85 | 53.49 | 49.71 |
+
+Ours / baseline, overall and finest band (geometric mean, slices where ours is better):
+
+| baseline | dataset | a = 1 | a = 3 | a = 5 | a = 9 | finest band a = 1 / 9 |
+|---|---:|---|---|---|---|---|
+| DDM2-like + dial | 1 | 0.954 (18/34) | 1.109 (28/34) | 1.169 (29/34) | 1.138 (29/34) | 0.782 / 1.027 |
+| DDM2-like + dial | 2 | 0.792 (4/34) | 0.869 (7/34) | 0.916 (10/34) | 0.943 (11/34) | 0.633 / 0.954 |
+| DDM2-like + dial | 3 | 0.766 (0/34) | 0.943 (10/34) | 0.933 (20/34) | 0.973 (19/34) | 0.557 / 0.925 |
+| DDM2-like stage III, one-shot (no sampling) + dial | 1 | 0.975 (19/34) | 1.126 (27/34) | 1.177 (29/34) | 1.147 (31/34) | 0.854 / 1.049 |
+| DDM2-like stage III, one-shot (no sampling) + dial | 2 | 0.839 (6/34) | 0.885 (8/34) | 0.932 (12/34) | 0.951 (11/34) | 0.871 / 0.889 |
+| DDM2-like stage III, one-shot (no sampling) + dial | 3 | 0.891 (6/34) | 1.039 (22/34) | 1.067 (23/34) | 1.050 (23/34) | 0.724 / 0.990 |
+| DDM2-like (r = 0, as published) | 1 | 0.954 (18/34) | 1.212 (28/34) | 1.367 (29/34) | 1.463 (32/34) | 0.782 / 0.969 |
+| DDM2-like (r = 0, as published) | 2 | 0.792 (4/34) | 0.886 (13/34) | 0.988 (21/34) | 1.055 (22/34) | 0.633 / 0.674 |
+| DDM2-like (r = 0, as published) | 3 | 0.766 (0/34) | 0.936 (15/34) | 1.001 (23/34) | 1.078 (25/34) | 0.557 / 0.762 |
+| DDM2-like stage III, one-shot (no sampling) (r = 0, as published) | 1 | 0.975 (19/34) | 1.191 (28/34) | 1.327 (29/34) | 1.422 (32/34) | 0.854 / 0.964 |
+| DDM2-like stage III, one-shot (no sampling) (r = 0, as published) | 2 | 0.839 (6/34) | 0.871 (9/34) | 0.968 (15/34) | 1.025 (21/34) | 0.871 / 0.713 |
+| DDM2-like stage III, one-shot (no sampling) (r = 0, as published) | 3 | 0.891 (6/34) | 1.036 (22/34) | 1.114 (26/34) | 1.139 (28/34) | 0.724 / 0.820 |
+
+**Data:** `runs/base/{classical,ours,n2s_eval}/neff.csv`, `runs/base/report_dl/summary.json`. **Commands:** `python baselines/evaluate.py --methods ...`; `bash runs/base/n2s_queue.sh`; `python baselines/report.py`.
