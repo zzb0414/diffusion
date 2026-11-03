@@ -1923,3 +1923,16 @@ Mean PSNR (dB), OURS / SUB, a = 1 and a = 9:
 | W20 | 25 | 17.59 / 17.37 | 19.43 / 19.23 |
 | W20 | 100 | 17.98 / 17.26 | 19.92 / 19.04 |
 | W20 | 400 | 17.77 / 17.21 | 19.98 / 19.62 |
+
+---
+
+## EXPLORATORY 2026-11-02 — CLAIMS C2-LC: does the score-vs-direct bias gap close with training?
+
+Not pre-registered. DEC networks (dataset 1, seeds 102–103; DSM vs direct-with-ladder) at 500–2000 iterations; median bias² b and per-map variance v (units of σ²) from the exact decomposition. The linear toy predicts a transient gap.
+
+| iteration | DSM b / v | DIR_L b / v |
+|---:|---|---|
+| 500 | 0.0433 / 0.0123 | 0.0607 / 0.0073 |
+| 1000 | 0.0386 / 0.0084 | 0.0539 / 0.0058 |
+| 1500 | 0.0329 / 0.0102 | 0.0511 / 0.0052 |
+| 2000 | 0.0316 / 0.0161 | 0.0480 / 0.0047 |
