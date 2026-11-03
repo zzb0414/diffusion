@@ -24,7 +24,7 @@ ARMS, ROWS = ("A", "B", "C", "D", "E"), (320, 128, 80)
 
 def best_r(arm, setting, M):
     s = defaultdict(float)
-    for r in csv.DictReader(open(os.path.join("runs", "res", "eval", f"{arm}_s101.csv"), encoding="utf-8")):
+    for r in csv.DictReader(open(os.path.join("runs", D.RUN_DIR, "eval", f"{arm}_s101.csv"), encoding="utf-8")):
         if r["setting"] == setting and int(r["M"]) == M and r["a"] == "1":
             s[float(r["r"])] += float(r["mse_sh_head"])
     return min(s, key=s.get)
@@ -35,8 +35,8 @@ def main():
     os.chdir(D.REPO)
     dev = "cuda"
     x, vol = D.load_clean("test")
-    models = {a: Mo.load(os.path.join("runs", "res", f"{a}_s101", "ckpt", "res_003000.pkl"), dev)[0] for a in ARMS}
-    out = os.path.join("runs", "res", "report"); os.makedirs(out, exist_ok=True)
+    models = {a: Mo.load(os.path.join("runs", D.RUN_DIR, f"{a}_s101", "ckpt", "res_003000.pkl"), dev)[0] for a in ARMS}
+    out = os.path.join("runs", D.RUN_DIR, "report"); os.makedirs(out, exist_ok=True)
     for setting, sfun in E.SETTINGS.items():
         fig, ax = plt.subplots(len(ROWS), 2 + len(ARMS), figsize=(2.2 * (2 + len(ARMS)), 2.4 * len(ROWS)))
         fe, axe = plt.subplots(len(ROWS), 1 + len(ARMS), figsize=(2.2 * (1 + len(ARMS)), 2.4 * len(ROWS)))
@@ -60,7 +60,7 @@ def main():
             ax[i, 0].set_ylabel(f"M = {M}"); axe[i, 0].set_ylabel(f"M = {M}")
         for a_ in list(ax.flat) + list(axe.flat):
             a_.set_xticks([]); a_.set_yticks([])
-        lab = "physical noise σ = M/320" if setting == "phys" else "matched noise σ = 0.5"
+        lab = f"physical noise σ = {D.S_K:g}·M/320" if setting == "phys" else f"matched noise σ = {0.5 * D.S_K:g}"
         fig.suptitle(f"RES, test image {args.img} (vol {vol[args.img]}), {lab}, single copy (a = 1), seed 101")
         fe.suptitle(f"|error| (×3 display gain), same image, {lab}")
         fig.tight_layout(); fe.tight_layout()

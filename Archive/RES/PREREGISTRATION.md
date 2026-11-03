@@ -47,3 +47,13 @@ Held-out matrices (never trained by B–E): 240 and 128 (in between), with 320 a
 
 ## No-overwrite
 Outputs only under `runs/res/`; cache under `~/diffusion_cache/res` (outside OneDrive). Scripts refuse to overwrite.
+
+## Addendum 2026-11-03 — low-noise repeat (S_K = 0.25), written before any S_K = 0.25 model was trained
+Reason: at S_K = 1 the head signal is 0.38× the per-pixel noise at M = 320 and every arm keeps < 15% of the outer half
+of k-space (frequency-band transfer, checked on 15 test images); the arm comparison was made in the heavy-smoothing
+regime only. The repeat asks whether the conclusions hold where most detail survives.
+- Identical design, code, arms, seeds, read-outs and tests; only `RES_SK=0.25` (σ(M) = 0.25·M/320: 0.25 at 320,
+  0.0625 at 80; matched setting σ = 0.125 = σ(160)). Outputs `runs/res_sk0.25/`; the S_K = 1 results are untouched.
+- Predictions: C ≈ B again (primary, ±5%); A still collapses at 80 under physical noise (below its ladder) and recovers
+  under matched noise; D again fails under matched noise; the specialist advantage of A at 160 (1.20× at S_K = 1) and
+  the single-image advantage of E (1.1–1.25×) are open — no directional prediction.

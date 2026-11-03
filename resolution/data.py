@@ -35,7 +35,8 @@ FULL = 320
 RES = (320, 240, 160, 128, 80)            # matrices at FOV 220 mm: voxel 0.69, 0.92, 1.38, 1.72, 2.75 mm
 FOV_MM = 220.0
 N = 10
-S_K = 1.0                                 # k-space noise std per channel -> sigma(320) = 1.0, sigma(80) = 0.25
+S_K = float(os.environ.get("RES_SK", "1.0"))  # k-space noise std per channel -> sigma(320) = S_K, sigma(80) = S_K / 4
+RUN_DIR = "res" if S_K == 1.0 else f"res_sk{S_K:g}"   # runs/<RUN_DIR>: 1.0 = the original study; RES_SK=0.25 = low-noise repeat
 NSL = 8                                   # central slices per volume
 N_TEST_VOL = 15
 SEED = 20261103

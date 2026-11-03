@@ -11,18 +11,21 @@ to WEEKEND_ITERATIONS.md once (guarded by its heading) unless --dry.
 import os, sys, csv, json, argparse
 from collections import defaultdict
 import numpy as np
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import data as Dd                                                        # noqa: E402
 from scipy.stats import wilcoxon
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ARMS, SEEDS, RES, A = ("A", "B", "C", "D", "E"), (101, 102, 103), (320, 240, 160, 128, 80), (1, 3, 5, 9)
-HEAD = "## RUN 2026-11-03 — RES: one denoiser across resolutions (fastMRI, physical noise)"
+HEAD = "## RUN 2026-11-03 — RES: one denoiser across resolutions (fastMRI, physical noise)" + (
+    "" if Dd.S_K == 1.0 else f" — low-noise repeat (S_K = {Dd.S_K:g})")
 rng = np.random.default_rng(0)
 
 
 def read(arm, seed):
     """{(setting, M, a, r): {img: (vol, sigma, mse_gt, mse_sh)}}"""
     T = defaultdict(dict)
-    for r in csv.DictReader(open(os.path.join(REPO, "runs", "res", "eval", f"{arm}_s{seed}.csv"), encoding="utf-8")):
+    for r in csv.DictReader(open(os.path.join(REPO, "runs", Dd.RUN_DIR, "eval", f"{arm}_s{seed}.csv"), encoding="utf-8")):
         T[(r["setting"], int(r["M"]), int(r["a"]), float(r["r"]))][int(r["img"])] = (
             int(r["vol"]), float(r["sigma"]), float(r["mse_gt_head"]), float(r["mse_sh_head"]))
     return T
@@ -84,7 +87,7 @@ def main():
     est = {(M, a): float(np.exp(np.mean([np.mean(arm_vol(TT, "B", "phys", M, a, "sh") - V[("B", "phys", M, a)])])))
            for M in RES for a in (1, 9)}
     L = [HEAD, "", "Pre-registered (`Archive/RES/PREREGISTRATION.md`). fastMRI AXT2, 15 test volumes × 8 slices; "
-         "physical noise σ(M) = M/320 per channel; n_eff = σ²/MSE vs ground truth (head mask), r chosen without ground "
+         "physical noise σ(M) = " + ("" if Dd.S_K == 1.0 else f"{Dd.S_K:g} × ") + "M/320 per channel; n_eff = σ²/MSE vs ground truth (head mask), r chosen without ground "
          "truth (leave-one-volume-out); seeds 101–103. Training matrices: A {160}; B–E {80, 160, 320}.", "",
          "**PRIMARY (n_eff C / B, physical noise, held-out matrices; Holm over 4):**", ""]
     for (M, a), v in prim.items():
@@ -92,7 +95,7 @@ def main():
                  f"{v['wins']}/{v['n']} volumes), p = {v['p']:.2g}, Holm {v['p_holm']:.2g} → **{v['verdict']}**")
     for st in ("phys", "matched"):
         for a in (1, 9):
-            L += ["", f"n_eff ({'physical' if st == 'phys' else 'matched σ = 0.5'} noise, a = {a}; geometric mean over volumes):", "",
+            L += ["", f"n_eff ({'physical' if st == 'phys' else f'matched σ = {0.5 * Dd.S_K:g}'} noise, a = {a}; geometric mean over volumes):", "",
                   "| arm | " + " | ".join(f"M = {M}" for M in RES) + " |", "|---|" + "---:|" * len(RES)]
             for arm in ARMS:
                 L.append(f"| {arm} | " + " | ".join("%.2f" % gm(V[(arm, st, M, a)]) for M in RES) + " |")
@@ -106,9 +109,9 @@ def main():
     L += ["", "Estimator check (arm B, physical noise): split-half n_eff / ground-truth n_eff, geometric mean over volumes: " +
           ", ".join(f"M {M} a {a}: {v:.3f}" for (M, a), v in est.items()), ""]
     print("\n".join(L))
-    os.makedirs(os.path.join(REPO, "runs", "res", "report"), exist_ok=True)
+    os.makedirs(os.path.join(REPO, "runs", Dd.RUN_DIR, "report"), exist_ok=True)
     json.dump({"primary": {f"{M}|{a}": v for (M, a), v in prim.items()}, "estimator": {f"{M}|{a}": v for (M, a), v in est.items()}},
-              open(os.path.join(REPO, "runs", "res", "report", "summary.json"), "w"), indent=2)
+              open(os.path.join(REPO, "runs", Dd.RUN_DIR, "report", "summary.json"), "w"), indent=2)
     log = os.path.join(REPO, "WEEKEND_ITERATIONS.md")
     if HEAD not in open(log, encoding="utf-8").read():
         with open(log, "a", encoding="utf-8") as f:

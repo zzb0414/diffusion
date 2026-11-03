@@ -3,7 +3,7 @@
 
 For one checkpoint: every test image (15 volumes x 8 slices) at every matrix M in data.RES, under two noise settings:
   phys     the physical setting (per-channel noise sigma(M) = S_K M / 320; primary)
-  matched  per-channel noise 0.5 at every M (diagnostic: separates image scale from noise level)
+  matched  per-channel noise 0.5 * S_K (= sigma(160)) at every M (diagnostic: separates image scale from noise level)
 Each copy is decoded once (one-shot Tweedie / direct output), blended with r, averaged over the fixed subsets of size a
 (baselines/_common.splits). Arm D: copies zero-filled to the 320 grid, decoded there, and brought back to M.
 Arm C: the voxel size of M is passed. Rows per (image, r, a): mse_gt (vs the clean image at M) and mse_sh (split-half,
@@ -22,7 +22,7 @@ from _common import splits
 
 A_EVAL = (1, 3, 5, 9)
 RGRID = (0.0, 1 / 12, 1 / 6, 0.25, 1 / 3, 0.5)
-SETTINGS = {"phys": lambda M: D.sigma(M), "matched": lambda M: 0.5}
+SETTINGS = {"phys": lambda M: D.sigma(M), "matched": lambda M: 0.5 * D.S_K}
 
 
 def copies(x320, i, M, s):
