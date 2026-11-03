@@ -118,8 +118,12 @@ means, (1/a) Σ_k E[x | y_k], differs from it in general. ∎
   rely on the prior.
 - On natural images the measured gap is larger (+1.59 dB ≈ 1.44× n_eff at SNR ≈ 1, NAT-SUB). Nonlinear priors widen
   it: one very noisy copy carries less usable structure than the linear model credits.
-- **Open (regime map):** with finite data, the mean denoiser must be learned at noise σ/√a from the same images, and
-  on ASL it lost (data-limited, GROUND SM). The C7 regime map measures when each wins.
+- **Regime map (CLAIMS C7, natural images, a = 9):** mean-denoising wins by +1.6 to +2.2 dB at σ 0.5 for 25, 100
+  and 400 training images, but loses by 0.2–0.9 dB at σ 2.0. Training-set size is not the driver; noise level is.
+- **Open:** the reversal at very low SNR is outside this proposition. In the Gaussian model the gap shrinks toward 1
+  at low SNR but never favours per-copy denoising. Candidates: the learned mean denoiser sees a single noise level
+  and a copies fewer training samples per image; nonlinear priors learned at very low SNR are poor. ASL
+  (per-repetition SNR ≈ 0.04–0.13) sits in this regime.
 
 ## P6 (C2, proof of concept). The parametrization fixes the side from which the optimum is approached
 
@@ -142,10 +146,21 @@ all three reach the Wiener optimum within about 1000 steps.
   higher variance, as DEC A measured (bias² halved, variance ×3).
 - It does not explain why the gap *persists* in networks at 2000 iterations. Candidates are non-convexity, finite
   capacity, and implicit regularization of over-parametrized models.
-- **Pending:** the gap's evolution over training in the DEC networks (CLAIMS C2-LC), and the residual-vs-score
-  ablation (CLAIMS C2), which tests the "one output scale across noise levels" role of σ².
+- **Network results contradict the toy's two other predictions:**
+  - *Residual ≈ score is false in networks.* The residual parametrization behaves like the direct one (within 5%
+    everywhere) and loses to score at a = 9 (0.857×; CLAIMS C2). Starting at the identity is not enough; the σ²
+    scaling is what matters.
+  - *The gap is not transient.* From 500 to 2000 iterations DSM's bias² stays about one third below the direct
+    model's (0.043→0.032 vs 0.061→0.048), while DSM's variance rises after 1000 iterations (CLAIMS C2-LC).
+- **Revised status:** the toy explains the direction only. The working hypothesis is that σ² scaling acts as a
+  persistent, level-dependent shrinkage of the network's correction (small corrections at low noise, one output
+  scale across levels). It needs its own argument; this is the main open theory item.
 
 ## Not yet covered
 
-- **C3 (multi-noise training → robustness):** coverage argument only; CLAIMS C3 is the controlled test.
-- **The C7 finite-data regime:** CLAIMS C7.
+- **C3 (multi-noise training → robustness):** coverage argument only. CLAIMS C3 supports it only upward: the
+  ladder adds noise, so σ-conditioned models fail when the test noise is below the training noise (W035, a = 1:
+  16.4 dB vs 22.6 dB for blind N2N). The coverage argument predicts exactly this; the claim must be stated as
+  coverage, not as general robustness.
+- **The C7 reversal at very low SNR** (P5, open).
+- **Why σ² scaling regularizes** (P6, open).

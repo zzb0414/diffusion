@@ -104,6 +104,13 @@ noise alone.
   - **The dial acts as a bias correction** for an imperfect denoiser.
 - *Conclusion:* statistically optimal in principle; at this data scale, PER with a tuned dial is the better practical
   estimator. Revisit with much larger data.
+- **Revised by CLAIMS C7 (2026-11-02): the regime is set by noise level, not data size.** On natural images, denoising
+  the mean wins at moderate noise (σ 0.5: +1.6 to +2.2 dB at a = 9, 68/68 images) even with only 25 training
+  images. At heavy noise (σ 2.0) per-copy + dial ties or wins (−0.2 to −0.9 dB for the mean). ASL repetitions have
+  per-repetition SNR ≈ 0.04–0.13, i.e. the heavy-noise regime, so "data-limited" is probably the wrong explanation
+  for the ASL result. This reading is an interpretation: the linear-Gaussian toy (THEORY P5) predicts a gap that
+  shrinks at low SNR but never reverses, so the reversal needs its own explanation (candidates: the mean denoiser is
+  learned at a single noise level σ/√a, without the ladder; the per-copy model sees a copies' worth of samples).
 
 ### 6. Training-recipe findings (supported)
 
@@ -161,7 +168,22 @@ Pre-registered, all methods on the same splits, every parameter cross-fitted (`A
   ours (62.3 vs 60.7 at a = 9). Generalization across coils is the open problem.
 - **Self-supervised DL baselines (BASE-DL, dataset 1, a = 9):** ours beats classic Noise2Noise (1.11×), N2N + σ
   (1.14×), Noise2Self (1.54×), R2R (1.85×) and Neighbor2Neighbor (2.02×). Classic Noise2Noise beats ours for single
-  maps and on datasets 2–3 at most depths: it is the most robust competitor. DDM2 not implemented (limitation).
+  maps and on datasets 2–3 at most depths: it is the most robust competitor.
+- **DDM2-like baseline (BASE-DDM2, pre-registered).** Stage I = classic Noise2Noise per repetition (deviation:
+  DDM2 uses the other volumes), stage II = residual noise level, stage III = diffusion model trained on stage-I
+  outputs, reverse-sampled from the matched level.
+  - **Primary (dataset 1):** ours ties at a = 1 (0.954×, p = 0.76) and wins at a = 9 (1.138×, 29/34 slices,
+    Holm 6e-6). Against DDM2 as published (no dial) ours wins 1.46× at a = 9.
+  - **Datasets 2–3: DDM2 is better** at a = 1 (ours 0.79× and 0.77×; the finest band 0.56–0.63×), and roughly
+    ties at a = 9 (0.94×, 0.97×).
+  - **Diffusion adds little over its own stage I.** DDM2 + dial is below classic N2N + dial in all 8 cells of
+    datasets 1 and 3 (e.g. dataset 1, a = 1: 22.7 vs 25.4; dataset 3, a = 1: 37.4 vs 42.5), and above it on
+    dataset 2 (by 3–6%, all depths). Its strength on datasets 2–3 mostly reflects classic N2N's, which we already
+    knew. (Cross-report comparison, same splits and scoring; not a pre-registered test.)
+  - **Sampling did not hurt DDM2** (sample ≥ one-shot Tweedie of the same network in most cells). This does not
+    contradict P4, which concerns sampling the true posterior: stage III learns a prior of smooth pseudo-clean
+    images, whose posterior is narrow. Candidate explanation, not tested: a multi-step walk copes better than one
+    Tweedie step with the coloured real noise, which the stage-III model never saw (it was trained on white noise).
 
 ### 6d. Step 3: ground truth on natural images (established, NAT; reading supported)
 
@@ -225,6 +247,12 @@ Pre-registered (`Archive/NAT`): Train400 → BSD68, 10 fixed noisy copies, σ = 
   - Patch2Self (MRI volumes; closest in data setting).
   - DDM2 (diffusion-based MRI denoising).
 - **Supervised DL** needs clean data, which this setting doesn't have.
+
+**Versus DDM2 (the likely reviewer reference; BASE-DDM2 in 6c).** DDM2 is a three-stage pipeline whose diffusion
+model learns from a CNN's pseudo-clean outputs, so it inherits that CNN's bias and needs a noise-matching stage. Ours
+is one network trained directly on real noisy pairs, with a decoding strength set by the averaging depth. Measured:
+ours ties DDM2 for single maps and wins 1.14× at a = 9 on the training dataset (1.46× vs DDM2 as published); DDM2
+is better for single maps on datasets 2–3.
 
 **Not novel by itself:** a one-shot Tweedie estimate from an N2N-trained score (≈ Noise2Score + N2N), and target
 insensitivity (N2N theory).
@@ -298,16 +326,20 @@ concept, and pre-registered evidence. A claim is article-ready only when all thr
 | Claim | Intuition | Theory / proof of concept | Evidence | Gap |
 |---|---|---|---|---|
 | **C1** The strength r should be set by the averaging depth a | Averaging removes variance, not bias | Exact decomposition of the split-half error; closed-form r*(a) (note 3) ✓ | ASL sweeps; natural images with r chosen without ground truth (6d) ✓ | Write as a proposition |
-| **C2** The score parametrization x̂₀ = y + σ² net lowers bias, so it wins when outputs are averaged | The network only adds a σ²-scaled correction; its default is the input itself | **Missing:** a linear-Gaussian toy, the same estimator class in two parametrizations under finite training / regularization | DEC A: bias² halved at 3× variance (6b) ✓ | Toy derivation; residual-without-σ² ablation |
-| **C3** Training across noise levels (the ladder) gives robustness to shift | The model covers more noise conditions, so it extrapolates less | **Weak:** coverage argument only | DEC A on datasets 2–3 (6b) ✓, one training site | Toy with shifted noise; multi-site data |
+| **C2** The score parametrization x̂₀ = y + σ² net lowers bias, so it wins when outputs are averaged | The network only adds a σ²-scaled correction; its default is the input itself | Linear toy (THEORY P6): direction ✓, but predicts a transient gap and residual ≈ score — **both wrong in networks** | DEC A: bias² halved at 3× variance ✓. C2: residual (y + net) = direct, 0.857× DSM at a = 9 → the σ² scaling, not residual learning, carries it ✓. C2-LC: gap persists 500–2000 iterations ✓ | A theory of *why σ² scaling* regularizes in networks (one output scale across levels?) |
+| **C3** Training across noise levels (the ladder) gives robustness to shift | The model covers more noise conditions, so it extrapolates less | **Weak:** coverage argument only | **Mixed (CLAIMS C3):** +2.9 dB for single maps at higher noise (W07); −0.7 dB at a = 9; ±0.3 dB with coloured noise; **collapse at lower noise** (W035, a = 1: 16.4 dB vs blind N2N 22.6) — the ladder only adds noise, so σ conditioning never sees levels below the training noise | Narrow the claim to "upward" robustness, or extend the ladder below the native noise (e.g. via the split-half mean) and re-test |
 | **C4** Pair-based training needs no noise model; score-from-noisy-data methods do | E[target \| input] = E[clean \| input] for any zero-mean independent noise | Exact Tweedie needs the noise covariance (x̂ = y + Σ∇log p); a white-noise assumption is wrong for coloured noise ✓ | Noise2Score validation; natural images C05 (6c, 6d) ✓ | Write up |
 | **C5** The quality of the training target is marginal | Same identity as C4 | ✓ (note 4) | KR equivalence, 3 seeds (note 4) ✓ | — |
 | **C6** Generative sampling hurts | A sample carries the posterior variance on top | Two independent posterior draws differ by 2 tr Cov ✓ | DEC B, including the finest band (6b) ✓ | Write up |
-| **C7** With enough data, denoising the copy mean beats denoising each copy | The mean holds all the information (sufficiency) | Sufficiency ✓; **missing:** *when* per-copy + dial wins (data size × SNR regime) | Natural images +1.59 dB ✓; ASL data-limited (note 5) ✓ | Regime theory, or a controlled data-size × SNR sweep |
+| **C7** At moderate noise, denoising the copy mean beats denoising each copy; at very low SNR it does not | The mean holds all the information (sufficiency) | Sufficiency ✓; Gaussian gap peaks at mid SNR (THEORY P5) ✓; **missing:** why per-copy *wins* at very low SNR | CLAIMS C7: +1.6–2.2 dB at σ 0.5 for n = 25–400; −0.2 to −0.9 dB at σ 2.0 ✓ (note 5) | Explain the reversal; place ASL on the map |
 | **C8** The ground-truth-free split-half estimator is unbiased | Independent halves | Proof by linearity ✓ | Natural images: within 1% (6d) ✓ | Write up |
 
 "Diffusion is better" is NOT a claim in this ledger. The evidence supports two narrower mechanisms: C2
 (parametrization → bias) and C3 (multi-noise training → robustness).
+
+Status 2026-11-03: LC (natural-image models still improving at 3000 iterations; ours still = supervised per-copy),
+C2, C2-LC, C3, C7 and BASE-DDM2 done (`WEEKEND_ITERATIONS.md`). C2 is now the best-supported mechanism, sharpened to
+"σ² output scaling". C3 is narrowed. C7 is reframed from data size to noise regime.
 
 ### 11. Order of work (priority, 2026-11-02)
 
@@ -327,10 +359,16 @@ concept, and pre-registered evidence. A claim is article-ready only when all thr
 6. **Data-dependent, when the multi-subject ASL arrives:** denoise-the-mean on the larger ASL pool (re-running it on
    current data is low priority); then the resolution study (fastMRI); recipe clean-up for pooled data (augmentation
    vs ladder; checkpoint selection by validation n_eff).
-7. **Deferred:** tuning model size / training against BM3D; Blind2Unblind and DDM2 baselines.
+7. **Deferred:** tuning model size / training against BM3D; Blind2Unblind.
 
 Done: adaptive-r headroom (note 3); decoder ablations and baselines (6b–6c); synthetic validation and the copy-mean
-test (6d).
+test (6d); items 1–5 above and the DDM2-like baseline (2026-11-02/03, results in notes 5, 6c and 10).
+
+**Next (2026-11-03), in order:**
+1. The resolution study (fastMRI) and the pooled-recipe clean-up (agreed with the user).
+2. Follow-ups opened by today's results: a ladder that also reaches below the native noise (fixes the C3 collapse);
+   the C7 reversal at low SNR; why σ² scaling regularizes (C2 theory).
+3. Single-map weakness vs classic N2N / DDM2 on datasets 2–3: the most visible soft spot a reviewer will find.
 
 ---
 
@@ -344,3 +382,4 @@ test (6d).
 - 2026-10-30: step 2 results (DEC, BASE) added as notes 6b–6c; roadmap rows updated.
 - 2026-11-01: BASE-DL folded into 6c; step 3 (NAT) added as note 6d; NAT-SUB revives note 5.
 - 2026-11-02: claims ledger (note 10, intuition → theory → evidence, user's principle) and new priority order (note 11).
+- 2026-11-03: CLAIMS (LC, C2, C2-LC, C3, C7) and BASE-DDM2 folded into notes 5, 6c, 10 and 11.
