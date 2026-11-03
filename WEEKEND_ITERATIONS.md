@@ -1897,3 +1897,29 @@ Pre-registered (`Archive/CLAIMS/PREREGISTRATION.md`). ASL, dataset-1 training, M
 | RESID / DIRL | 1 | 0.963 (0.953–0.972) | 0.985 (0.978–0.992) |
 | RESID / DIRL | 2 | 0.981 (0.967–0.993) | 1.007 (0.999–1.015) |
 | RESID / DIRL | 3 | 0.951 (0.930–0.971) | 0.988 (0.977–0.999) |
+
+---
+
+## RUN 2026-11-02 — CLAIMS C7: when does denoising the copy mean win? (training-set size × noise)
+
+Pre-registered (`Archive/CLAIMS/PREREGISTRATION.md`). OURS (per copy + dial) vs SUB (denoise the copy mean), trained on the first n Train400 images; BSD68, r chosen without ground truth.
+
+**PRIMARY (PSNR(SUB) − PSNR(OURS) at a = 9, Holm over 6):**
+
+- W05, n = 25: +2.13 dB (95% CI +1.98 to +2.29; 68/68 images), p = 7.6e-13, Holm 4.6e-12
+- W05, n = 100: +2.21 dB (95% CI +2.04 to +2.36; 68/68 images), p = 7.6e-13, Holm 4.6e-12
+- W05, n = 400: +1.59 dB (95% CI +1.47 to +1.71; 68/68 images), p = 7.6e-13, Holm 4.6e-12
+- W20, n = 25: -0.20 dB (95% CI -0.48 to +0.07; 35/68 images), p = 0.62, Holm 0.62
+- W20, n = 100: -0.88 dB (95% CI -1.22 to -0.57; 19/68 images), p = 7.9e-06, Holm 2.4e-05
+- W20, n = 400: -0.36 dB (95% CI -0.63 to -0.10; 32/68 images), p = 0.081, Holm 0.16
+
+Mean PSNR (dB), OURS / SUB, a = 1 and a = 9:
+
+| condition | n | a = 1 | a = 9 |
+|---|---:|---|---|
+| W05 | 25 | 21.72 / 21.86 | 23.13 / 25.27 |
+| W05 | 100 | 22.35 / 22.42 | 23.79 / 25.99 |
+| W05 | 400 | 22.55 / 22.47 | 24.48 / 26.07 |
+| W20 | 25 | 17.59 / 17.37 | 19.43 / 19.23 |
+| W20 | 100 | 17.98 / 17.26 | 19.92 / 19.04 |
+| W20 | 400 | 17.77 / 17.21 | 19.98 / 19.62 |
