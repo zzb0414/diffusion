@@ -210,6 +210,28 @@ Pre-registered (`Archive/NAT`): Train400 → BSD68, 10 fixed noisy copies, σ = 
   estimates. The open questions are making SUB work with few training slices (pooled multi-site data) and closing the
   last 0.26 dB to BM3D (capacity, iterations).
 
+### 6e. Data: re-reconstruction and QA (2026-11-03)
+
+- **Re-reconstruction.** Datasets 1–3 were rebuilt with `spiral/prepare_asl_dataset.py` (extracted from the
+  preparation notebook). Two recon bugs were fixed: the Jupiter GIRF was applied to Omega data, and the CG-SENSE inner
+  products lacked complex conjugation. The old pipeline reproduces the old files to 1e-5. The fix changes the maps by
+  33% (mean of 10) but barely changes the noise level or colour. Old files are in
+  `asl_for_diffusion/_old_recon_2026-11-03/`. **All results above used the old reconstruction; retraining is needed.**
+  - Dataset 1 = 20260924/17902872310000, dataset 2 = 20261005/17912367870000 (VSS), dataset 3 =
+    20261005/17912367510000. M0, control and label volumes are saved next to each subtraction file.
+  - The 20261102 pcASL scan is excluded (stronger labelling gradient, Gss 10/1 vs 2.7/0.3, different subtraction
+    convention).
+- **Noise colour is not set by the recon.** All three share the trajectory and the reconstruction. The coarse-heavy
+  datasets (1, 3) have more residual static signal after background suppression (4.9%, 4.7% of M0 vs 3.9% for
+  dataset 2). Working hypothesis for C9: the repetition-to-repetition variation has a thermal part (DCF-shaped) and a
+  physiological part (fluctuating residual tissue signal, smooth). Background suppression (1 selective + 3
+  non-selective inversions) makes the control the negative-polarity image, so subtraction must stay complex.
+- **Independence gate** (`asl_for_diffusion/QA_2026-11-03/make_qa.py` → `qa_independence.txt`). N2N training and the
+  split-half evaluation assume independent repetitions. The test is the lag correlation of the deviations from the
+  repetition mean, against a permutation null. Datasets 1 and 2 pass. **Dataset 3 is flagged:** a slow fluctuation
+  across the scan (lag 1 +0.17, lags 3–4 −0.33 at coarse scale), i.e. physiological variation that averaging does not
+  remove. Its results carry this caveat. Run the gate on every new subject before training.
+
 ---
 
 ## Part II — Draft roadmap (for discussion, 2026-10-29)
@@ -334,6 +356,8 @@ concept, and pre-registered evidence. A claim is article-ready only when all thr
 | **C7** At moderate noise, denoising the copy mean beats denoising each copy; at very low SNR it does not | The mean holds all the information (sufficiency) | Sufficiency ✓; Gaussian gap peaks at mid SNR (THEORY P5) ✓; **missing:** why per-copy *wins* at very low SNR | CLAIMS C7: +1.6–2.2 dB at σ 0.5 for n = 25–400; −0.2 to −0.9 dB at σ 2.0 ✓ (note 5) | Explain the reversal; place ASL on the map |
 | **C8** The ground-truth-free split-half estimator is unbiased | Independent halves | Proof by linearity ✓ | Natural images: within 1% (6d) ✓ | Write up |
 
+| **C9 (candidate, 2026-11-03)** Noise colour, not level, limits cross-dataset transfer; a colour-matched ladder fixes it within a dataset | Spiral iterative recon with DCF preconditioning makes the noise intrinsically coloured, with a shape set by trajectory and recon; a scalar σ label and a white ladder cannot describe it | (y_i − y_j)/√2 from two other repetitions is noise with exactly the acquisition's covariance, independent of the input: an exact, model-free colour-matched ladder | **Pending:** label sweep (is the scalar label the problem?); then a colour-matched-ladder ablation; per-band labels for cross-dataset transfer | Literature check: noise from difference images is the classic NEMA SNR method; using it as a noise-augmentation ladder for self-supervised training may still be new |
+
 "Diffusion is better" is NOT a claim in this ledger. The evidence supports two narrower mechanisms: C2
 (parametrization → bias) and C3 (multi-noise training → robustness).
 
@@ -383,3 +407,4 @@ test (6d); items 1–5 above and the DDM2-like baseline (2026-11-02/03, results 
 - 2026-11-01: BASE-DL folded into 6c; step 3 (NAT) added as note 6d; NAT-SUB revives note 5.
 - 2026-11-02: claims ledger (note 10, intuition → theory → evidence, user's principle) and new priority order (note 11).
 - 2026-11-03: CLAIMS (LC, C2, C2-LC, C3, C7) and BASE-DDM2 folded into notes 5, 6c, 10 and 11.
+- 2026-11-03: data re-reconstruction, dataset 4 excluded, independence QA gate (note 6e).
