@@ -6,6 +6,10 @@
   C   as B, plus the voxel size as a second conditioning (its own sinusoidal embedding added to the noise embedding)
   D   standardize: every image brought to the 320 grid by zero-filling k-space (linear), denoised there, brought back
   E   classic Noise2Noise (direct output, no sigma input, native noise, one other copy as target) on {80, 160, 320}
+MEAN study (Archive/MEAN/PREREGISTRATION.md):
+  SUB denoise the mean: input = mean of a random m-subset of the copies (m ~ U{1..9}, label sigma/sqrt(m)), N2N target =
+      mean of the other copies (N2N_DSM.loss_subset); trained at 160 only, ladder floor sigma/3. Its per-copy
+      counterpart is arm A.
 """
 import torch
 import data as D
@@ -13,7 +17,8 @@ from unet import UNet, TimeEmbed                              # noqa: E402
 from n2n import N2N_DSM                                      # noqa: E402
 
 ARMS = {"A": dict(train_res=(160,)), "B": dict(train_res=(80, 160, 320)), "C": dict(train_res=(80, 160, 320), vox=True),
-        "D": dict(train_res=(80, 160, 320), grid=D.FULL), "E": dict(train_res=(80, 160, 320), classic=True)}
+        "D": dict(train_res=(80, 160, 320), grid=D.FULL), "E": dict(train_res=(80, 160, 320), classic=True),
+        "SUB": dict(train_res=(160,), sub=True)}
 NET_BASE, NET_EMB, L, LADDER_TOP = 32, 32, 40, 5.0
 
 
@@ -55,7 +60,7 @@ def build(arm, dev):
     Net = VoxUNet if spec.get("vox") else UNet
     net = Net(in_ch=2, out_ch=2, base_out=NET_BASE, emb_dim=NET_EMB).to(dev)
     classic = spec.get("classic", False)
-    m = N2N_DSM(L=L, sigma_min=min(sig), sigma_max=LADDER_TOP * max(sig), backbone=net, ch=2,
+    m = N2N_DSM(L=L, sigma_min=min(sig) / (3.0 if spec.get("sub") else 1.0), sigma_max=LADDER_TOP * max(sig), backbone=net, ch=2,
                 param="direct" if classic else "score", blind=classic)
     return net, m
 

@@ -51,6 +51,7 @@ def main():
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--seed", type=int, default=101)
     ap.add_argument("--iters", type=int, default=CFG["ITERS"])
+    ap.add_argument("--n-vol", type=int, default=0, help="MEAN study: train on the first n training volumes only (0 = all)")
     args = ap.parse_args()
     os.chdir(D.REPO)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -58,12 +59,15 @@ def main():
     os.makedirs(os.path.join(args.outdir, "ckpt"), exist_ok=True)
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     spec = Mo.ARMS[args.arm]
-    x, _ = D.load_clean("train")
+    x, vol = D.load_clean("train")
+    if args.n_vol:
+        x = x[vol < args.n_vol]
     gen = Copies(x, dev)
     net, m = Mo.build(args.arm, dev)
     opt = torch.optim.Adam(net.parameters(), lr=CFG["LR"])
     ckpt_cfg = dict(arm=args.arm, seed=args.seed, train_res=list(spec["train_res"]), sigma_min=float(m.dsm.sigmas[0]),
-                    sigma_max=float(m.dsm.sigmas[-1]), param=m.param, blind=m.blind, p_raw=CFG["P_RAW"])
+                    sigma_max=float(m.dsm.sigmas[-1]), param=m.param, blind=m.blind, p_raw=CFG["P_RAW"],
+                    n_vol=args.n_vol)
     json.dump(dict(cfg=CFG, ckpt_cfg=ckpt_cfg, n_train_images=len(x)), open(os.path.join(args.outdir, "config.json"), "w"), indent=2)
     log = open(os.path.join(args.outdir, "train.log"), "a", encoding="utf-8")
     with open(os.path.join(args.outdir, "train.csv"), "w", newline="") as f:
@@ -78,7 +82,9 @@ def main():
         sy = torch.full((CFG["BATCH"],), D.sigma(M), device=dev)
         if spec.get("vox"):
             net.vox = Mo.vox_coord(M)
-        if spec.get("classic"):
+        if spec.get("sub"):
+            loss = m.loss_subset(y, sigma_y=sy, loss="mse", p_raw=CFG["P_RAW"])
+        elif spec.get("classic"):
             loss = m.loss_multireal(y, loss="mse", sigma_y=sy, p_raw=1.0, target_k=1)
         else:
             loss = m.loss_multireal(y, loss="mse", sigma_y=sy, p_raw=CFG["P_RAW"])
