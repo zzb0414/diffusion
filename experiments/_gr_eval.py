@@ -95,7 +95,8 @@ def main():
     for k in range(5):
         cfg = json.load(open(os.path.join(a_.run, f"fold{k}", "config.json"), encoding="utf-8"))
         assert sorted(cfg["held_out"]) == sorted(s for s, f in folds.items() if f == k), "fold mismatch"
-        model = load(os.path.join(a_.run, f"fold{k}", "ckpt", "l1_%06d.pkl" % a_.iter), device)[0]
+        ck = os.path.join(a_.run, f"fold{k}", "ckpt", "%s_%06d.pkl" % (cfg.get("ckpt_cfg", {}).get("loss", "l1"), a_.iter))
+        model = load(ck, device)[0]
         for i, (d, s) in enumerate(meta):
             if folds[s] != k:
                 continue

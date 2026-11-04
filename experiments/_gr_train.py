@@ -65,6 +65,9 @@ def main():
     ap.add_argument("--param", default="score", choices=["score", "direct", "residual"], help="DEC / C2: x0 parametrization")
     ap.add_argument("--blind", action="store_true", help="DEC: hide sigma from the net")
     ap.add_argument("--p-raw", type=float, default=None, help="DEC: probability of no added noise (default 0.5)")
+    ap.add_argument("--sub-uniform", action="store_true",
+                    help="SM2: --mode sub draws slices uniformly and m ~ U{1..N-1} per sample (the MEAN recipe), "
+                         "instead of the balanced (slice, m) sampler")
     args = ap.parse_args()
     LOSS = args.loss
     P_RAW = CFG["P_RAW"] if args.p_raw is None else args.p_raw
@@ -112,13 +115,14 @@ def main():
         n2n._tk_gen = torch.Generator(device=x_train.device)
         n2n._tk_gen.manual_seed(20261027 + args.seed - 101)
 
-    if args.mode == "sub":                        # balanced (slice, m) sampler, as _r4b_train.py
+    if args.mode == "sub" and not args.sub_uniform:   # balanced (slice, m) sampler, as _r4b_train.py
         pairs = [(i, m) for i in range(len(tr)) for m in range(1, CFG["M_MAX"] + 1)]
         ls = np.array([np.log(float(sy_train[i]) / np.sqrt(m)) for i, m in pairs])
         edges = np.linspace(ls.min(), ls.max() + 1e-9, CFG["NBINS"] + 1)
         bins = np.digitize(ls, edges) - 1
         w = 1.0 / np.bincount(bins, minlength=CFG["NBINS"])[bins]
         w /= w.sum()
+    if args.mode == "sub":
         assert sigma_min <= float(sig.min()) / np.sqrt(CFG["M_MAX"]) + 1e-12, "ladder must reach sigma/3"
 
     ckpt_cfg = dict(net_type="N2N_DSM", noise_label="total",
@@ -128,6 +132,8 @@ def main():
                     fold=args.fold, K=CFG["K"], held_out=held, datasets=args.datasets, mode=args.mode,
                     seed=args.seed, target_k=args.target_k, train_frac=args.train_frac, aug=args.aug,
                     ladder_div=args.ladder_div)
+    if args.sub_uniform:
+        ckpt_cfg.update(sub_uniform=True)
     if args.noise_norm:
         ckpt_cfg.update(noise_norm=True, sigma_ref=sigma_ref)
     if args.param != "score" or args.blind:
@@ -155,7 +161,7 @@ def main():
     recent = []
     t0 = time.time()
     for it in range(1, args.iters + 1):
-        if args.mode == "per":
+        if args.mode == "per" or args.sub_uniform:
             poss = torch.randint(0, len(tr), (CFG["BATCH"],), device=DEVICE)
             mm = None
         else:
@@ -172,8 +178,9 @@ def main():
                                         sigma_ref=sigma_ref if args.noise_norm else None,
                                         target_k=args.target_k)
         else:
-            assert not args.noise_norm, "noise_norm: --mode per only"
-            l_ = trainer.step_subset(xb, sy_train[poss], loss=LOSS, p_raw=P_RAW, m=mm)
+            assert not args.noise_norm or args.sub_uniform, "noise_norm in --mode sub needs --sub-uniform (SM2)"
+            l_ = trainer.step_subset(xb, sy_train[poss], loss=LOSS, p_raw=P_RAW, m=mm, noise_norm=args.noise_norm,
+                                     sigma_ref=sigma_ref if args.noise_norm else None)
         recent = (recent + [l_])[-50:]
         if it % 50 == 0:
             hl = monitor()
