@@ -2213,3 +2213,109 @@ Band transfer at a = 9 (share of the true detail kept per band of k / k_max; pla
 | SUB | 2 | 0.99 | 0.92 | 0.78 | 0.48 | 0.28 |
 | SUB | 8 | 1.00 | 0.96 | 0.81 | 0.47 | 0.25 |
 | SUB | 62 | 1.00 | 0.95 | 0.82 | 0.49 | 0.26 |
+
+---
+
+## RUN 2026-11-04 — MEAN-SNR: denoise the mean vs denoise each at ASL-like noise (fastMRI, S_K = 2)
+
+Pre-registered (`Archive/MEAN/PREREGISTRATION_SNR.md`). fastMRI AXT2 at matrix 160, physical noise σ = 1 per channel, N = 10 copies; PER = arm A (denoise each copy, average, dial), SUB = denoise the mean of the a copies (σ/√a, dial). Training on the first 62 training volumes (496 images), seeds 101–102; checkpoint and r chosen without ground truth (leave-one-volume-out split-half); n_eff vs ground truth on 15 test volumes.
+
+**PRIMARY (Holm over 2):**
+
+- P1 n_eff SUB/PER, 62 volumes, a = 9: 1.455× (90% CI 1.411–1.500; SUB higher on 15/15 volumes), p = 6.1e-05, Holm 0.00012
+- P2 band T4 SUB - PER, 62 volumes, a = 9: 0.112 (90% CI 0.107–0.117; SUB higher on 15/15 volumes), p = 6.1e-05, Holm 0.00012
+
+n_eff (geometric mean over volumes) and SUB / PER (90% CI):
+
+| training volumes | a | PER | SUB | SUB / PER |
+|---:|---:|---:|---:|---|
+| 62 | 1 | 70.05 | 67.63 | 0.965 (0.96–0.98) |
+| 62 | 3 | 89.60 | 103.02 | 1.150 (1.13–1.17) |
+| 62 | 5 | 94.94 | 128.54 | 1.354 (1.32–1.39) |
+| 62 | 9 | 103.98 | 151.25 | 1.455 (1.41–1.50) |
+
+Band transfer at a = 9 (share of the true detail kept per band of k / k_max; plain averaging = 1 in every band):
+
+| design | training volumes | 0–.1 | .1–.25 | .25–.5 | .5–.75 | .75–1 |
+|---|---:|---:|---:|---:|---:|---:|
+| PER | 62 | 0.96 | 0.63 | 0.26 | 0.10 | 0.09 |
+| SUB | 62 | 1.00 | 0.89 | 0.61 | 0.21 | 0.10 |
+
+---
+
+## RUN 2026-11-04 — MEAN-SNR: denoise the mean vs denoise each at ASL-like noise (fastMRI, S_K = 3)
+
+Pre-registered (`Archive/MEAN/PREREGISTRATION_SNR.md`). fastMRI AXT2 at matrix 160, physical noise σ = 1.5 per channel, N = 10 copies; PER = arm A (denoise each copy, average, dial), SUB = denoise the mean of the a copies (σ/√a, dial). Training on the first 62 training volumes (496 images), seeds 101–102; checkpoint and r chosen without ground truth (leave-one-volume-out split-half); n_eff vs ground truth on 15 test volumes.
+
+**PRIMARY (Holm over 2):**
+
+- P1 n_eff SUB/PER, 62 volumes, a = 9: 1.229× (90% CI 1.192–1.265; SUB higher on 15/15 volumes), p = 6.1e-05, Holm 0.00012
+- P2 band T4 SUB - PER, 62 volumes, a = 9: 0.043 (90% CI 0.040–0.045; SUB higher on 15/15 volumes), p = 6.1e-05, Holm 0.00012
+
+n_eff (geometric mean over volumes) and SUB / PER (90% CI):
+
+| training volumes | a | PER | SUB | SUB / PER |
+|---:|---:|---:|---:|---|
+| 62 | 1 | 108.07 | 106.12 | 0.982 (0.97–0.99) |
+| 62 | 3 | 137.39 | 144.14 | 1.049 (1.03–1.07) |
+| 62 | 5 | 145.46 | 175.50 | 1.207 (1.18–1.23) |
+| 62 | 9 | 156.96 | 192.92 | 1.229 (1.19–1.26) |
+
+Band transfer at a = 9 (share of the true detail kept per band of k / k_max; plain averaging = 1 in every band):
+
+| design | training volumes | 0–.1 | .1–.25 | .25–.5 | .5–.75 | .75–1 |
+|---|---:|---:|---:|---:|---:|---:|
+| PER | 62 | 0.95 | 0.39 | 0.14 | 0.08 | 0.08 |
+| SUB | 62 | 0.96 | 0.80 | 0.44 | 0.13 | 0.08 |
+
+---
+
+## RUN 2026-11-04 — MEAN-SNR: denoise the mean vs denoise each at ASL-like noise (fastMRI, S_K = 6)
+
+Pre-registered (`Archive/MEAN/PREREGISTRATION_SNR.md`). fastMRI AXT2 at matrix 160, physical noise σ = 3 per channel, N = 10 copies; PER = arm A (denoise each copy, average, dial), SUB = denoise the mean of the a copies (σ/√a, dial). Training on the first 62 training volumes (496 images), seeds 101–102; checkpoint and r chosen without ground truth (leave-one-volume-out split-half); n_eff vs ground truth on 15 test volumes.
+
+**PRIMARY (Holm over 2):**
+
+- P1 n_eff SUB/PER, 62 volumes, a = 9: 0.659× (90% CI 0.634–0.682; SUB higher on 0/15 volumes), p = 6.1e-05, Holm 0.00012
+- P2 band T4 SUB - PER, 62 volumes, a = 9: 0.142 (90% CI 0.137–0.146; SUB higher on 15/15 volumes), p = 6.1e-05, Holm 0.00012
+
+n_eff (geometric mean over volumes) and SUB / PER (90% CI):
+
+| training volumes | a | PER | SUB | SUB / PER |
+|---:|---:|---:|---:|---|
+| 62 | 1 | 208.32 | 223.44 | 1.073 (1.06–1.09) |
+| 62 | 3 | 277.69 | 243.11 | 0.875 (0.86–0.89) |
+| 62 | 5 | 312.28 | 289.12 | 0.926 (0.90–0.95) |
+| 62 | 9 | 335.20 | 220.82 | 0.659 (0.63–0.68) |
+
+Band transfer at a = 9 (share of the true detail kept per band of k / k_max; plain averaging = 1 in every band):
+
+| design | training volumes | 0–.1 | .1–.25 | .25–.5 | .5–.75 | .75–1 |
+|---|---:|---:|---:|---:|---:|---:|
+| PER | 62 | 0.85 | 0.05 | 0.00 | -0.01 | -0.00 |
+| SUB | 62 | 0.93 | 0.47 | 0.24 | 0.13 | 0.11 |
+
+---
+
+### Reading — MEAN-SNR (written 2026-11-04 after the three reports above)
+
+SUB / PER at a = 9 against the common SNR scale (rms head signal / per-channel noise): S_K = 1 (SNR 1.09) 1.536×,
+S_K = 2 (0.55) 1.455×, S_K = 3 (0.36) 1.229×, S_K = 6 (0.18) **0.659×**. Pre-registered predictions: S_K = 2, 3 in
+(1, 1.54) — held; S_K = 6 ≤ 1.1 — held (more strongly than expected); a = 1 within 5% — held at S_K = 2, 3 (0.965,
+0.982), missed at S_K = 6 (1.073, SUB better). Rule "> 1.2 at S_K = 3 → noise level does not explain the ASL result":
+point estimate 1.229 passes, CI 1.19–1.26 straddles 1.2; ASL dataset 1 (SNR 0.63) sits between S_K = 1 and 2, where SUB
+wins by 1.45–1.54×, so noise level does not explain GROUND SM's 0.967× on dataset 1.
+
+Diagnostic (exploratory, oracle over checkpoint and r, `r = 0`): the S_K = 6 reversal is NOT a selection failure —
+SUB's best ground-truth n_eff peaks at a = 5 (265) and falls at a = 9 (206), i.e. the SUB model gets worse as its input
+gets cleaner. At equal decode noise, SUB models are worse than a model trained at that noise, increasingly with S_K:
+σ = 0.5: S_K = 3 SUB (a = 9) MSE 0.0111 vs S_K = 1 PER 0.0075; σ = 1.0: S_K = 6 SUB (a = 9) 0.0379 vs S_K = 2 PER 0.0137.
+Mechanism (hypothesis): in subset N2N the input of a large subset m is paired with the mean of the N − m others, so the
+clean end of SUB's range is trained against the noisiest targets (m = 9: target variance 9× the input's). N2N keeps the
+learned function unbiased but its estimation variance at fixed data/iterations grows with target noise — a
+"target-noise tax" that sufficiency does not see. It is small at S_K ≤ 2 and dominates at S_K = 6. PER's LOO target
+is always a 9-copy mean. The band data agree: at S_K = 6 PER's transfer is ≈ 0 above k/k_max = 0.1 (it wins MSE by
+blurring), while SUB keeps more detail (T4 +0.14) yet loses n_eff.
+
+Candidate fixes (not run): inverse-target-variance weighting over m in `loss_subset` (weight ∝ (N − m)), or
+oversampling small-target-noise pairs; a matched check is S_K = 6 SUB with the weighting.
