@@ -83,7 +83,8 @@ def main():
         if spec.get("vox"):
             net.vox = Mo.vox_coord(M)
         if spec.get("sub"):
-            loss = m.loss_subset(y, sigma_y=sy, loss="mse", p_raw=CFG["P_RAW"])
+            loss = m.loss_subset(y, sigma_y=sy, loss="mse", p_raw=CFG["P_RAW"], m_dist=spec.get("m_dist"),
+                                 m_weight=spec.get("m_weight"))
         elif spec.get("classic"):
             loss = m.loss_multireal(y, loss="mse", sigma_y=sy, p_raw=1.0, target_k=1)
         else:

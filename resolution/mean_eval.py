@@ -48,7 +48,7 @@ def main():
     assert not os.path.exists(args.out), "refusing to overwrite " + args.out
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     m, cfg = Mo.load(os.path.join(args.run, "ckpt", f"res_{args.iter:06d}.pkl"), dev)
-    sub = cfg["arm"] == "SUB"
+    sub = cfg["arm"].startswith("SUB")
     x, vol = D.load_clean("test")
     s = D.sigma(M)
     k = torch.from_numpy(np.hypot(*np.meshgrid(*(np.arange(M) - M // 2,) * 2)) / (M / 2)).to(dev)

@@ -639,8 +639,16 @@ class N2N_DSM:
         return x + sigma.square().view(-1, 1, 1, 1) * out
 
     def loss_subset(self, x0_stack, sigma_y, rng=None, loss="l1", huber_delta=0.05,
-                    p_raw=0.5, m_max=None, m=None, noise_norm=False, sigma_ref=None):
+                    p_raw=0.5, m_max=None, m=None, noise_norm=False, sigma_ref=None,
+                    m_dist=None, m_weight=None):
         """Subset-averaging N2N: denoise the MEAN of m realizations.
+
+        ``m_dist`` (optional): ``"linear"`` draws m with probability proportional
+        to m (more draws at the clean end, whose targets are the noisiest).
+        ``m_weight`` (optional): ``"precision"`` weights each sample by its
+        target's precision, (N - m) / (N / 2) (inverse target-noise variance,
+        normalised to mean 1 under uniform m). ``None`` for both keeps the
+        default path unchanged.
 
         ``m`` (optional, (B,) ints): fix the subset size per slice instead of
         drawing it uniformly per sample -- lets the caller balance which TOTAL
@@ -665,7 +673,11 @@ class N2N_DSM:
         dev = x0_stack.device
         enss = x0_stack.view(B, N, self.ch, H, W).repeat_interleave(N, dim=0)  # (K,N,ch,H,W)
         K = B * N
-        if m is None:
+        if m is None and m_dist == "linear":
+            pm = torch.arange(1, m_max + 1, dtype=torch.float64, device=dev)
+            m = torch.multinomial(pm / pm.sum(), K, replacement=True, generator=rng) + 1
+        elif m is None:
+            assert m_dist is None, f"unknown m_dist {m_dist!r}"
             m = torch.randint(1, m_max + 1, (K,), device=dev, generator=rng)
         else:
             m = torch.as_tensor(m, device=dev).long().repeat_interleave(N)
@@ -680,6 +692,10 @@ class N2N_DSM:
         sy = sy / m.to(X.dtype).sqrt()
         x0_hat, sig = self._tweedie_total(X, sy, rng, p_raw)
         w = self._noise_weight(sig, loss, sigma_ref) if noise_norm else None
+        if m_weight is not None:
+            assert m_weight == "precision", f"unknown m_weight {m_weight!r}"
+            wp = (N - m).to(X.dtype) / (N / 2.0)
+            w = wp if w is None else w * wp
         return self._regress(x0_hat, T, loss, huber_delta, w)
 
     @torch.no_grad()

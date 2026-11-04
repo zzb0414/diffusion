@@ -10,6 +10,8 @@ MEAN study (Archive/MEAN/PREREGISTRATION.md):
   SUB denoise the mean: input = mean of a random m-subset of the copies (m ~ U{1..9}, label sigma/sqrt(m)), N2N target =
       mean of the other copies (N2N_DSM.loss_subset); trained at 160 only, ladder floor sigma/3. Its per-copy
       counterpart is arm A.
+  SUBW / SUBM (Archive/MEAN/PREREGISTRATION_TAX.md): SUB with each sample weighted by its target's precision (N - m) /
+      SUB with m drawn proportional to m.
 """
 import torch
 import data as D
@@ -18,7 +20,8 @@ from n2n import N2N_DSM                                      # noqa: E402
 
 ARMS = {"A": dict(train_res=(160,)), "B": dict(train_res=(80, 160, 320)), "C": dict(train_res=(80, 160, 320), vox=True),
         "D": dict(train_res=(80, 160, 320), grid=D.FULL), "E": dict(train_res=(80, 160, 320), classic=True),
-        "SUB": dict(train_res=(160,), sub=True)}
+        "SUB": dict(train_res=(160,), sub=True),
+        "SUBW": dict(train_res=(160,), sub=True, m_weight="precision"), "SUBM": dict(train_res=(160,), sub=True, m_dist="linear")}
 NET_BASE, NET_EMB, L, LADDER_TOP = 32, 32, 40, 5.0
 
 
