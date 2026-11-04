@@ -2174,3 +2174,42 @@ n_eff (matched σ = 0.125 noise, a = 9; geometric mean over volumes):
 
 Estimator check (arm B, physical noise): split-half n_eff / ground-truth n_eff, geometric mean over volumes: M 320 a 1: 0.999, M 320 a 9: 0.999, M 240 a 1: 1.001, M 240 a 9: 1.001, M 160 a 1: 1.000, M 160 a 9: 1.000, M 128 a 1: 0.999, M 128 a 9: 0.999, M 80 a 1: 0.999, M 80 a 9: 0.999
 
+
+---
+
+## RUN 2026-11-03 — MEAN: denoise the mean vs denoise each, then average (fastMRI, training-data scaling)
+
+Pre-registered (`Archive/MEAN/PREREGISTRATION.md`). fastMRI AXT2 at matrix 160, physical noise σ = 0.5 per channel, N = 10 copies; PER = arm A (denoise each copy, average, dial), SUB = denoise the mean of the a copies (σ/√a, dial). Training on the first 2 / 8 / 62 training volumes (16 / 128 / 496 images), seeds 101–102; checkpoint and r chosen without ground truth (leave-one-volume-out split-half); n_eff vs ground truth on 15 test volumes.
+
+**PRIMARY (Holm over 2):**
+
+- P1 n_eff SUB/PER, 62 volumes, a = 9: 1.536× (90% CI 1.508–1.568; SUB higher on 15/15 volumes), p = 6.1e-05, Holm 0.00012
+- P2 band T4 SUB - PER, 62 volumes, a = 9: 0.214 (90% CI 0.205–0.224; SUB higher on 15/15 volumes), p = 6.1e-05, Holm 0.00012
+
+n_eff (geometric mean over volumes) and SUB / PER (90% CI):
+
+| training volumes | a | PER | SUB | SUB / PER |
+|---:|---:|---:|---:|---|
+| 2 | 1 | 23.11 | 23.44 | 1.014 (1.00–1.03) |
+| 2 | 3 | 31.84 | 39.95 | 1.254 (1.23–1.28) |
+| 2 | 5 | 35.68 | 52.96 | 1.484 (1.45–1.52) |
+| 2 | 9 | 41.23 | 70.39 | 1.707 (1.67–1.75) |
+| 8 | 1 | 28.23 | 28.32 | 1.003 (0.98–1.02) |
+| 8 | 3 | 38.15 | 48.69 | 1.276 (1.23–1.32) |
+| 8 | 5 | 42.86 | 64.13 | 1.496 (1.45–1.55) |
+| 8 | 9 | 48.63 | 83.67 | 1.720 (1.66–1.78) |
+| 62 | 1 | 32.87 | 31.91 | 0.971 (0.97–0.98) |
+| 62 | 3 | 44.77 | 53.82 | 1.202 (1.18–1.22) |
+| 62 | 5 | 50.43 | 68.56 | 1.359 (1.33–1.39) |
+| 62 | 9 | 56.27 | 86.45 | 1.536 (1.51–1.57) |
+
+Band transfer at a = 9 (share of the true detail kept per band of k / k_max; plain averaging = 1 in every band):
+
+| design | training volumes | 0–.1 | .1–.25 | .25–.5 | .5–.75 | .75–1 |
+|---|---:|---:|---:|---:|---:|---:|
+| PER | 2 | 0.98 | 0.75 | 0.48 | 0.23 | 0.18 |
+| PER | 8 | 0.98 | 0.84 | 0.57 | 0.28 | 0.20 |
+| PER | 62 | 1.00 | 0.87 | 0.59 | 0.28 | 0.19 |
+| SUB | 2 | 0.99 | 0.92 | 0.78 | 0.48 | 0.28 |
+| SUB | 8 | 1.00 | 0.96 | 0.81 | 0.47 | 0.25 |
+| SUB | 62 | 1.00 | 0.95 | 0.82 | 0.49 | 0.26 |
