@@ -16,12 +16,17 @@ from _r3_train import sigma_hat                              # noqa: E402
 
 DATA_DIR = "../asl_for_diffusion"
 CV_SRC = "runs/cv_r3"
+# 2026-11-04 good-coil scans (asl_for_diffusion/check_2026-11-04/SUMMARY_20261104.md). Id 4 stays unused (the excluded
+# 20261102 scan). 5 = 1104a (dataset-1 subject, dataset-1 protocol), 6 = 1104c (another subject, dataset-1 protocol),
+# 7 = 1104b (dataset-1 subject, ROSpoilAngle -2).
+PATHS = {5: "check_2026-11-04/scan_20261104a.npy", 6: "check_2026-11-04/scan_20261104c.npy",
+         7: "check_2026-11-04/scan_20261104b.npy"}
 
 
 def load_datasets(ids=(1,)):
     xs, meta = [], []
     for k in ids:
-        img = np.load(os.path.join(DATA_DIR, f"dataset{k}.npy"))          # (Nx,Ny,Ns,Navg)
+        img = np.load(os.path.join(DATA_DIR, PATHS.get(k, f"dataset{k}.npy")))   # (Nx,Ny,Ns,Navg)
         t = torch.from_numpy(img).permute(2, 3, 0, 1).contiguous()          # (Ns,Navg,Nx,Ny)
         t = t / t.abs().amax(dim=(1, 2, 3), keepdim=True)
         xs.append(torch.stack([t.real, t.imag], dim=2).contiguous())        # (Ns,Navg,2,Nx,Ny)

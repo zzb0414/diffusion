@@ -74,7 +74,7 @@ def main():
     assert args.mode == "per" or args.target_k is None, "target_k applies to --mode per"
 
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    RUN = os.path.join(args.outdir, f"fold{args.fold}")
+    RUN = os.path.join(args.outdir, "foldall" if args.fold == -1 else f"fold{args.fold}")   # -1: every slice index (SUBJ)
     assert not os.path.exists(os.path.join(RUN, "train.csv")), "refusing to overwrite " + RUN
     os.makedirs(os.path.join(RUN, "ckpt"), exist_ok=True)
     log_path = os.path.join(RUN, "train.log")
@@ -90,7 +90,7 @@ def main():
     x, meta, sig = load_datasets(args.datasets)
     N = x.shape[1]
     folds = cv_folds()
-    held = sorted(s for s, k in folds.items() if k == args.fold)
+    held = sorted(s for s, k in folds.items() if k == args.fold)       # empty for --fold -1
     train_idx = sorted(s for s, k in folds.items() if k != args.fold)
     if args.train_frac < 1.0:                     # nested subsets: a fixed permutation per fold
         perm = np.random.default_rng(20261028 + args.fold).permutation(train_idx)
@@ -150,6 +150,8 @@ def main():
 
     @torch.no_grad()
     def monitor():                                # held-out L1 at a = 1, logged only
+        if not ho:
+            return float("nan")
         n2n.net.eval()
         x0 = n2n._x0(xh, sh)
         n2n.net.train()

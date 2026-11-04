@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # MEAN-TAX (Archive/MEAN/PREREGISTRATION_TAX.md): SUBW, SUBM at S_K = 6 then 2, 62 volumes, seeds 101-102.
-# Waits for ASL-SM2 (one GPU job at a time). Resumable. Progress lines go to runs/mean_tax/queue.log.
+# Waits for ASL-SUBJ, which waits for ASL-SM2 (one GPU job at a time). Resumable. Progress lines go to runs/mean_tax/queue.log.
 set -u
-while [ ! -f runs/sm2/queue.done ]; do sleep 60; done
+while [ ! -f runs/subj/queue.done ]; do sleep 60; done
 PY="C:/ProgramData/anaconda3/python.exe -X utf8 -u"
 Q=runs/mean_tax/queue.log
 run() { local t=$1; shift; echo "[$(date +%H:%M:%S)] START $t" >> $Q; "$@" || { echo "[$(date +%H:%M:%S)] FAILED $t" >> $Q; exit 1; }; }

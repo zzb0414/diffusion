@@ -85,6 +85,9 @@ def main():
     ap.add_argument("--datasets", type=int, nargs="+", default=[1])
     ap.add_argument("--out", required=True)
     ap.add_argument("--check", default=None, help="evaluate_slice CSV to reproduce (per mode)")
+    ap.add_argument("--single", action="store_true",
+                    help="SUBJ: one model (<run>/foldall) trained on other datasets scores every slice; the fold column is "
+                         "the slice index's CV fold (for cross-fitted selection)")
     a_ = ap.parse_args()
     assert not os.path.exists(os.path.join(a_.out, "neff.csv")), "refusing to overwrite " + a_.out
     os.makedirs(a_.out, exist_ok=True)
@@ -92,18 +95,22 @@ def main():
     x, meta, sig = load_datasets(a_.datasets)
     folds = cv_folds()
     rows = []
-    for k in range(5):
+    for k in (["all"] if a_.single else range(5)):
         cfg = json.load(open(os.path.join(a_.run, f"fold{k}", "config.json"), encoding="utf-8"))
-        assert sorted(cfg["held_out"]) == sorted(s for s, f in folds.items() if f == k), "fold mismatch"
+        if a_.single:
+            assert cfg["held_out"] == [] and not set(cfg["datasets"]) & set(a_.datasets), "test data used in training"
+        else:
+            assert sorted(cfg["held_out"]) == sorted(s for s, f in folds.items() if f == k), "fold mismatch"
         ck = os.path.join(a_.run, f"fold{k}", "ckpt", "%s_%06d.pkl" % (cfg.get("ckpt_cfg", {}).get("loss", "l1"), a_.iter))
         model = load(ck, device)[0]
         for i, (d, s) in enumerate(meta):
-            if folds[s] != k:
-                continue
-            assert s not in cfg["train_slices"], "model trained on this slice index"
+            if not a_.single:
+                if folds[s] != k:
+                    continue
+                assert s not in cfg["train_slices"], "model trained on this slice index"
             res = score_slice(model, x[i].to(device), float(sig[i]), device, a_.mode)
             for (a, rg), v in res.items():
-                rows.append(dict(dataset=d, slice=s, fold=k, sigma_hat=float(sig[i]), a=a, region=rg,
+                rows.append(dict(dataset=d, slice=s, fold=folds[s], sigma_hat=float(sig[i]), a=a, region=rg,
                                  **{f"neff_r{r:.4f}": v[r] for r in RATIOS}))
         del model; torch.cuda.empty_cache()
     if a_.check:

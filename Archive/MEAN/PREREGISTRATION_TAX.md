@@ -3,7 +3,7 @@
 Written 2026-11-04, after MEAN-SNR and BEFORE any model of this study was trained. Code: `n2n.N2N_DSM.loss_subset`
 (new optional `m_dist`, `m_weight`; defaults verified bit-identical), `resolution/models.py` (arms SUBW, SUBM),
 `resolution/train.py` (passes them), `resolution/mean_eval.py` (any arm starting with SUB decodes the mean),
-`resolution/tax_report.py`. Queue: `runs/mean_tax/queue.sh` (starts after `runs/sm2/queue.done`).
+`resolution/tax_report.py`. Queue: `runs/mean_tax/queue.sh` (starts after `runs/subj/queue.done`, i.e. after ASL-SM2 and ASL-SUBJ; order changed 2026-11-04 before it started).
 
 ## Why
 MEAN-SNR: SUB / PER at a = 9 fell from 1.46× (S_K = 2) and 1.23× (S_K = 3) to 0.66× (S_K = 6). With oracle checkpoint
