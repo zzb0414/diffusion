@@ -14,9 +14,12 @@ import numpy as np
 from scipy.stats import wilcoxon
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-NVOL, SEEDS, A, ITERS = (2, 8, 62), (101, 102), (1, 3, 5, 9), (1000, 2000, 3000)
+SK = float(os.environ.get("RES_SK", "1.0"))          # noise scale; 1 = the MEAN study, else MEAN-SNR (Archive/MEAN/PREREGISTRATION_SNR.md)
+MDIR = "mean" if SK == 1.0 else f"mean_sk{SK:g}"
+NVOL, SEEDS, A, ITERS = ((2, 8, 62) if SK == 1.0 else (62,)), (101, 102), (1, 3, 5, 9), (1000, 2000, 3000)
 TB = ("T1", "T2", "T3", "T4", "T5")
-HEAD = "## RUN 2026-11-03 — MEAN: denoise the mean vs denoise each, then average (fastMRI, training-data scaling)"
+HEAD = ("## RUN 2026-11-03 — MEAN: denoise the mean vs denoise each, then average (fastMRI, training-data scaling)" if SK == 1.0
+        else f"## RUN 2026-11-04 — MEAN-SNR: denoise the mean vs denoise each at ASL-like noise (fastMRI, S_K = {SK:g})")
 rng = np.random.default_rng(0)
 
 
@@ -24,7 +27,7 @@ def read(arm, n, seed):
     """{(a, iter, r): {img: (vol, sigma, mse_gt, mse_sh, T(5))}}"""
     T = defaultdict(dict)
     for it in ITERS:
-        for r in csv.DictReader(open(os.path.join(REPO, "runs", "mean", "eval", f"{arm}_v{n}_s{seed}_it{it}.csv"), encoding="utf-8")):
+        for r in csv.DictReader(open(os.path.join(REPO, "runs", MDIR, "eval", f"{arm}_v{n}_s{seed}_it{it}.csv"), encoding="utf-8")):
             T[(int(r["a"]), it, float(r["r"]))][int(r["img"])] = (int(r["vol"]), float(r["sigma"]), float(r["mse_gt_head"]),
                                                                   float(r["mse_sh_head"]), [float(r[b]) for b in TB])
     return T
@@ -77,9 +80,9 @@ def main():
         assert all(abs(v["estimate"] - (1 if k.startswith("P1") else 0)) < 1e-12 for k, v in prim.items()), "dry run"
         print("DRY RUN OK"); return
     gm = lambda z: float(np.exp(z.mean()))                                                   # noqa: E731
-    L = [HEAD, "", "Pre-registered (`Archive/MEAN/PREREGISTRATION.md`). fastMRI AXT2 at matrix 160, physical noise σ = 0.5 "
+    L = [HEAD, "", f"Pre-registered (`Archive/MEAN/PREREGISTRATION{'' if SK == 1.0 else '_SNR'}.md`). fastMRI AXT2 at matrix 160, physical noise σ = {0.5 * SK:g} "
          "per channel, N = 10 copies; PER = arm A (denoise each copy, average, dial), SUB = denoise the mean of the a copies "
-         "(σ/√a, dial). Training on the first 2 / 8 / 62 training volumes (16 / 128 / 496 images), seeds 101–102; checkpoint "
+         "(σ/√a, dial). Training on the first " + " / ".join(map(str, NVOL)) + " training volumes (" + " / ".join(str(8 * n) for n in NVOL) + " images), seeds 101–102; checkpoint "
          "and r chosen without ground truth (leave-one-volume-out split-half); n_eff vs ground truth on 15 test volumes.", "",
          "**PRIMARY (Holm over 2):**", ""]
     for k, v in prim.items():
@@ -97,8 +100,8 @@ def main():
         for n in NVOL:
             L.append(f"| {nm} | {n} | " + " | ".join("%.2f" % t for t in V[(arm, n, 9)][1].mean(0)) + " |")
     print("\n".join(L))
-    os.makedirs(os.path.join(REPO, "runs", "mean", "report"), exist_ok=True)
-    json.dump({"primary": prim}, open(os.path.join(REPO, "runs", "mean", "report", "summary.json"), "w"), indent=2)
+    os.makedirs(os.path.join(REPO, "runs", MDIR, "report"), exist_ok=True)
+    json.dump({"primary": prim}, open(os.path.join(REPO, "runs", MDIR, "report", "summary.json"), "w"), indent=2)
     log = os.path.join(REPO, "WEEKEND_ITERATIONS.md")
     if HEAD not in open(log, encoding="utf-8").read():
         with open(log, "a", encoding="utf-8") as f:

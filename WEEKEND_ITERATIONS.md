@@ -2179,7 +2179,7 @@ Estimator check (arm B, physical noise): split-half n_eff / ground-truth n_eff, 
 
 ## RUN 2026-11-03 — MEAN: denoise the mean vs denoise each, then average (fastMRI, training-data scaling)
 
-Pre-registered (`Archive/MEAN/PREREGISTRATION.md`). fastMRI AXT2 at matrix 160, physical noise σ = 0.5 per channel, N = 10 copies; PER = arm A (denoise each copy, average, dial), SUB = denoise the mean of the a copies (σ/√a, dial). Training on the first 2 / 8 / 62 training volumes (16 / 128 / 496 images), seeds 101–102; checkpoint and r chosen without ground truth (leave-one-volume-out split-half); n_eff vs ground truth on 15 test volumes.
+Pre-registered (`Archive/MEAN/PREREGISTRATION.md`). fastMRI AXT2 at matrix 160, physical noise σ = 0.5 per channel, N = 10 copies; PER = arm A (denoise each copy, average, dial), SUB = denoise the mean of the a copies (σ/√a, dial). Training on the first 2 / 8 / 62 training volumes (16 / 64 / 496 images; corrected 2026-11-04, was mislabelled 128), seeds 101–102; checkpoint and r chosen without ground truth (leave-one-volume-out split-half); n_eff vs ground truth on 15 test volumes.
 
 **PRIMARY (Holm over 2):**
 
