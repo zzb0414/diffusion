@@ -2526,3 +2526,52 @@ Exploratory — oracle (best checkpoint and r by ground truth) MSE, seed 101, by
   σ/√9 gets even less gradient. Lower per-sample estimation variance does not help when the clean end is under-trained;
   the tax is a sample-allocation problem, not a weighting problem.
 - Partial remedy only: the S_K = 6 gap to PER (0.74×) remains; candidates left: capacity at the clean end, data size.
+
+---
+
+## RUN 2026-11-05 — ASL-COIL exploratory (CPU): where ASL's noise colour comes from, and per-band SNR vs fastMRI
+
+Pre-specified as exploratory in `Archive/COIL/PREREGISTRATION.md`. Code: `experiments/_band_snr.py` (output
+`runs/coil/band_snr.txt`); the region split below is a one-off of the same computation.
+
+**1. Noise colour is mostly in-brain, coarse-scale fluctuation, not the reconstruction.**
+- Protocols of datasets 2 and 3 (one session, coil2) differ only in VSS on (+ T2 prep 20 vs 25 ms) and a manual
+  adjust volume for dataset 2; readout and trajectory are identical.
+- Absolute noise band power (deviations × N/(N−1), coarse → fine bands 0–.0625 / .0625–.125 / .125–.25 / .25–.75 cycles/px):
+
+  | scan | background | in brain |
+  |---|---|---|
+  | ds1 (coil1) | 2.43 2.33 2.67 2.73 (×1e10; f/c 1.13) | 8.12 5.05 4.51 3.56 (f/c 0.44) |
+  | ds2 (coil2, VSS) | 1.98 2.31 2.83 3.06 (f/c 1.54) | 3.51 3.16 3.58 3.61 (f/c 1.03) |
+  | ds3 (coil2) | 2.78 2.51 2.82 2.84 (f/c 1.02) | 12.3 6.33 5.44 4.02 (f/c 0.33) |
+  | 1104c (coil1) | 2.43 2.18 2.46 2.58 (f/c 1.06) | 6.11 3.82 3.79 3.45 (f/c 0.57) |
+
+- Background (thermal, recon-shaped) noise is nearly identical across coils and scans, flat to slightly blue. Fine-band
+  in-brain power is also similar (3.5–4.0e10). The differences are an in-brain coarse excess: ds3 3.5× ds2's.
+  VSS (ds2) suppresses it, which points to physiological (vascular / labelling) fluctuation across repetitions.
+- So coil1 vs coil2 do not differ in thermal noise in absolute units; their M0-normalised SNR difference comes from lower M0.
+- σ̂ averages the whole image: in-brain noise variance is 1.2–1.5× the background's (ds2 1.22, ds1 1.39, ds3 1.54),
+  so the scalar noise label under-states in-brain noise, by different amounts per dataset.
+
+**2. Per-band SNR does not explain the small ASL gain.** Per-copy SNR (power) by band (k/k_max), brain/head mask:
+
+| data | 0–.1 | .1–.25 | .25–.5 | .5–.75 | .75–1 | all | window [1/9, 1] | above 1 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| fastMRI S_K = 1 | 60.1 | 2.04 | 0.291 | 0.040 | 0.017 | 0.76 | 0.07 | 0.90 |
+| fastMRI S_K = 2 | 15.0 | 0.51 | 0.073 | 0.010 | 0.004 | 0.19 | 0.18 | 0.76 |
+| fastMRI S_K = 3 | 6.68 | 0.227 | 0.032 | 0.004 | 0.002 | 0.084 | 0.17 | 0.73 |
+| fastMRI S_K = 6 | 1.67 | 0.057 | 0.008 | 0.001 | 0.0005 | 0.021 | 0.08 | 0.68 |
+| ds1 (coil1) | 5.18 | 0.504 | 0.106 | 0.053 | 0.029 | 0.172 | 0.17 | 0.60 |
+| ds2 (coil2, VSS) | 4.06 | 0.271 | 0.042 | 0.017 | 0.012 | 0.060 | 0.16 | 0.54 |
+| ds3 (coil2) | 1.61 | 0.172 | 0.033 | 0.017 | 0.012 | 0.067 | 0.31 | 0.42 |
+| 1104a (coil1) | 3.64 | 0.452 | 0.135 | 0.079 | 0.047 | 0.162 | 0.25 | 0.45 |
+| 1104c (coil1) | 5.88 | 0.553 | 0.159 | 0.070 | 0.039 | 0.180 | 0.25 | 0.53 |
+
+('window' = share of signal power at per-copy SNR in [1/9, 1], where denoise-the-mean can beat denoise-each at a = 9.)
+- ASL's spectrum is flatter than brain anatomy: lower SNR in the coarsest band (physiological excess), higher in the fine
+  bands. Its overall band SNR (ds1 0.17, 1104c 0.18) and window share (0.17–0.25) match or exceed fastMRI S_K = 2
+  (0.19, 0.18), where SUB / PER was 1.46×. A spectral-SNR explanation for ASL's ≈ 1.06× (or 0.87×) is ruled out.
+- Remaining candidates, in order: (a) the noise is not the stationary, scalar-σ noise the model assumes (in-brain excess
+  1.2–1.5×, coarse, physiological, possibly not independent across repetitions; SUB decodes the mean at σ̂/√a with no
+  dial, PER's dial can absorb a mis-stated σ, and SUB picks r ≈ 0); (b) few subjects / slices. ASL-COIL Part A tests
+  pooling; (a) can be tested evaluation-only by decoding SUB at c · σ̂/√a with c chosen by split-half (no retraining).
