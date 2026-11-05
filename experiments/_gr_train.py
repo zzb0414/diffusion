@@ -68,10 +68,13 @@ def main():
     ap.add_argument("--sub-uniform", action="store_true",
                     help="SM2: --mode sub draws slices uniformly and m ~ U{1..N-1} per sample (the MEAN recipe), "
                          "instead of the balanced (slice, m) sampler")
+    ap.add_argument("--m-dist", default=None, choices=["linear"],
+                    help="COIL: with --sub-uniform, draw m with probability proportional to m (MEAN-TAX's SUBM)")
     args = ap.parse_args()
     LOSS = args.loss
     P_RAW = CFG["P_RAW"] if args.p_raw is None else args.p_raw
     assert args.mode == "per" or args.target_k is None, "target_k applies to --mode per"
+    assert args.m_dist is None or args.sub_uniform, "--m-dist needs --mode sub --sub-uniform"
 
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     RUN = os.path.join(args.outdir, "foldall" if args.fold == -1 else f"fold{args.fold}")   # -1: every slice index (SUBJ)
@@ -134,6 +137,8 @@ def main():
                     ladder_div=args.ladder_div)
     if args.sub_uniform:
         ckpt_cfg.update(sub_uniform=True)
+    if args.m_dist is not None:
+        ckpt_cfg.update(m_dist=args.m_dist)
     if args.noise_norm:
         ckpt_cfg.update(noise_norm=True, sigma_ref=sigma_ref)
     if args.param != "score" or args.blind:
@@ -182,7 +187,7 @@ def main():
         else:
             assert not args.noise_norm or args.sub_uniform, "noise_norm in --mode sub needs --sub-uniform (SM2)"
             l_ = trainer.step_subset(xb, sy_train[poss], loss=LOSS, p_raw=P_RAW, m=mm, noise_norm=args.noise_norm,
-                                     sigma_ref=sigma_ref if args.noise_norm else None)
+                                     sigma_ref=sigma_ref if args.noise_norm else None, m_dist=args.m_dist)
         recent = (recent + [l_])[-50:]
         if it % 50 == 0:
             hl = monitor()

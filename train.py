@@ -28,14 +28,14 @@ class DiffusionTrainer:
         return loss.item()
 
     def step_subset(self, x0, sigma_y, rng=None, loss="l1", huber_delta=0.05,
-                    p_raw=0.5, m_max=None, m=None, noise_norm=False, sigma_ref=None):
+                    p_raw=0.5, m_max=None, m=None, noise_norm=False, sigma_ref=None, m_dist=None):
         """Training step for ``N2N_DSM.loss_subset`` (denoise subset means)."""
         x0 = x0.to(self.device)
         self.opt.zero_grad()
         loss_val = self.model.loss_subset(x0, sigma_y, rng=rng, loss=loss,
                                           huber_delta=huber_delta, p_raw=p_raw,
                                           m_max=m_max, m=m, noise_norm=noise_norm,
-                                          sigma_ref=sigma_ref)
+                                          sigma_ref=sigma_ref, m_dist=m_dist)
         loss_val.backward()
         if self.grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(self.model.net.parameters(),
