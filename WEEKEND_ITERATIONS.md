@@ -2656,3 +2656,14 @@ n_eff at a = 9: PER 36.4 on ds1 held-out slices → 26.6 on 1104c; SUB 30.7 → 
   different subjects (SNR matched, 0.633 vs 0.638); one unseen subject only.
 - Consequence for evaluation: slice-index CV within the training subject favours denoise-each; unseen-subject testing
   is the deployment-relevant setting and needs more subjects.
+
+### ASL-COIL follow-up 2 (exploratory, eval only; 2026-11-05, 15:15): same subject, new session (1104a)
+`runs/coil/xsess/queue.sh`: the same fold models score 1104a (dataset-1 subject, new session; not in their training).
+SUB / PER at a = 9 (90% CI): ds1 held-out slices 0.843 (d1-only) / 0.873 (pooled); **1104a 0.946 (0.91–0.99) / 0.943
+(0.90–0.99)**; 1104c 1.021 / 1.068. SUBM / PER on 1104a 0.908. n_eff at a = 9 (d1-only): PER 36.4 → 24.5 (1104a) →
+26.6 (1104c); SUB 30.7 → 23.2 → 27.1.
+- Same session (ds1 held-out slices): PER's large advantage. New session, same subject: most of it gone (PER's n_eff
+  falls 33%, below its 1104c value); SUB still trails slightly. New subject: SUB ahead.
+- Reading: the bulk of PER's in-subject advantage is session-specific (adjacent slices of the same acquisition share
+  anatomy, perfusion state and noise realization statistics); a smaller part is subject-level. Caveat: 1104a fails the
+  repetition-independence gate (slow perfusion dip), which can bias split-half n_eff; one scan per setting.
