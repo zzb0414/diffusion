@@ -41,7 +41,7 @@ CFG = dict(
 
 
 def load_data():
-    img = np.load("../asl_for_diffusion/dataset1.npy")     # (Nx,Ny,Ns,Navg)
+    img = np.load("../asl_for_diffusion/coil1/ds1_20260924/asl.npy")     # (Nx,Ny,Ns,Navg)
     t = torch.from_numpy(img).permute(2, 3, 0, 1).contiguous()   # (Ns,Navg,Nx,Ny)
     t = t / t.abs().amax(dim=(1, 2, 3), keepdim=True)
     return torch.stack([t.real, t.imag], dim=2).contiguous()     # (Ns,Navg,2,Nx,Ny)

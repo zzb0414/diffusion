@@ -21,8 +21,8 @@ ASL = os.path.join(REPO, "..", "asl_for_diffusion")
 sys.path.insert(0, os.path.join(REPO, "resolution"))
 BANDS = ((0, .1), (.1, .25), (.25, .5), (.5, .75), (.75, 1.0))     # k / k_max, as the band-transfer tables
 NBIN = 40
-SCANS = {"ds1 (coil1)": "dataset1", "ds2 (coil2, VSS)": "dataset2", "ds3 (coil2)": "dataset3",
-         "1104a (coil1)": "check_2026-11-04/scan_20261104a", "1104c (coil1)": "check_2026-11-04/scan_20261104c"}
+SCANS = {"ds1 (coil1)": "coil1/ds1_20260924", "ds2 (coil2, VSS)": "coil2_vss/ds2_20261005", "ds3 (coil2)": "coil2/ds3_20261005",
+         "1104a (coil1)": "coil1/1104a_20261104", "1104c (coil1)": "coil1/1104c_20261104"}   # asl_for_diffusion/manifest.json
 
 
 def kgrid(H, W):
@@ -50,8 +50,8 @@ def summarize(S, Nn, k):
 def asl_rows():
     out = []
     for name, p in SCANS.items():
-        x = np.load(os.path.join(ASL, p + ".npy")); N = x.shape[-1]
-        m0 = np.abs(np.load(os.path.join(ASL, p + "_M0.npy")))
+        x = np.load(os.path.join(ASL, p, "asl.npy")); N = x.shape[-1]
+        m0 = np.abs(np.load(os.path.join(ASL, p, "M0.npy")))
         brain = (m0 > 0.25 * np.percentile(m0, 99))[..., None]
         dev = (x - x.mean(-1, keepdims=True)) * np.sqrt(N / (N - 1))
         Nn = spec(dev, brain); S = spec(x.mean(-1), brain[..., 0]) - Nn / N

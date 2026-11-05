@@ -32,7 +32,7 @@ SEED_BASE = 12345        # fixed diffusion-noise seed for every eval run
 
 
 def load_data():
-    img = np.load("../asl_for_diffusion/dataset1.npy")
+    img = np.load("../asl_for_diffusion/coil1/ds1_20260924/asl.npy")
     t = torch.from_numpy(img).permute(2, 3, 0, 1).contiguous()
     scale = t.abs().amax(dim=(1, 2, 3), keepdim=True)
     t = t / scale
