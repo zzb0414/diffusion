@@ -2432,3 +2432,97 @@ Absolute n_eff (geometric mean over slices) and chosen r (per seed, fold 0's cho
   pooling coils with different noise colour hurts SUB (one scalar σ conditioning, decoding at σ/√a) more than PER.
   A direct test: SM2's recipe trained on dataset 1 only, scored on dataset 1 held-out slices.
 - The gain (≈ 6%) is much smaller than on fastMRI at a similar SNR (1.46–1.54×).
+
+---
+
+## RUN 2026-11-04 — MEAN-TAX: removing the target-noise tax of denoise-the-mean (fastMRI, S_K = 6)
+
+Pre-registered (`Archive/MEAN/PREREGISTRATION_TAX.md`). fastMRI AXT2 at matrix 160, σ = 3 per channel, N = 10, 62 training volumes, seeds 101–102. SUBW: denoise the mean with each sample weighted by its target's precision (N − m); SUBM: denoise the mean with m drawn ∝ m. SUB and PER (arm A) are the MEAN-SNR runs at the same S_K. Checkpoint and r chosen without ground truth (leave-one-volume-out split-half); n_eff vs ground truth on 15 test volumes.
+
+**PRIMARY (Holm over 2):**
+
+- P1 SUBW / SUB, a = 9: 0.586× (90% CI 0.582–0.591; higher on 0/15 volumes), p = 6.1e-05, Holm 0.00012
+- P2 SUBM / SUB, a = 9: 1.126× (90% CI 1.122–1.131; higher on 15/15 volumes), p = 6.1e-05, Holm 0.00012
+
+n_eff (geometric mean over volumes) and ratios to PER (90% CI):
+
+| a | PER | SUB | SUBW | SUBM | SUB / PER | SUBW / PER | SUBM / PER |
+|---:|---:|---:|---:|---:|---|---|---|
+| 1 | 208.3 | 223.4 | 185.7 | 163.8 | 1.073 (1.06–1.09) | 0.892 (0.88–0.90) | 0.786 (0.77–0.80) |
+| 3 | 277.7 | 243.1 | 229.1 | 216.1 | 0.875 (0.86–0.89) | 0.825 (0.81–0.84) | 0.778 (0.77–0.79) |
+| 5 | 312.3 | 289.1 | 269.5 | 247.9 | 0.926 (0.90–0.95) | 0.863 (0.84–0.88) | 0.794 (0.77–0.81) |
+| 9 | 335.2 | 220.8 | 129.5 | 248.8 | 0.659 (0.63–0.68) | 0.386 (0.37–0.40) | 0.742 (0.72–0.77) |
+
+Band transfer at a = 9 (same choice; plain averaging = 1):
+
+| design | 0–.1 | .1–.25 | .25–.5 | .5–.75 | .75–1 |
+|---|---:|---:|---:|---:|---:|
+| PER | 0.85 | 0.05 | 0.00 | -0.01 | -0.00 |
+| SUB | 0.93 | 0.47 | 0.24 | 0.13 | 0.11 |
+| SUBW | 0.92 | 0.50 | 0.30 | 0.23 | 0.21 |
+| SUBM | 0.99 | 0.45 | 0.22 | 0.13 | 0.10 |
+
+Exploratory — oracle (best checkpoint and r by ground truth) MSE, seed 101, by decode noise (SUB arms decode at σ/√a; a monotone tax-free model gets lower MSE as a grows):
+
+| a | decode σ (SUB arms) | PER | SUB | SUBW | SUBM |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 3.00 | 0.0435 | 0.0423 | 0.0536 | 0.0462 |
+| 3 | 1.73 | 0.0322 | 0.0388 | 0.0408 | 0.0385 |
+| 5 | 1.34 | 0.0286 | 0.0340 | 0.0335 | 0.0330 |
+| 9 | 1.00 | 0.0262 | 0.0438 | 0.0635 | 0.0315 |
+
+---
+
+## RUN 2026-11-04 — MEAN-TAX: removing the target-noise tax of denoise-the-mean (fastMRI, S_K = 2)
+
+Pre-registered (`Archive/MEAN/PREREGISTRATION_TAX.md`). fastMRI AXT2 at matrix 160, σ = 1 per channel, N = 10, 62 training volumes, seeds 101–102. SUBW: denoise the mean with each sample weighted by its target's precision (N − m); SUBM: denoise the mean with m drawn ∝ m. SUB and PER (arm A) are the MEAN-SNR runs at the same S_K. Checkpoint and r chosen without ground truth (leave-one-volume-out split-half); n_eff vs ground truth on 15 test volumes.
+
+**PRIMARY (Holm over 2):**
+
+- P1 SUBW / SUB, a = 9: 0.810× (90% CI 0.805–0.815; higher on 0/15 volumes), p = 6.1e-05, Holm 0.00012
+- P2 SUBM / SUB, a = 9: 1.035× (90% CI 1.032–1.038; higher on 15/15 volumes), p = 6.1e-05, Holm 0.00012
+
+n_eff (geometric mean over volumes) and ratios to PER (90% CI):
+
+| a | PER | SUB | SUBW | SUBM | SUB / PER | SUBW / PER | SUBM / PER |
+|---:|---:|---:|---:|---:|---|---|---|
+| 1 | 70.1 | 67.6 | 68.7 | 65.4 | 0.965 (0.96–0.98) | 0.980 (0.97–0.99) | 0.934 (0.92–0.95) |
+| 3 | 89.6 | 103.0 | 102.1 | 99.1 | 1.150 (1.13–1.17) | 1.140 (1.12–1.16) | 1.106 (1.08–1.13) |
+| 5 | 94.9 | 128.5 | 127.5 | 127.0 | 1.354 (1.32–1.39) | 1.343 (1.31–1.38) | 1.338 (1.30–1.38) |
+| 9 | 104.0 | 151.3 | 122.5 | 156.6 | 1.455 (1.41–1.50) | 1.178 (1.14–1.22) | 1.506 (1.46–1.55) |
+
+Band transfer at a = 9 (same choice; plain averaging = 1):
+
+| design | 0–.1 | .1–.25 | .25–.5 | .5–.75 | .75–1 |
+|---|---:|---:|---:|---:|---:|
+| PER | 0.96 | 0.63 | 0.26 | 0.10 | 0.09 |
+| SUB | 1.00 | 0.89 | 0.61 | 0.21 | 0.10 |
+| SUBW | 0.99 | 0.87 | 0.59 | 0.26 | 0.16 |
+| SUBM | 0.99 | 0.88 | 0.60 | 0.21 | 0.09 |
+
+Exploratory — oracle (best checkpoint and r by ground truth) MSE, seed 101, by decode noise (SUB arms decode at σ/√a; a monotone tax-free model gets lower MSE as a grows):
+
+| a | decode σ (SUB arms) | PER | SUB | SUBW | SUBM |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 1.00 | 0.0137 | 0.0147 | 0.0149 | 0.0158 |
+| 3 | 0.58 | 0.0105 | 0.0097 | 0.0098 | 0.0104 |
+| 5 | 0.45 | 0.0099 | 0.0077 | 0.0079 | 0.0079 |
+| 9 | 0.33 | 0.0090 | 0.0066 | 0.0082 | 0.0065 |
+
+### Reading — MEAN-TAX (written 2026-11-04, 23:50, after the run)
+- Predictions vs result:
+  - "At least one remedy > 1 at S_K = 6, a = 9; SUBM more likely": holds. SUBM / SUB 1.126× (15/15 volumes); SUBW / SUB
+    0.586× (0/15).
+  - "Its oracle MSE falls monotonically with a": holds for SUBM (0.0462 → 0.0385 → 0.0330 → 0.0315); SUB (0.0438 at
+    a = 9, above a = 5) and SUBW (0.0635) do not.
+  - "Neither beats PER at S_K = 6; above 0.9× would be strong": SUBM / PER 0.742× (SUB 0.659×). Expected, not strong.
+  - "At S_K = 2 the remedies change SUB / PER by < 5%": holds for SUBM (1.455 → 1.506, +3.5%), fails for SUBW
+    (1.455 → 1.178, −19%).
+- Pre-registered rule triggers: SUBM works at S_K = 6 without costing at S_K = 2, so it becomes the default denoise-the-mean
+  recipe for ASL runs after ASL-SM2 (ASL-SM2 and ASL-SUBJ are not changed).
+- Cost of SUBM at small a (not in the predictions): drawing m ∝ m starves the noisy end, so a = 1 drops (S_K = 6:
+  SUB / PER 1.073 → SUBM / PER 0.786; S_K = 2: 0.965 → 0.934). For averaged ASL maps (a = 9) this is the right trade.
+- Why SUBW hurts: inverse-target-variance weights shrink exactly the large-m (clean-input) samples, so the decode point
+  σ/√9 gets even less gradient. Lower per-sample estimation variance does not help when the clean end is under-trained;
+  the tax is a sample-allocation problem, not a weighting problem.
+- Partial remedy only: the S_K = 6 gap to PER (0.74×) remains; candidates left: capacity at the clean end, data size.
