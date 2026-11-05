@@ -2637,3 +2637,22 @@ Absolute n_eff (geometric mean over slices) and chosen r (per seed, fold 0's cho
   and a prior learned from the same subject's adjacent slices is unusually good. Slice-CV on the training subject then
   favours PER; on an unseen subject (the deployment case) the order flips. Evaluation-only test: score the
   dataset-1-only CV fold models (Part A) on 1104c — same models, two test settings.
+
+### ASL-COIL follow-up (exploratory, eval only; 2026-11-05, 14:00): same models, two test subjects
+`runs/coil/xsubj/queue.sh`: the dataset-1-only CV fold models (Part A) and ASL-SM2's pooled seed-101 fold models score
+1104c, each slice by the fold model that held its index out; selection as in the report (cross-fitted, no ground truth).
+
+| a | d1-only models, ds1 held-out: SUB / PER | d1-only models, 1104c: SUB / PER | SUBM / PER | SUBM / SUB | pooled models, ds1: SUB / PER | pooled models, 1104c: SUB / PER |
+|---:|---|---|---|---|---|---|
+| 1 | 1.051 (0.96–1.20) | 1.094 (1.06–1.13; 28/34) | 1.048 | 0.958 | 0.905 | 0.988 (0.98–1.00) |
+| 3 | 0.926 (0.88–0.98) | 1.049 (1.02–1.08; 28/34) | 1.069 | 1.018 | 0.903 | 1.071 (1.05–1.09) |
+| 5 | 0.894 (0.84–0.96) | 1.054 (1.01–1.10; 28/34) | 1.073 | 1.018 | 0.898 | 1.082 (1.04–1.12) |
+| 9 | 0.843 (0.77–0.92) | 1.021 (0.98–1.06; 25/34) | 1.042 | 1.021 | 0.873 | 1.068 (1.03–1.10; 30/34) |
+
+n_eff at a = 9: PER 36.4 on ds1 held-out slices → 26.6 on 1104c; SUB 30.7 → 27.1; SUBM 27.7 on 1104c.
+- The ranking flips with the test subject for the SAME models (pooled: 0.873× → 1.068×). The flip comes almost
+  entirely from PER, whose n_eff drops 27% off the training subject; SUB drops 12%. Supports the hypothesis that PER
+  leans on a subject-specific prior learned from adjacent slices. Caveat: ds1 vs 1104c are different scans as well as
+  different subjects (SNR matched, 0.633 vs 0.638); one unseen subject only.
+- Consequence for evaluation: slice-index CV within the training subject favours denoise-each; unseen-subject testing
+  is the deployment-relevant setting and needs more subjects.
