@@ -2389,3 +2389,46 @@ Absolute n_eff (geometric mean over slices) and chosen r (per seed, fold 0's cho
   a = 9), so its "0.000" ratios and "inf" n_eff are meaningless. Robust versions (not pre-registered): SUB / PER-D on
   dataset 3 median per-slice ratio 0.75 / 0.70 / 0.70 / 0.79 / 0.84 / 0.87 and pooled-MSE ratio 0.75 / 0.60 / 0.58 / 0.55
   / 0.54 / 0.53 for a = 1 / 2 / 3 / 5 / 7 / 9. Primary read-outs (dataset 1) are unaffected (no non-finite entries).
+
+---
+
+## RUN 2026-11-04 — ASL-SUBJ: denoise the mean vs denoise each, then average, on an unseen subject
+
+Pre-registered (`Archive/SUBJ/PREREGISTRATION.md`). Trained on every slice of dataset 1 + scan 1104a (same subject, 2026-09-24 and 2026-11-04, good coil); tested on every slice of scan 1104c (another subject, same protocol and coil). The ASL-SM2 recipe (MSE, p_raw 0.5, no augmentation, 3000 iterations; SUB ladder floor σ̂_min/3, m ~ U{1..9}; PER-D noise-normalized, seed 101 only). Split-half n_eff on the test subject (signal region, no ground truth); checkpoint and r cross-fitted over the test subject's slice folds.
+
+**PRIMARY (Holm over 2):**
+
+- P1 SUB / PER, unseen subject (1104c), a = 9: 1.062× (90% CI 1.028–1.094; SUB better on 28/34 slices), p = 0.00058, Holm 0.00058
+- P2 SUB / PER-D, unseen subject (1104c), a = 9: 1.054× (90% CI 1.020–1.085; SUB better on 30/34 slices), p = 0.00029, Holm 0.00058
+
+SUB / PER and SUB / PER-D (90% CI):
+
+| dataset | a | SUB / PER | SUB / PER-D |
+|---:|---:|---|---|
+| 6 | 1 | 1.001 (0.99–1.01; 20/34) | 0.992 (0.98–1.00; 12/34) |
+| 6 | 2 | 1.040 (1.03–1.05; 33/34) | 1.024 (1.02–1.03; 29/34) |
+| 6 | 3 | 1.066 (1.06–1.08; 32/34) | 1.026 (1.01–1.04; 26/34) |
+| 6 | 5 | 1.057 (1.02–1.09; 27/34) | 1.039 (1.01–1.06; 27/34) |
+| 6 | 7 | 1.062 (1.03–1.09; 27/34) | 1.050 (1.02–1.08; 30/34) |
+| 6 | 9 | 1.062 (1.03–1.09; 28/34) | 1.054 (1.02–1.09; 30/34) |
+
+Absolute n_eff (geometric mean over slices) and chosen r (per seed, fold 0's choice):
+
+| dataset | a | PER | SUB | PER-D |
+|---:|---:|---|---|---|
+| 6 | 1 | 17.90 (r 0, 0) | 17.91 (r 0, 0) | 18.06 (r 0) |
+| 6 | 2 | 19.59 (r 0.0833, 0.0833) | 20.37 (r 0, 0) | 19.90 (r 0.0833) |
+| 6 | 3 | 20.67 (r 0.0833, 0.167) | 22.04 (r 0, 0) | 21.48 (r 0.0833) |
+| 6 | 5 | 23.32 (r 0.167, 0.167) | 24.64 (r 0.0833, 0.0833) | 23.71 (r 0.167) |
+| 6 | 7 | 25.40 (r 0.25, 0.25) | 26.96 (r 0.0833, 0.0833) | 25.69 (r 0.25) |
+| 6 | 9 | 27.24 (r 0.333, 0.333) | 28.93 (r 0.0833, 0.0833) | 27.44 (r 0.333) |
+
+### Note on ASL-SUBJ (written 2026-11-04, 22:20, after the run; exploratory)
+- All pre-registered predictions hold: P1 1.062×, P2 1.054× (both Holm p < 0.001); the ratio grows from a = 1 (1.001,
+  within 5%) to a plateau of about 1.06 from a = 3. SUB again picks r ≈ 0–1/12; PER needs r up to 1/3.
+- Contrast with ASL-SM2 (SUB 0.87× on dataset 1): the two studies differ in training data (good coil only, one subject in
+  two sessions vs pooled datasets 1–3 including the two other coils with different noise colour) and in test data
+  (unseen subject vs held-out slices), so they are not a controlled pair. Leading hypothesis to test, not a finding:
+  pooling coils with different noise colour hurts SUB (one scalar σ conditioning, decoding at σ/√a) more than PER.
+  A direct test: SM2's recipe trained on dataset 1 only, scored on dataset 1 held-out slices.
+- The gain (≈ 6%) is much smaller than on fastMRI at a similar SNR (1.46–1.54×).
