@@ -2667,3 +2667,46 @@ SUB / PER at a = 9 (90% CI): ds1 held-out slices 0.843 (d1-only) / 0.873 (pooled
 - Reading: the bulk of PER's in-subject advantage is session-specific (adjacent slices of the same acquisition share
   anatomy, perfusion state and noise realization statistics); a smaller part is subject-level. Caveat: 1104a fails the
   repetition-independence gate (slow perfusion dip), which can bias split-half n_eff; one scan per setting.
+
+---
+
+## RUN 2026-11-05 — GAP A1/A2: does a re-scaled noise label close ASL's small denoise-the-mean gain?
+
+Pre-registered (`Archive/GAP/PREREGISTRATION.md`). Evaluation only: the ASL-SUBJ / ASL-COIL models (trained on dataset 1 + 1104a; PER, SUB, SUBM, seeds 101–102) decode the unseen subject 1104c with the noise label scaled by c (PER: c·σ̂; SUB/SUBM: c·σ̂/√a), c ∈ {0.5, 0.65, 0.8, 1, 1.2, 1.4, 1.7, 2} chosen without ground truth with checkpoint and r (cross-fitted over slice folds), or c = the slice's in-signal / whole-image noise std ratio ("brain", untuned).
+
+**PRIMARY (Holm over 2):**
+
+- P1 SUB tuned c / SUB c = 1, a = 9: 1.008× (90% CI 0.997–1.020; higher on 22/34 slices), p = 0.14, Holm 0.14
+- P2 (SUB / PER) both tuned c, a = 9: 1.081× (90% CI 1.066–1.095; higher on 32/34 slices), p = 2.4e-08, Holm 4.8e-08
+
+Ratios (90% CI; slices higher):
+
+| a | SUB/PER, c = 1 | SUB/PER, tuned | SUB/PER, brain | SUBM/PER, tuned | SUB tuned / c = 1 | PER tuned / c = 1 | SUB brain / c = 1 | PER brain / c = 1 |
+|---:|---|---|---|---|---|---|---|---|
+| 1 | 1.001 (0.99–1.01; 20/34) | 0.997 (0.99–1.01; 20/34) | 0.998 (0.99–1.01; 14/34) | 0.965 (0.95–0.98; 4/34) | 1.000 (1.00–1.00; 0/34) | 1.004 (1.00–1.01; 23/34) | 0.983 (0.98–0.99; 2/34) | 0.986 (0.98–0.99; 13/34) |
+| 2 | 1.040 (1.03–1.05; 33/34) | 1.040 (1.03–1.05; 33/34) | 1.028 (1.02–1.04; 25/34) | 1.021 (1.01–1.03; 25/34) | 1.000 (1.00–1.00; 0/34) | 1.000 (1.00–1.00; 0/34) | 0.989 (0.99–0.99; 2/34) | 1.000 (0.99–1.01; 11/34) |
+| 3 | 1.066 (1.06–1.08; 32/34) | 1.070 (1.06–1.09; 31/34) | 1.046 (1.03–1.06; 30/34) | 1.071 (1.06–1.09; 31/34) | 1.000 (1.00–1.00; 0/34) | 0.997 (0.99–1.01; 9/34) | 0.994 (0.99–1.00; 15/34) | 1.013 (1.00–1.03; 19/34) |
+| 5 | 1.057 (1.02–1.09; 27/34) | 1.070 (1.05–1.09; 29/34) | 1.071 (1.05–1.09; 30/34) | 1.099 (1.08–1.12; 31/34) | 0.992 (0.99–0.99; 3/34) | 0.980 (0.95–1.00; 18/34) | 1.005 (0.99–1.02; 13/34) | 0.991 (0.98–1.00; 18/34) |
+| 7 | 1.062 (1.03–1.09; 27/34) | 1.067 (1.05–1.09; 28/34) | 1.089 (1.06–1.11; 30/34) | 1.100 (1.08–1.12; 32/34) | 0.992 (0.99–1.00; 7/34) | 0.987 (0.97–1.00; 5/34) | 1.006 (1.00–1.02; 22/34) | 0.981 (0.97–0.99; 13/34) |
+| 9 | 1.062 (1.03–1.09; 28/34) | 1.081 (1.07–1.10; 32/34) | 1.074 (1.04–1.10; 27/34) | 1.128 (1.12–1.14; 33/34) | 1.008 (1.00–1.02; 22/34) | 0.990 (0.98–1.00; 5/34) | 1.015 (1.01–1.02; 25/34) | 1.004 (1.00–1.01; 14/34) |
+
+Absolute n_eff (geometric mean) and chosen c (per seed, fold 0's choice):
+
+| a | PER c = 1 | PER tuned c | PER brain | SUB c = 1 | SUB tuned c | SUB brain | SUBM c = 1 | SUBM tuned c | SUBM brain |
+|---:|---|---|---|---|---|---|---|---|---|
+| 1 | 17.9 (1, 1) | 18.0 (1, 1.2) | 17.6 (brain, brain) | 17.9 (1, 1) | 17.9 (1, 1) | 17.6 (brain, brain) | 17.3 (1, 1) | 17.3 (1, 1.4) | 17.2 (brain, brain) |
+| 2 | 19.6 (1, 1) | 19.6 (1, 1) | 19.6 (brain, brain) | 20.4 (1, 1) | 20.4 (1, 1) | 20.1 (brain, brain) | 20.0 (1, 1) | 20.0 (1, 1) | 19.8 (brain, brain) |
+| 3 | 20.7 (1, 1) | 20.6 (1, 1) | 20.9 (brain, brain) | 22.0 (1, 1) | 22.0 (1, 1) | 21.9 (brain, brain) | 22.1 (1, 1) | 22.1 (1, 1) | 21.8 (brain, brain) |
+| 5 | 23.3 (1, 1) | 22.8 (0.8, 1) | 23.1 (brain, brain) | 24.6 (1, 1) | 24.4 (1.2, 1.2) | 24.8 (brain, brain) | 25.2 (1, 1) | 25.1 (1.2, 1) | 25.3 (brain, brain) |
+| 7 | 25.4 (1, 1) | 25.1 (1, 1) | 24.9 (brain, brain) | 27.0 (1, 1) | 26.8 (1.2, 1.2) | 27.1 (brain, brain) | 27.8 (1, 1) | 27.6 (1.2, 1.2) | 28.0 (brain, brain) |
+| 9 | 27.2 (1, 1) | 27.0 (1, 1) | 27.3 (brain, brain) | 28.9 (1, 1) | 29.2 (1.2, 1.2) | 29.4 (brain, brain) | 30.0 (1, 1) | 30.4 (1.2, 1.2) | 30.5 (brain, brain) |
+
+Untuned in-signal / whole-image noise std ratio on 1104c: median 1.075 (range 1.057–1.132).
+
+**Reading (GAP A1/A2, against the pre-registration).** The noise label is not the cause of the small gain.
+- P1 (SUB with tuned c / SUB at c = 1, a = 9) is 1.008× (CI 0.997–1.020, Holm p = 0.14). That is the pre-registered "≤ 1.02" outcome.
+- The c chosen without ground truth is 1 or 1.2, never below 1. The single-slice hint of c = 0.8 (amendment) did not generalize.
+- The "brain" label (in-signal noise std ≈ 1.075× the whole-image σ̂ on 1104c) moves SUB by ≤ 1.5%.
+- P2 (SUB/PER, both tuned) is 1.081× against 1.062× at c = 1. Tuning helps SUB by < 2% and PER not at all.
+- So the gap to fastMRI's 1.46× is not a scalar label error, either whole-image or in-brain. Per the pre-registration, the next test is B (noise transplant).
+- SUBM/PER, both tuned, is 1.128× at a = 9 (33/34 slices). That is the largest unseen-subject gain so far, but it is still far from 1.46×.
