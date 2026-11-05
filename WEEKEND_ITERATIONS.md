@@ -2319,3 +2319,73 @@ blurring), while SUB keeps more detail (T4 +0.14) yet loses n_eff.
 
 Candidate fixes (not run): inverse-target-variance weighting over m in `loss_subset` (weight ∝ (N − m)), or
 oversampling small-target-noise pairs; a matched check is S_K = 6 SUB with the weighting.
+
+---
+
+## RUN 2026-11-04 — ASL-SM2: denoise the mean vs denoise each, then average, on re-reconstructed ASL
+
+Pre-registered (`Archive/SM2/PREREGISTRATION.md`). Pooled training on datasets 1–3 (re-reconstructed 2026-11-03), 5-fold CV by slice index, 3000 iterations. PER and SUB: the fastMRI MEAN recipe (MSE, p_raw 0.5, no augmentation; SUB ladder floor σ̂_min/3, m ~ U{1..9}); PER-D: MSE noise-normalized (the best earlier ASL recipe), seed 101 only. Split-half n_eff (signal region, no ground truth); checkpoint and r chosen on the other folds.
+
+**PRIMARY (Holm over 2):**
+
+- P1 SUB / PER, dataset 1, a = 9: 0.867× (90% CI 0.818–0.916; SUB better on 11/34 slices), p = 0.00046, Holm 0.00046
+- P2 SUB / PER-D, dataset 1, a = 9: 0.752× (90% CI 0.682–0.825; SUB better on 7/34 slices), p = 4.1e-06, Holm 8.1e-06
+
+SUB / PER and SUB / PER-D (90% CI):
+
+| dataset | a | SUB / PER | SUB / PER-D |
+|---:|---:|---|---|
+| 1 | 1 | 0.932 (0.88–1.00; 4/34) | 0.819 (0.79–0.85; 1/34) |
+| 1 | 2 | 0.927 (0.90–0.95; 5/34) | 0.797 (0.76–0.83; 0/34) |
+| 1 | 3 | 0.906 (0.89–0.92; 1/34) | 0.788 (0.74–0.84; 2/34) |
+| 1 | 5 | 0.884 (0.85–0.92; 8/34) | 0.763 (0.70–0.83; 2/34) |
+| 1 | 7 | 0.863 (0.82–0.91; 9/34) | 0.758 (0.69–0.83; 4/34) |
+| 1 | 9 | 0.867 (0.82–0.92; 11/34) | 0.752 (0.68–0.82; 7/34) |
+| 2 | 1 | 0.944 (0.93–0.96; 4/34) | 0.955 (0.93–0.99; 6/34) |
+| 2 | 2 | 0.915 (0.89–0.94; 1/34) | 0.910 (0.88–0.94; 4/34) |
+| 2 | 3 | 0.900 (0.83–0.96; 9/34) | 0.874 (0.81–0.92; 3/34) |
+| 2 | 5 | 0.833 (0.75–0.91; 4/34) | 0.845 (0.77–0.91; 3/34) |
+| 2 | 7 | 0.806 (0.72–0.89; 2/34) | 0.803 (0.72–0.88; 3/34) |
+| 2 | 9 | 0.811 (0.72–0.89; 5/34) | 0.805 (0.73–0.88; 0/34) |
+| 3 | 1 | 0.909 (0.82–1.03; 4/34) | 0.708 (0.64–0.77; 1/34) |
+| 3 | 2 | 0.773 (0.72–0.82; 2/34) | 0.000 (nan–0.48; 0/34) |
+| 3 | 3 | 0.728 (0.67–0.78; 0/34) | 0.000 (nan–nan; 0/34) |
+| 3 | 5 | 0.693 (0.61–0.78; 0/34) | 0.000 (nan–nan; 1/34) |
+| 3 | 7 | 0.644 (0.53–0.77; 4/34) | 0.000 (nan–nan; 2/34) |
+| 3 | 9 | 0.621 (0.50–0.76; 12/34) | 0.000 (nan–nan; 4/34) |
+
+Absolute n_eff (geometric mean over slices) and chosen r (per seed, fold 0's choice):
+
+| dataset | a | PER | SUB | PER-D |
+|---:|---:|---|---|---|
+| 1 | 1 | 24.33 (r 0, 0) | 22.68 (r 0, 0) | 27.68 (r 0) |
+| 1 | 2 | 27.16 (r 0, 0) | 25.17 (r 0, 0) | 31.56 (r 0) |
+| 1 | 3 | 29.58 (r 0.0833, 0.0833) | 26.81 (r 0, 0) | 34.04 (r 0.0833) |
+| 1 | 5 | 32.26 (r 0.0833, 0.0833) | 28.53 (r 0, 0) | 37.38 (r 0.0833) |
+| 1 | 7 | 34.86 (r 0.167, 0.167) | 30.09 (r 0, 0) | 39.71 (r 0.167) |
+| 1 | 9 | 36.48 (r 0.25, 0.25) | 31.62 (r 0, 0) | 42.06 (r 0.167) |
+| 2 | 1 | 58.83 (r 0, 0) | 55.55 (r 0, 0) | 58.15 (r 0) |
+| 2 | 2 | 63.39 (r 0, 0) | 57.98 (r 0, 0) | 63.74 (r 0) |
+| 2 | 3 | 64.46 (r 0, 0) | 57.99 (r 0, 0) | 66.36 (r 0) |
+| 2 | 5 | 69.58 (r 0.0833, 0.0833) | 57.98 (r 0, 0) | 68.58 (r 0.0833) |
+| 2 | 7 | 72.78 (r 0.0833, 0.0833) | 58.65 (r 0, 0) | 73.02 (r 0.0833) |
+| 2 | 9 | 74.73 (r 0.0833, 0.0833) | 60.64 (r 0.0833, 0.0833) | 75.31 (r 0.0833) |
+| 3 | 1 | 45.47 (r 0, 0) | 41.34 (r 0, 0) | 58.36 (r 0) |
+| 3 | 2 | 56.59 (r 0, 0) | 43.73 (r 0, 0) | inf (r 0) |
+| 3 | 3 | 62.61 (r 0, 0) | 45.59 (r 0, 0) | inf (r 0) |
+| 3 | 5 | 67.64 (r 0.0833, 0.0833) | 46.85 (r 0, 0) | inf (r 0.0833) |
+| 3 | 7 | 75.26 (r 0.0833, 0.0833) | 48.48 (r 0, 0) | inf (r 0.0833) |
+| 3 | 9 | 79.68 (r 0.0833, 0.0833) | 49.46 (r 0, 0) | inf (r 0.0833) |
+
+### Note on the ASL-SM2 report (written 2026-11-04, 21:10, after the run; exploratory)
+- Predictions vs result: P1 > 1 and P2 > 1 were predicted; both FAIL (SUB / PER 0.867×, SUB / PER-D 0.752× on dataset 1,
+  a = 9). The ratio falls with a instead of growing; at a = 1 SUB is 7% below PER (prediction: within 5%). Dataset 3
+  shows the smallest ratio, as predicted. Per the pre-registered interpretation, with SUB winning at fastMRI SNR
+  0.36–0.55 (MEAN-SNR), the deficit is specific to ASL (coloured / non-independent noise, few subjects) — not noise level
+  or data size. Note SUB picks r = 0 almost everywhere and its absolute n_eff barely grows with a (dataset 1: 22.7 → 31.6;
+  plain averaging gains 9×), i.e. its decoder does not exploit the lower noise of the mean — consistent with the
+  target-noise tax seen at fastMRI S_K = 6. MEAN-TAX and ASL-SUBJ (queued) test this further.
+- Artefact in the secondary table: PER-D on dataset 3 has 61 non-positive split-half MSEs (n_eff = inf; slices 22–27 at
+  a = 9), so its "0.000" ratios and "inf" n_eff are meaningless. Robust versions (not pre-registered): SUB / PER-D on
+  dataset 3 median per-slice ratio 0.75 / 0.70 / 0.70 / 0.79 / 0.84 / 0.87 and pooled-MSE ratio 0.75 / 0.60 / 0.58 / 0.55
+  / 0.54 / 0.53 for a = 1 / 2 / 3 / 5 / 7 / 9. Primary read-outs (dataset 1) are unaffected (no non-finite entries).
