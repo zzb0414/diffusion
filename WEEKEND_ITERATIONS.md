@@ -2427,9 +2427,9 @@ Absolute n_eff (geometric mean over slices) and chosen r (per seed, fold 0's cho
 - All pre-registered predictions hold: P1 1.062×, P2 1.054× (both Holm p < 0.001); the ratio grows from a = 1 (1.001,
   within 5%) to a plateau of about 1.06 from a = 3. SUB again picks r ≈ 0–1/12; PER needs r up to 1/3.
 - Contrast with ASL-SM2 (SUB 0.87× on dataset 1): the two studies differ in training data (good coil only, one subject in
-  two sessions vs pooled datasets 1–3 including the two other coils with different noise colour) and in test data
+  two sessions vs pooled datasets 1–3 including datasets 2–3 from the poorer coil — one session, noise colour 1.48 vs 0.53 vs 0.66 for dataset 1) and in test data
   (unseen subject vs held-out slices), so they are not a controlled pair. Leading hypothesis to test, not a finding:
-  pooling coils with different noise colour hurts SUB (one scalar σ conditioning, decoding at σ/√a) more than PER.
+  pooling data with different noise colour (two coils, three colours) hurts SUB (one scalar σ conditioning, decoding at σ/√a) more than PER.
   A direct test: SM2's recipe trained on dataset 1 only, scored on dataset 1 held-out slices.
 - The gain (≈ 6%) is much smaller than on fastMRI at a similar SNR (1.46–1.54×).
 
