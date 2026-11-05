@@ -2575,3 +2575,65 @@ Pre-specified as exploratory in `Archive/COIL/PREREGISTRATION.md`. Code: `experi
   1.2–1.5×, coarse, physiological, possibly not independent across repetitions; SUB decodes the mean at σ̂/√a with no
   dial, PER's dial can absorb a mis-stated σ, and SUB picks r ≈ 0); (b) few subjects / slices. ASL-COIL Part A tests
   pooling; (a) can be tested evaluation-only by decoding SUB at c · σ̂/√a with c chosen by split-half (no retraining).
+
+---
+
+## RUN 2026-11-05 — ASL-COIL: does pooling coils hurt denoise-the-mean, and does the MEAN-TAX fix carry to ASL?
+
+Pre-registered (`Archive/COIL/PREREGISTRATION.md`). Part A: PER, SUB and SUBM (denoise the mean with m drawn ∝ m) trained on dataset 1 only (coil1), 5-fold CV by slice index, seed 101, compared on the same slices and folds with ASL-SM2's pooled (datasets 1–3, coil1 + coil2) seed-101 models. Part B: SUBM trained like ASL-SUBJ (dataset 1 + 1104a, seeds 101–102), scored on the unseen subject 1104c against ASL-SUBJ's PER and SUB. ASL-SM2 recipe otherwise (MSE, p_raw 0.5, no augmentation, 3000 iterations, SUB/SUBM ladder floor σ̂_min/3). Split-half n_eff (signal region, no ground truth); checkpoint and r cross-fitted over slice folds.
+
+**PRIMARY (Holm over 3):**
+
+- P1 pooling interaction (SUB/PER on dataset 1 only) / (SUB/PER pooled), dataset 1, a = 9: 0.966× (90% CI 0.930–1.004; higher on 10/34 slices), p = 0.1, Holm 0.2
+- P2 SUBM / SUB, unseen subject (1104c), a = 9: 1.038× (90% CI 1.025–1.053; higher on 29/34 slices), p = 2.8e-07, Holm 8.3e-07
+- P3 SUBM / SUB, dataset-1-only CV, a = 9: 0.951× (90% CI 0.910–0.992; higher on 17/34 slices), p = 0.15, Holm 0.2
+
+Dataset 1 (Part A). Ratios (90% CI; slices higher):
+
+| a | SUB / PER (d1 only) | SUBM / PER (d1 only) | SUB / PER (pooled) | interaction | PER d1 / pooled | SUB d1 / pooled |
+|---:|---|---|---|---|---|---|
+| 1 | 1.051 (0.96–1.20; 13/34) | 0.962 (0.87–1.10; 10/34) | 0.905 (0.85–0.97; 3/34) | 1.162 (1.10–1.25; 30/34) | 0.914 (0.85–0.97; 13/34) | 1.062 (1.04–1.09; 25/34) |
+| 2 | 1.013 (0.96–1.08; 13/34) | 0.936 (0.88–1.01; 8/34) | 0.925 (0.89–0.96; 6/34) | 1.095 (1.06–1.14; 24/34) | 0.939 (0.89–0.98; 15/34) | 1.028 (1.00–1.06; 19/34) |
+| 3 | 0.926 (0.88–0.98; 10/34) | 0.849 (0.80–0.91; 5/34) | 0.903 (0.89–0.92; 3/34) | 1.025 (0.98–1.08; 18/34) | 0.968 (0.92–1.01; 16/34) | 0.992 (0.97–1.02; 14/34) |
+| 5 | 0.894 (0.83–0.95; 11/34) | 0.818 (0.78–0.86; 3/34) | 0.898 (0.86–0.93; 7/34) | 0.995 (0.95–1.05; 15/34) | 0.966 (0.93–1.00; 19/34) | 0.962 (0.94–0.98; 10/34) |
+| 7 | 0.851 (0.78–0.92; 10/34) | 0.792 (0.75–0.84; 2/34) | 0.873 (0.82–0.92; 9/34) | 0.975 (0.94–1.02; 12/34) | 0.979 (0.94–1.01; 18/34) | 0.955 (0.93–0.98; 7/34) |
+| 9 | 0.843 (0.77–0.92; 10/34) | 0.801 (0.76–0.85; 4/34) | 0.873 (0.82–0.92; 12/34) | 0.966 (0.93–1.00; 10/34) | 0.995 (0.96–1.03; 19/34) | 0.960 (0.94–0.99; 8/34) |
+
+Unseen subject 1104c (Part B). Ratios (90% CI; slices higher):
+
+| a | SUBM / SUB | SUBM / PER | SUB / PER |
+|---:|---|---|---|
+| 1 | 0.967 (0.96–0.97; 0/34) | 0.968 (0.95–0.98; 5/34) | 1.001 (0.99–1.01; 20/34) |
+| 2 | 0.982 (0.98–0.99; 5/34) | 1.021 (1.01–1.03; 25/34) | 1.040 (1.03–1.05; 33/34) |
+| 3 | 1.001 (1.00–1.01; 18/34) | 1.068 (1.06–1.08; 31/34) | 1.066 (1.06–1.08; 32/34) |
+| 5 | 1.024 (1.02–1.03; 28/34) | 1.082 (1.06–1.11; 30/34) | 1.057 (1.02–1.09; 27/34) |
+| 7 | 1.031 (1.02–1.04; 30/34) | 1.095 (1.06–1.12; 31/34) | 1.062 (1.03–1.09; 27/34) |
+| 9 | 1.038 (1.03–1.05; 29/34) | 1.103 (1.07–1.13; 31/34) | 1.062 (1.03–1.09; 28/34) |
+
+Absolute n_eff (geometric mean over slices) and chosen r (per seed, fold 0's choice):
+
+| a | PER_d1 | SUB_d1 | SUBM_d1 | PER_pool | SUB_pool | PER_subj | SUB_subj | SUBM_subj |
+|---:|---|---|---|---|---|---|---|---|
+| 1 | 22.36 (r 0) | 23.51 (r 0) | 21.51 (r 0) | 24.45 (r 0) | 22.13 (r 0) | 17.90 (r 0, 0) | 17.91 (r 0, 0) | 17.32 (r 0, 0) |
+| 2 | 25.26 (r 0.0833) | 25.58 (r 0) | 23.64 (r 0) | 26.92 (r 0) | 24.89 (r 0) | 19.59 (r 0.0833, 0.0833) | 20.37 (r 0, 0) | 20.01 (r 0, 0.0833) |
+| 3 | 28.77 (r 0.0833) | 26.62 (r 0) | 24.44 (r 0) | 29.72 (r 0.0833) | 26.83 (r 0) | 20.67 (r 0.0833, 0.167) | 22.04 (r 0, 0) | 22.07 (r 0, 0.0833) |
+| 5 | 31.06 (r 0.167) | 27.76 (r 0) | 25.42 (r 0) | 32.14 (r 0.0833) | 28.87 (r 0) | 23.32 (r 0.167, 0.167) | 24.64 (r 0.0833, 0.0833) | 25.23 (r 0.0833, 0.0833) |
+| 7 | 34.22 (r 0.167) | 29.12 (r 0) | 27.10 (r 0) | 34.94 (r 0.167) | 30.50 (r 0) | 25.40 (r 0.25, 0.25) | 26.96 (r 0.0833, 0.0833) | 27.81 (r 0.0833, 0.0833) |
+| 9 | 36.41 (r 0.25) | 30.68 (r 0) | 29.17 (r 0) | 36.61 (r 0.25) | 31.95 (r 0) | 27.24 (r 0.333, 0.333) | 28.93 (r 0.0833, 0.0833) | 30.04 (r 0.0833, 0.0833) |
+
+### Reading — ASL-COIL (written 2026-11-05, 13:45, after the run)
+- Predictions vs result:
+  - P1 > 1 (pooling hurts SUB): FAILS. Interaction 0.966× (CI 0.93–1.00) at a = 9; dataset-1-only SUB / PER is 0.843×,
+    as low as pooled (0.873×). Pooling only matters at a = 1 (interaction 1.16×: pooling helps PER 9%, costs SUB 6%).
+  - P2 SUBM / SUB on 1104c ≥ 1 and ≤ +5%: HOLDS (1.038×, 29/34 slices, Holm 8e-7). SUBM / PER there: 1.103×.
+  - P3 SUBM / SUB on dataset 1 ≥ 1: FAILS (0.951×, CI 0.91–0.99, Holm 0.2, not significant).
+- Pre-registered rules: pooling is not the cause; SUBM is confirmed as the ASL default (P2 > 1).
+- The pattern across ASL-SM2, ASL-SUBJ and ASL-COIL is consistent: denoise-the-mean variants WIN on the unseen subject
+  (SUB 1.06×, SUBM 1.10× vs PER) and LOSE on held-out slices of the training subject (0.84–0.87×), whatever the pooling.
+  PER's n_eff is much higher on the training subject's held-out slices (36.4 at a = 9) than on 1104c (27.2), SUB's less
+  so (30.7 vs 28.9). The CV folds interleave slice indices (fold pattern 3331120340102043113403214210402224), so every
+  held-out slice has trained neighbours of the same subject (and, pooled, the same indices' anatomy in datasets 2–3).
+- New hypothesis (not a finding): PER, which decodes at single-copy SNR, leans on the learned prior far more than SUB,
+  and a prior learned from the same subject's adjacent slices is unusually good. Slice-CV on the training subject then
+  favours PER; on an unseen subject (the deployment case) the order flips. Evaluation-only test: score the
+  dataset-1-only CV fold models (Part A) on 1104c — same models, two test settings.
