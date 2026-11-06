@@ -2710,3 +2710,60 @@ Untuned in-signal / whole-image noise std ratio on 1104c: median 1.075 (range 1.
 - P2 (SUB/PER, both tuned) is 1.081× against 1.062× at c = 1. Tuning helps SUB by < 2% and PER not at all.
 - So the gap to fastMRI's 1.46× is not a scalar label error, either whole-image or in-brain. Per the pre-registration, the next test is B (noise transplant).
 - SUBM/PER, both tuned, is 1.128× at a = 9 (33/34 slices). That is the largest unseen-subject gain so far, but it is still far from 1.46×.
+
+---
+
+## RUN 2026-11-05 — GAP B: does ASL's noise, transplanted onto fastMRI, shrink the denoise-the-mean gain?
+
+Pre-registered (`Archive/GAP/PREREGISTRATION_B.md`). fastMRI AXT2 at the ASL matrix (80), 62 training volumes, N = 10 copies, label σ = 1 per channel (white noise then has fastMRI S_K = 2's per-band SNR). Noise: W white; G Gaussian with the ASL repetition-deviation power spectrum; T the real ASL deviation fields (coil1; training from ds1 + 1104a, test from 1104c; distinct slice and repetition per copy). PER (arm A), SUB, SUBM; seeds 101–102; checkpoint and r chosen without ground truth (leave-one-volume-out split-half); n_eff vs ground truth on 15 test volumes.
+
+**PRIMARY (Holm over 2):**
+
+- P1 (SUB/PER under T) / (SUB/PER under W), a = 9: 1.029× (90% CI 1.012–1.046; higher on 13/15 volumes), p = 0.0084, Holm 0.0084
+- P2 (SUB/PER under G) / (SUB/PER under W), a = 9: 1.084× (90% CI 1.071–1.097; higher on 15/15 volumes), p = 6.1e-05, Holm 0.00012
+
+Share of the gap (W's SUB/PER 1.205 → ASL's 1.062) reproduced, in log ratio: G -0.64, T -0.23.
+
+SUB / PER and SUBM / PER (90% CI; volumes higher):
+
+| a | SUB/PER W | SUB/PER G | SUB/PER T | SUBM/PER W | SUBM/PER G | SUBM/PER T |
+|---:|---|---|---|---|---|---|
+| 1 | 0.948 (0.94–0.96; 0/15) | 0.977 (0.97–0.99; 3/15) | 0.910 (0.90–0.92; 0/15) | 0.912 (0.90–0.92; 0/15) | 0.957 (0.95–0.97; 2/15) | 0.860 (0.85–0.87; 0/15) |
+| 3 | 1.059 (1.04–1.07; 14/15) | 1.100 (1.08–1.12; 15/15) | 0.974 (0.95–0.99; 4/15) | 1.030 (1.02–1.04; 13/15) | 1.086 (1.07–1.10; 15/15) | 0.977 (0.96–0.99; 4/15) |
+| 5 | 1.167 (1.15–1.18; 15/15) | 1.197 (1.17–1.22; 15/15) | 1.077 (1.05–1.10; 14/15) | 1.156 (1.14–1.17; 15/15) | 1.187 (1.16–1.21; 15/15) | 1.078 (1.06–1.09; 14/15) |
+| 9 | 1.205 (1.18–1.23; 15/15) | 1.306 (1.28–1.34; 15/15) | 1.240 (1.21–1.26; 15/15) | 1.246 (1.22–1.27; 15/15) | 1.357 (1.32–1.39; 15/15) | 1.237 (1.21–1.26; 15/15) |
+
+n_eff (geometric mean over volumes; σ = 1 label):
+
+| a | A W | SUB W | SUBM W | A G | SUB G | SUBM G | A T | SUB T | SUBM T |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 58.6 | 55.5 | 53.4 | 54.0 | 52.8 | 51.7 | 51.3 | 46.7 | 44.1 |
+| 3 | 71.7 | 75.9 | 73.8 | 67.4 | 74.1 | 73.2 | 63.4 | 61.7 | 61.9 |
+| 5 | 77.9 | 90.9 | 90.0 | 73.8 | 88.3 | 87.6 | 69.0 | 74.2 | 74.4 |
+| 9 | 85.1 | 102.6 | 106.1 | 78.8 | 103.0 | 106.9 | 75.3 | 93.4 | 93.2 |
+
+Band transfer at a = 9 (share of the true detail kept per band of k / k_max; plain averaging = 1):
+
+| design | noise | 0–.1 | .1–.25 | .25–.5 | .5–.75 | .75–1 |
+|---|---|---:|---:|---:|---:|---:|
+| A | W | 1.00 | 0.65 | 0.36 | 0.15 | 0.09 |
+| SUB | W | 0.99 | 0.86 | 0.69 | 0.40 | 0.21 |
+| SUBM | W | 0.99 | 0.87 | 0.69 | 0.39 | 0.19 |
+| A | G | 0.99 | 0.62 | 0.36 | 0.16 | 0.12 |
+| SUB | G | 0.99 | 0.87 | 0.69 | 0.37 | 0.18 |
+| SUBM | G | 0.99 | 0.87 | 0.69 | 0.37 | 0.17 |
+| A | T | 1.01 | 0.61 | 0.32 | 0.12 | 0.08 |
+| SUB | T | 0.98 | 0.82 | 0.62 | 0.30 | 0.13 |
+| SUBM | T | 0.96 | 0.81 | 0.61 | 0.30 | 0.11 |
+
+**Reading (GAP B, against the pre-registration; written 2026-11-05 after the run).**
+- **Control first.** W at matrix 80 gives SUB/PER 1.205 at a = 9, against 1.455 at matrix 160 at the same per-band SNR.
+  - That sits at the pre-registered "W < 1.2" boundary, so the matrix change carries much of the gap.
+  - In log ratio, matrix 160 → 80 accounts for (ln 1.455 − ln 1.205) / (ln 1.455 − ln 1.062) ≈ 0.60 of the fastMRI-to-ASL gap.
+- **ASL's noise is not the cause.** Both P1 (T/W 1.029×) and P2 (G/W 1.084×) are above 1, so the transplanted noise does not shrink the gain. ASL's colour *helps* denoise-the-mean, and the real fields leave it about where white noise does.
+  - The heavy tails and in-brain excess cost both designs n_eff (PER 85 → 75, SUB 103 → 93), but not the ratio.
+  - My pre-run guess (P1 ≈ 0.9) was wrong.
+- **What remains.** About 40% of the gap (W at matrix 80, 1.205 → ASL's 1.06) is not the noise, not the label and not the training-set size. It lies in ASL's signal or data: low-SNR perfusion content, and the subject/session generalization seen in ASL-SUBJ.
+- **Open: why the matrix matters.** Two candidates, untested:
+  - At 80 × 80 the same anatomy has less fine structure per pixel, so the mid bands where denoise-the-mean gains (T3/T4) hold less signal.
+  - 64-pixel crops cover most of an 80 image, so training sees fewer distinct patches.
