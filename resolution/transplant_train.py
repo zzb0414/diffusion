@@ -13,6 +13,7 @@ import models as Mo
 import transplant as TP
 from unet import UNet
 from n2n import N2N_DSM
+from models import fft2c, ifft2c
 _sp = importlib.util.spec_from_file_location("res_train", os.path.join(os.path.dirname(os.path.abspath(__file__)), "train.py"))
 RT = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(RT)       # resolution/train.py (the repo root has its own)
 CFG, stack = RT.CFG, RT.stack
@@ -40,6 +41,9 @@ def main():
     ap.add_argument("--arm", required=True, choices=ARMS); ap.add_argument("--noise", required=True, choices=TP.KINDS)
     ap.add_argument("--outdir", required=True); ap.add_argument("--seed", type=int, default=101)
     ap.add_argument("--iters", type=int, default=CFG["ITERS"]); ap.add_argument("--n-vol", type=int, default=62)
+    ap.add_argument("--crop", type=int, default=CFG["CROP"], help="GAP C1: crop size")
+    ap.add_argument("--batch", type=int, default=CFG["BATCH"], help="GAP C1: batch size (crop^2 x batch kept constant)")
+    ap.add_argument("--grid", type=int, default=TP.M, choices=(TP.M, 160), help="GAP C2: 160 = matrix-80 content on a 160 grid")
     args = ap.parse_args()
     os.chdir(D.REPO)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -54,16 +58,28 @@ def main():
     opt = torch.optim.Adam(net.parameters(), lr=CFG["LR"])
     ckpt_cfg = dict(arm=args.arm, noise=args.noise, seed=args.seed, M=TP.M, sig=TP.SIG, sigma_min=float(m.dsm.sigmas[0]),
                     sigma_max=float(m.dsm.sigmas[-1]), p_raw=CFG["P_RAW"], n_vol=args.n_vol)
+    B = args.batch
+    if args.crop != CFG["CROP"] or B != CFG["BATCH"] or args.grid != TP.M:                       # GAP C; absent keys = the GAP B setting
+        ckpt_cfg.update(batch=B, crop=args.crop, grid=args.grid)
     json.dump(dict(cfg=CFG, ckpt_cfg=ckpt_cfg, n_train_images=len(x)), open(os.path.join(args.outdir, "config.json"), "w"), indent=2)
     log = open(os.path.join(args.outdir, "train.log"), "a", encoding="utf-8")
     with open(os.path.join(args.outdir, "train.csv"), "w", newline="") as f:
         csv.writer(f).writerow(["iter", "loss_avg50", "sec"])
-    c, recent, t0 = CFG["CROP"], [], time.time()
-    sy = torch.full((CFG["BATCH"],), TP.SIG, device=dev)
+    c, recent, t0, G = args.crop, [], time.time(), args.grid
+    if G != TP.M:
+        pad = (G - TP.M) // 2
+
+        def copies(i):
+            k = torch.zeros((D.N, G, G), dtype=Y.dtype, device=dev); k[:, pad:pad + TP.M, pad:pad + TP.M] = fft2c(Y[i])
+            return ifft2c(k) * (G / TP.M)
+    else:
+        def copies(i):
+            return Y[i]
+    sy = torch.full((B,), TP.SIG, device=dev)
     for it in range(1, args.iters + 1):
-        idx = torch.randint(0, len(x), (CFG["BATCH"],)).tolist()
-        tl = torch.randint(0, TP.M - c + 1, (CFG["BATCH"], 2)).tolist()
-        y = torch.stack([stack(Y[i][:, t:t + c, l:l + c]) for i, (t, l) in zip(idx, tl)])
+        idx = torch.randint(0, len(x), (B,)).tolist()
+        tl = torch.randint(0, G - c + 1, (B, 2)).tolist()
+        y = torch.stack([stack(copies(i)[:, t:t + c, l:l + c]) for i, (t, l) in zip(idx, tl)])
         if spec.get("sub"):
             loss = m.loss_subset(y, sigma_y=sy, loss="mse", p_raw=CFG["P_RAW"], m_dist=spec.get("m_dist"))
         else:

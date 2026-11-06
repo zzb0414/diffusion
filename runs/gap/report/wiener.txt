@@ -1,0 +1,10 @@
+Wiener (linear) SUB / PER n_eff ratio, population spectrum, best r; a = 1, 3, 5, 9
+
+fastMRI matrix 160, clean spectrum, white sigma 1: 1.000 1.115 1.250 1.423
+fastMRI matrix 80, clean spectrum, white sigma 1: 1.000 1.093 1.194 1.273
+fastMRI matrix 80, estimated from noisy copies (check): 1.000 1.092 1.191 1.264
+ASL coil1/ds1_20260924: 1.000 1.070 1.116 1.169
+ASL coil1/1104a_20261104: 1.000 1.044 1.082 1.114
+ASL coil1/1104c_20261104: 1.000 1.056 1.106 1.149
+ASL coil2/ds3_20261005: 1.000 1.100 1.161 1.245
+ASL coil2_vss/ds2_20261005: 1.000 1.074 1.148 1.178

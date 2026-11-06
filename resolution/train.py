@@ -52,6 +52,8 @@ def main():
     ap.add_argument("--seed", type=int, default=101)
     ap.add_argument("--iters", type=int, default=CFG["ITERS"])
     ap.add_argument("--n-vol", type=int, default=0, help="MEAN study: train on the first n training volumes only (0 = all)")
+    ap.add_argument("--crop", type=int, default=CFG["CROP"], help="GAP C1: crop size")
+    ap.add_argument("--batch", type=int, default=CFG["BATCH"], help="GAP C1: batch size (crop^2 x batch kept constant)")
     args = ap.parse_args()
     os.chdir(D.REPO)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -68,18 +70,21 @@ def main():
     ckpt_cfg = dict(arm=args.arm, seed=args.seed, train_res=list(spec["train_res"]), sigma_min=float(m.dsm.sigmas[0]),
                     sigma_max=float(m.dsm.sigmas[-1]), param=m.param, blind=m.blind, p_raw=CFG["P_RAW"],
                     n_vol=args.n_vol)
+    B = args.batch
+    if args.crop != CFG["CROP"] or B != CFG["BATCH"]:
+        ckpt_cfg.update(batch=B, crop=args.crop)
     json.dump(dict(cfg=CFG, ckpt_cfg=ckpt_cfg, n_train_images=len(x)), open(os.path.join(args.outdir, "config.json"), "w"), indent=2)
     log = open(os.path.join(args.outdir, "train.log"), "a", encoding="utf-8")
     with open(os.path.join(args.outdir, "train.csv"), "w", newline="") as f:
         csv.writer(f).writerow(["iter", "M", "loss_avg50", "sec"])
-    c, recent, t0 = CFG["CROP"], [], time.time()
+    c, recent, t0 = args.crop, [], time.time()
     for it in range(1, args.iters + 1):
         M = spec["train_res"][int(torch.randint(len(spec["train_res"]), (1,)))]
         G = spec.get("grid") or M
-        idx = torch.randint(0, len(x), (CFG["BATCH"],)).tolist()
-        tl = torch.randint(0, G - c + 1, (CFG["BATCH"], 2)).tolist()
+        idx = torch.randint(0, len(x), (B,)).tolist()
+        tl = torch.randint(0, G - c + 1, (B, 2)).tolist()
         y = torch.stack([stack(gen.get(i, M, spec.get("grid"))[:, t:t + c, l:l + c]) for i, (t, l) in zip(idx, tl)])
-        sy = torch.full((CFG["BATCH"],), D.sigma(M), device=dev)
+        sy = torch.full((B,), D.sigma(M), device=dev)
         if spec.get("vox"):
             net.vox = Mo.vox_coord(M)
         if spec.get("sub"):

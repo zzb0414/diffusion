@@ -53,11 +53,14 @@ def main():
     sub = cfg["arm"].startswith("SUB")
     x, vol = D.load_clean("test")
     s = TP.SIG
-    k = torch.from_numpy(np.hypot(*np.meshgrid(*(np.arange(M) - M // 2,) * 2)) / (M / 2)).to(dev)
+    G = cfg.get("grid", M)                                                 # GAP C2: content of matrix M on a G grid
+    k = torch.from_numpy(np.hypot(*np.meshgrid(*(np.arange(G) - G // 2,) * 2)) / (M / 2)).to(dev)   # bands of the content
     bmask = [((k >= lo) & (k < hi)) for lo, hi in BANDS]
     rows, t0 = [], time.time()
     for i in range(args.max_img or len(x)):
         clean = TP.clean(x[i]); y = clean[None] + TP.fields("test", i, cfg["noise"])
+        if G != M:
+            clean, y = TP.up(clean, G), TP.up(y, G)
         head = torch.from_numpy(np.abs(clean) > 0.05 * np.percentile(np.abs(clean), 99)).to(dev)
         c = torch.from_numpy(clean.astype(np.complex128)).to(dev); Y = torch.from_numpy(y.astype(np.complex128)).to(dev)
         N = len(y)
@@ -76,7 +79,7 @@ def main():
                 e_gt = (est - c[None]).abs().square() / 2; e_sh = (est - ref).abs().square() / 2
                 F = fft2c(est)
                 T = [float((F * C.conj()[None])[:, b].real.sum() / len(sub_)) / p for b, p in zip(bmask, cpow)]
-                rows.append([cfg["arm"] + "_" + cfg["noise"], cfg["seed"], cfg.get("n_vol", 0), args.iter, int(vol[i]), i, round(r, 4), a, s, s2,
+                rows.append([cfg["arm"] + "_" + cfg["noise"] + ("" if "crop" not in cfg else f"_c{cfg['crop']}g{G}"), cfg["seed"], cfg.get("n_vol", 0), args.iter, int(vol[i]), i, round(r, 4), a, s, s2,
                              float(e_gt[:, head].mean()), float(e_sh[:, head].mean()) - s2 / (N - a)] + T)
         if i % 20 == 0:
             print(f"image {i} ({(time.time() - t0) / 60:.1f} min)", flush=True)

@@ -62,5 +62,13 @@ def fields(split, i, kind, n=D.N):
     return np.fft.ifft2(np.fft.fft2(w, norm="ortho") * np.sqrt(psd / (2 * SIG ** 2)), norm="ortho").astype(np.complex64)
 
 
+def up(z, G=160):
+    """(..., 80, 80) complex -> (..., G, G): the same content on a finer pixel grid (centred k-space zero-padding,
+    intensity preserved; white noise keeps its per-pixel std but becomes band-limited). GAP C2."""
+    c = (G - M) // 2
+    k = np.zeros(z.shape[:-2] + (G, G), np.complex128); k[..., c:c + M, c:c + M] = D.fft2c(z)
+    return (D.ifft2c(k) * (G / M)).astype(np.complex64)
+
+
 def clean(x320):
     return D.to_res(D.fft2c(x320), M).astype(np.complex64)
