@@ -44,6 +44,7 @@ def main():
     ap.add_argument("--crop", type=int, default=CFG["CROP"], help="GAP C1: crop size")
     ap.add_argument("--batch", type=int, default=CFG["BATCH"], help="GAP C1: batch size (crop^2 x batch kept constant)")
     ap.add_argument("--grid", type=int, default=TP.M, choices=(TP.M, 160), help="GAP C2: 160 = matrix-80 content on a 160 grid")
+    ap.add_argument("--content", default="F", choices=TP.CONTENTS, help="GAP D/E: D = ASL-SNR-spectrum content, E = D random phase")
     args = ap.parse_args()
     os.chdir(D.REPO)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -53,7 +54,7 @@ def main():
     spec = Mo.ARMS[args.arm]
     x, vol = D.load_clean("train")
     x = x[vol < args.n_vol]
-    Y = torch.from_numpy(np.stack([TP.clean(xi)[None] + TP.fields("train", i, args.noise) for i, xi in enumerate(x)])).to(dev)
+    Y = torch.from_numpy(np.stack([TP.content(xi, "train", i, args.content, args.noise)[None] + TP.fields("train", i, args.noise) for i, xi in enumerate(x)])).to(dev)
     net, m = build(args.arm, dev)
     opt = torch.optim.Adam(net.parameters(), lr=CFG["LR"])
     ckpt_cfg = dict(arm=args.arm, noise=args.noise, seed=args.seed, M=TP.M, sig=TP.SIG, sigma_min=float(m.dsm.sigmas[0]),
@@ -61,6 +62,8 @@ def main():
     B = args.batch
     if args.crop != CFG["CROP"] or B != CFG["BATCH"] or args.grid != TP.M:                       # GAP C; absent keys = the GAP B setting
         ckpt_cfg.update(batch=B, crop=args.crop, grid=args.grid)
+    if args.content != "F":                                                                       # GAP D/E
+        ckpt_cfg.update(content=args.content)
     json.dump(dict(cfg=CFG, ckpt_cfg=ckpt_cfg, n_train_images=len(x)), open(os.path.join(args.outdir, "config.json"), "w"), indent=2)
     log = open(os.path.join(args.outdir, "train.log"), "a", encoding="utf-8")
     with open(os.path.join(args.outdir, "train.csv"), "w", newline="") as f:

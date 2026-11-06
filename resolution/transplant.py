@@ -72,3 +72,57 @@ def up(z, G=160):
 
 def clean(x320):
     return D.to_res(D.fft2c(x320), M).astype(np.complex64)
+
+
+# ---- GAP D / E (Archive/GAP/PREREGISTRATION_D.md): content with ASL's signal-to-noise spectrum ----------------------
+CONTENTS = ("F", "D", "E")      # F fastMRI as is (GAP B); D filtered to coil1 ASL's per-frequency SNR; E = D, random phase
+SNR_SCANS = ("ds1_20260924", "1104a_20261104", "1104c_20261104")
+_filt = {}
+
+
+def ring(P, nb=40):
+    """Radial average over nb rings of |k| (numpy fft order), as resolution/wiener.py."""
+    k = np.hypot(*np.meshgrid(np.fft.fftfreq(P.shape[1]), np.fft.fftfreq(P.shape[0])))
+    b = np.minimum((k / k.max() * nb).astype(int), nb - 1); out = np.zeros_like(P)
+    for j in range(nb):
+        out[b == j] = P[b == j].mean()
+    return out
+
+
+def asl_snr():
+    """Ring-averaged per-frequency SNR of ONE coil1 ASL repetition: signal power (|FFT mean|^2 - Nn / N) over noise power
+    (repetition deviations), population over slices and the three coil1 scans, each scan's noise scaled to SIG."""
+    Ps, Ns = [], []
+    for p in SNR_SCANS:
+        F = np.fft.fft2(np.load(os.path.join(ASL, p, "asl.npy")).astype(np.complex128), axes=(0, 1), norm="ortho")
+        n = F.shape[-1]; Fm = F.mean(-1); Nn = (np.abs(F - Fm[..., None]) ** 2).sum(-1) / (n - 1)
+        sc = 2 * SIG ** 2 / Nn.mean()
+        Ps.append(((np.abs(Fm) ** 2 - Nn / n).mean(-1)) * sc); Ns.append(Nn.mean(-1) * sc)
+    return np.clip(ring(np.mean(Ps, 0)), 0, None) / ring(np.mean(Ns, 0))
+
+
+def filt(noise):
+    """|H(k)| (80, 80, numpy fft order) making fastMRI content x noise `noise` have ASL's per-frequency SNR:
+    |H|^2 P_fastMRI(k) / Nn_noise(k) = SNR_ASL(k) (ring-averaged population spectra; fastMRI P from the train split)."""
+    if noise not in _filt:
+        path = os.path.join(CACHE, f"filter_{noise}.npy")
+        if not os.path.exists(path):
+            x, _ = D.load_clean("train")
+            P = ring(np.mean([np.abs(np.fft.fft2(clean(z), norm="ortho")) ** 2 for z in x], 0))
+            Nn = ring(pool("train")[1]) if noise == "T" else np.full((M, M), 2 * SIG ** 2)
+            np.save(path, np.sqrt(asl_snr() * Nn / P))
+        _filt[noise] = np.load(path)
+    return _filt[noise]
+
+
+def content(x320, split, i, kind, noise):
+    """Clean image of GAP B/D/E: F = clean(x320); D = F filtered by filt(noise); E = D with uniformly random Fourier
+    phase (a stationary Gaussian-like image with D's spectrum; seeded per split and image)."""
+    c = clean(x320)
+    if kind == "F":
+        return c
+    K = np.fft.fft2(c, norm="ortho") * filt(noise)
+    if kind == "E":
+        rng = np.random.default_rng(SEED + 17 + 1000003 * D.SPLIT_ID[split] + 7 * i)
+        K = np.abs(K) * np.exp(2j * np.pi * rng.random(K.shape))
+    return np.fft.ifft2(K, norm="ortho").astype(np.complex64)
