@@ -68,6 +68,8 @@ def main():
     ap.add_argument("--sub-uniform", action="store_true",
                     help="SM2: --mode sub draws slices uniformly and m ~ U{1..N-1} per sample (the MEAN recipe), "
                          "instead of the balanced (slice, m) sampler")
+    ap.add_argument("--crop", type=int, default=None, help="ASL-CROP: random square crop per sample (default: whole slice)")
+    ap.add_argument("--batch", type=int, default=None, help="ASL-CROP: batch size (default CFG BATCH)")
     ap.add_argument("--m-dist", default=None, choices=["linear"],
                     help="COIL: with --sub-uniform, draw m with probability proportional to m (MEAN-TAX's SUBM)")
     args = ap.parse_args()
@@ -128,6 +130,8 @@ def main():
     if args.mode == "sub":
         assert sigma_min <= float(sig.min()) / np.sqrt(CFG["M_MAX"]) + 1e-12, "ladder must reach sigma/3"
 
+    if args.batch:
+        CFG["BATCH"] = args.batch
     ckpt_cfg = dict(net_type="N2N_DSM", noise_label="total",
                     objective="multireal" if args.mode == "per" else "subset_balanced",
                     N=N, L=CFG["L"], sigma_min=sigma_min, sigma_max=CFG["SIGMA_MAX"],
@@ -139,6 +143,8 @@ def main():
         ckpt_cfg.update(sub_uniform=True)
     if args.m_dist is not None:
         ckpt_cfg.update(m_dist=args.m_dist)
+    if args.crop or args.batch:
+        ckpt_cfg.update(crop=args.crop, batch=CFG["BATCH"])
     if args.noise_norm:
         ckpt_cfg.update(noise_norm=True, sigma_ref=sigma_ref)
     if args.param != "score" or args.blind:
@@ -179,6 +185,10 @@ def main():
         if args.aug:
             xb = torch.stack([dihedral(xb[i], int(rng_np.integers(4)), bool(rng_np.integers(2)))
                               for i in range(len(xb))])
+        if args.crop:
+            c = args.crop
+            tl = torch.randint(0, xb.shape[-1] - c + 1, (len(xb), 2)).tolist()
+            xb = torch.stack([xb[i, :, t:t + c, l:l + c] for i, (t, l) in enumerate(tl)])
         if args.mode == "per":
             l_ = trainer.step_multireal(xb, loss=LOSS, sigma_y=sy_train[poss], p_raw=P_RAW,
                                         noise_norm=args.noise_norm,
