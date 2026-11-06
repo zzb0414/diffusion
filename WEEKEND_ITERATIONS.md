@@ -2842,3 +2842,13 @@ Band transfer at a = 9 (bands of k / k_max of the content; plain averaging = 1):
 - **Amendment C3 (pre-registered here, before running).** To isolate pixel scale: U80 with crop 128 and batch 2 (0.8 FOV), PER and SUB, seeds 101–102.
   - If its ratio is about 1.2 (as at matrix 80), pixel scale does not matter and the FOV fraction is the lever.
   - If it stays about 1.4, pixel scale matters independently.
+
+**GAP C3 (amendment, pre-registered in the GAP C reading; scored with matrix_report's selection, 2026-11-06).** Matrix-80 content on a 160 grid, crop 128, batch 2 (0.8 FOV):
+- **The ratio.** SUB/PER = 1.278 (1.24–1.31; 15/15). That lies between matrix 80 (1.205) and U80 with crop 64 (1.424), and closer to matrix 80.
+  - U80c128 / U80 = 0.898 (0/15); U80c128 / 80 = 1.061 (15/15).
+  - In log ratio, about 64% of U80's rise came from the crop's FOV share and about 36% from the finer pixel grid.
+- **Absolute n_eff, against matrix 80.** A finer grid helps neither design:
+  - PER 79.3 against 85.1 (0.932×);
+  - SUB 101.4 against 102.6 (0.988×).
+  - The residual ratio rise is PER getting worse on the finer grid (band-limited noise spread over more pixels), not SUB improving.
+- **Reading.** Pixel scale is not a useful lever. Up-sampling ASL inputs onto a finer grid would not help denoise-the-mean. The lever is the crop/patch recipe: FOV share and patches per step, tested on ASL in ASL-CROP.
