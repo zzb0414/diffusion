@@ -2852,3 +2852,37 @@ Band transfer at a = 9 (bands of k / k_max of the content; plain averaging = 1):
   - SUB 101.4 against 102.6 (0.988×).
   - The residual ratio rise is PER getting worse on the finer grid (band-limited noise spread over more pixels), not SUB improving.
 - **Reading.** Pixel scale is not a useful lever. Up-sampling ASL inputs onto a finer grid would not help denoise-the-mean. The lever is the crop/patch recipe: FOV share and patches per step, tested on ASL in ASL-CROP.
+
+---
+
+## RUN 2026-11-06 — ASL-CROP: does training on crops help denoise-the-mean on ASL?
+
+Pre-registered (`Archive/CROP/PREREGISTRATION.md`). Trained on dataset 1 + 1104a (seeds 101–102, 3000 iterations, MSE), tested on the unseen subject 1104c; crop models use random 32 × 32 crops, batch 32 (same pixels per step as whole 80 × 80 slices at batch 8); references are ASL-SUBJ (PER, SUB) and ASL-COIL (SUBM). Checkpoint and r cross-fitted over slice folds, no ground truth.
+
+**PRIMARY (Holm over 3):**
+
+- P1 SUBM crop / SUBM whole slice, a = 9: 0.947× (90% CI 0.916–0.974; higher on 11/34 slices), p = 0.0034, Holm 0.0068
+- P2 SUB crop / SUB whole slice, a = 9: 1.037× (90% CI 1.025–1.049; higher on 26/34 slices), p = 2.3e-05, Holm 7e-05
+- P3 PER crop / PER whole slice, a = 9: 1.006× (90% CI 1.000–1.012; higher on 22/34 slices), p = 0.043, Holm 0.043
+
+Ratios (90% CI; slices higher):
+
+| a | SUBM c / SUBM | SUB c / SUB | PER c / PER | SUB/PER whole | SUB/PER crop | SUBM/PER whole | SUBM/PER crop | SUBM crop / PER whole |
+|---:|---|---|---|---|---|---|---|---|
+| 1 | 1.000 (0.99–1.01; 20/34) | 0.990 (0.98–1.00; 10/34) | 1.000 (0.99–1.01; 21/34) | 1.001 (0.99–1.01; 20/34) | 0.991 (0.98–1.01; 10/34) | 0.968 (0.95–0.98; 5/34) | 0.968 (0.95–0.98; 12/34) | 0.968 (0.95–0.98; 12/34) |
+| 2 | 0.986 (0.97–1.00; 15/34) | 1.003 (1.00–1.01; 21/34) | 1.014 (1.01–1.02; 25/34) | 1.040 (1.03–1.05; 33/34) | 1.029 (1.02–1.04; 30/34) | 1.021 (1.01–1.03; 25/34) | 0.994 (0.98–1.01; 21/34) | 1.007 (0.99–1.03; 21/34) |
+| 3 | 0.961 (0.94–0.98; 13/34) | 1.019 (1.01–1.02; 26/34) | 1.036 (1.02–1.05; 30/34) | 1.066 (1.06–1.08; 32/34) | 1.049 (1.03–1.06; 27/34) | 1.068 (1.06–1.08; 31/34) | 0.991 (0.95–1.03; 22/34) | 1.026 (0.99–1.06; 24/34) |
+| 5 | 0.958 (0.93–0.98; 12/34) | 1.014 (1.01–1.02; 22/34) | 1.014 (1.01–1.02; 28/34) | 1.057 (1.02–1.09; 27/34) | 1.057 (1.03–1.08; 26/34) | 1.082 (1.06–1.11; 30/34) | 1.022 (0.98–1.06; 26/34) | 1.037 (0.99–1.08; 26/34) |
+| 7 | 0.947 (0.92–0.97; 10/34) | 1.027 (1.02–1.04; 24/34) | 1.009 (1.00–1.02; 25/34) | 1.062 (1.03–1.09; 27/34) | 1.080 (1.05–1.11; 31/34) | 1.095 (1.06–1.12; 31/34) | 1.027 (0.98–1.07; 27/34) | 1.037 (0.99–1.08; 28/34) |
+| 9 | 0.947 (0.92–0.97; 11/34) | 1.037 (1.03–1.05; 26/34) | 1.006 (1.00–1.01; 22/34) | 1.062 (1.03–1.09; 28/34) | 1.095 (1.06–1.12; 31/34) | 1.103 (1.07–1.13; 31/34) | 1.038 (0.99–1.08; 28/34) | 1.044 (1.00–1.08; 26/34) |
+
+**Reading (against `Archive/CROP/PREREGISTRATION.md`):**
+- **P1 = 0.947 (Holm 0.007): the prediction failed for SUBM.** Training SUBM on 32-pixel crops lowers n_eff by 5% at a = 9. The drop grows with a (1.000 at a = 1, 0.947 at a = 9). Both seeds agree (0.941, 0.952). SUBM-crop does **not** become the ASL default; the whole-slice SUBM stays the default.
+- **P2 = 1.037 (Holm 7e-5): SUB gains as predicted**, matching fastMRI's +3.7% at matrix 80. Both seeds agree (1.052, 1.023).
+- **P3 = 1.006: PER is essentially unchanged**, so the predicted PER loss (fastMRI −8%) did not appear on ASL.
+- **Crops and m ∝ m look like substitutes, not complements.**
+  - SUB-crop / SUB-whole (1.037) equals SUBM-whole / SUB-whole (1.038).
+  - Combining the two is worse than either: SUBM-crop / SUB-crop is 0.947.
+  - So both levers seem to buy the same thing, a better denoiser at high m (low input noise), and stacking them overshoots. This is a hypothesis, not yet tested.
+- **The application comparison is unchanged.** The best ASL design is still SUBM on whole slices: 1.103× PER at a = 9. SUB-crop reaches about the same level (1.037 × 1.062 ≈ 1.10).
+- **What carries over from fastMRI.** The recipe dependence of the SUB/PER ratio is real on ASL, so the comparison should report each design at its own recipe. But the best recipe depends on the subset weighting, so the fastMRI-derived "crop 0.4 FOV" rule cannot be adopted as a default.
