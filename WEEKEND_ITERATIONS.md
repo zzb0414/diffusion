@@ -2767,3 +2767,78 @@ Band transfer at a = 9 (share of the true detail kept per band of k / k_max; pla
 - **Open: why the matrix matters.** Two candidates, untested:
   - At 80 × 80 the same anatomy has less fine structure per pixel, so the mid bands where denoise-the-mean gains (T3/T4) hold less signal.
   - 64-pixel crops cover most of an 80 image, so training sees fewer distinct patches.
+
+---
+
+## RUN 2026-11-06 — GAP C: why does a coarser matrix shrink the learned denoise-the-mean gain?
+
+Pre-registered (`Archive/GAP/PREREGISTRATION_C.md`). fastMRI AXT2, white noise σ = 1 per channel, 62 training volumes, PER (arm A) and SUB, seeds 101–102, pixels per training step 8 × 64² in every condition; checkpoint and r chosen without ground truth (leave-one-volume-out split-half); n_eff vs ground truth on 15 test volumes. Conditions: 160 (crop 64), 160c128 (crop 128, batch 2), 80 (crop 64), 80c32 (crop 32, batch 32), U80 (matrix-80 content on a 160 grid, crop 64).
+
+**PRIMARY (Holm over 3):**
+
+- P1 crop at matrix 80: (SUB/PER, 80c32) / (SUB/PER, 80), a = 9: 1.130× (90% CI 1.115–1.146; higher on 15/15 volumes), p = 6.1e-05, Holm 0.00018
+- P2 pixel scale: (SUB/PER, U80) / (SUB/PER, 80), a = 9: 1.182× (90% CI 1.161–1.207; higher on 15/15 volumes), p = 6.1e-05, Holm 0.00018
+- P3 crop at matrix 160: (SUB/PER, 160c128) / (SUB/PER, 160), a = 9: 0.884× (90% CI 0.870–0.898; higher on 0/15 volumes), p = 6.1e-05, Holm 0.00018
+
+SUB / PER (90% CI; volumes higher), and the learned / linear factor at a = 9 (SUB/PER over the Wiener prediction):
+
+| condition | a = 1 | a = 3 | a = 5 | a = 9 | Wiener a = 9 | learned / Wiener |
+|---|---|---|---|---|---:|---:|
+| 160 | 0.965 (0.96–0.98; 0/15) | 1.150 (1.13–1.17; 15/15) | 1.354 (1.32–1.39; 15/15) | 1.455 (1.41–1.50; 15/15) | 1.423 | 1.022 |
+| 160c128 | 0.931 (0.92–0.94; 0/15) | 1.077 (1.06–1.10; 14/15) | 1.253 (1.22–1.28; 15/15) | 1.286 (1.25–1.32; 15/15) | 1.423 | 0.903 |
+| 80 | 0.948 (0.94–0.96; 0/15) | 1.059 (1.04–1.07; 14/15) | 1.167 (1.15–1.18; 15/15) | 1.205 (1.18–1.23; 15/15) | 1.273 | 0.947 |
+| 80c32 | 0.918 (0.91–0.92; 0/15) | 1.073 (1.05–1.09; 14/15) | 1.248 (1.22–1.28; 15/15) | 1.361 (1.32–1.40; 15/15) | 1.273 | 1.069 |
+| U80 | 0.973 (0.97–0.98; 1/15) | 1.140 (1.12–1.16; 15/15) | 1.289 (1.26–1.33; 15/15) | 1.424 (1.38–1.47; 15/15) | 1.273 | 1.119 |
+
+n_eff (geometric mean over volumes), PER / SUB:
+
+| a | 160 | 160c128 | 80 | 80c32 | U80 |
+|---:|---|---|---|---|---|
+| 1 | 70.1 / 67.6 | 73.8 / 68.7 | 58.6 / 55.5 | 55.2 / 50.7 | 49.8 / 48.5 |
+| 3 | 89.6 / 103.0 | 94.8 / 102.0 | 71.7 / 75.9 | 67.4 / 72.3 | 60.1 / 68.5 |
+| 5 | 94.9 / 128.5 | 100.6 / 126.0 | 77.9 / 90.9 | 71.3 / 88.9 | 65.3 / 84.2 |
+| 9 | 104.0 / 151.3 | 109.0 / 140.2 | 85.1 / 102.6 | 78.1 / 106.4 | 70.4 / 100.3 |
+
+Band transfer at a = 9 (bands of k / k_max of the content; plain averaging = 1):
+
+| condition | design | 0–.1 | .1–.25 | .25–.5 | .5–.75 | .75–1 |
+|---|---|---:|---:|---:|---:|---:|
+| 160 | A | 0.96 | 0.63 | 0.26 | 0.10 | 0.09 |
+| 160 | SUB | 1.00 | 0.89 | 0.61 | 0.21 | 0.10 |
+| 160c128 | A | 0.99 | 0.59 | 0.26 | 0.11 | 0.09 |
+| 160c128 | SUB | 0.98 | 0.88 | 0.60 | 0.21 | 0.12 |
+| 80 | A | 1.00 | 0.65 | 0.36 | 0.15 | 0.09 |
+| 80 | SUB | 0.99 | 0.86 | 0.69 | 0.40 | 0.21 |
+| 80c32 | A | 0.98 | 0.62 | 0.33 | 0.15 | 0.11 |
+| 80c32 | SUB | 0.98 | 0.88 | 0.70 | 0.38 | 0.17 |
+| U80 | A | 0.96 | 0.56 | 0.29 | 0.14 | 0.09 |
+| U80 | SUB | 1.01 | 0.87 | 0.69 | 0.41 | 0.19 |
+
+**Reading (GAP C, against the pre-registration; written 2026-11-06 after the run).**
+- **The primaries.** All three hit their thresholds, and two of them strongly: P1 1.130 (crop 32 at 80 raises the ratio), P3 0.884 (crop 128 at 160 lowers it), P2 1.182 (U80).
+  - Read literally, the pre-registration says both crop and pixel scale matter.
+- **One variable explains all five conditions: the share of the field of view a training crop covers.**
+  - At 0.4 of the FOV the ratio is 1.455 (160), 1.361 (80c32) and 1.424 (U80).
+  - At 0.8 it is 1.286 (160c128) and 1.205 (80).
+  - U80 is confounded with this. Its 64 crop on a 160 grid covers 0.4 of the FOV, a design flaw I missed. So P2 does not isolate pixel scale; C3 below separates them.
+- **The ratio moves because the two designs respond in opposite directions** (with the pixel budget fixed, large crops also mean fewer patches per step):
+
+  | n_eff at a = 9 | small crop (0.4 FOV) | large crop (0.8 FOV) |
+  |---|---|---|
+  | PER, matrix 160 | 104 | 109 |
+  | PER, matrix 80 | 78 | 85 |
+  | SUB, matrix 160 | 151 | 140 |
+  | SUB, matrix 80 | 106 | 103 |
+
+  Larger crops (fewer patches) help PER and hurt SUB. In U80, PER falls to 70 and SUB to 100, so U80's ratio rises because PER worsens, not because SUB improves.
+- **Exploratory: each design at its own better recipe** (picked by ground truth from two options):
+  - matrix 160: SUB/PER = 151.3 / 109.0 = 1.388 (learned / Wiener 0.975);
+  - matrix 80: 106.4 / 85.1 = 1.250 (0.982).
+  - The learned factor is then about 0.98 at both matrices. The matrix effect becomes entirely spectral (Wiener 1.423 → 1.273).
+  - The MEAN-SNR headline of 1.455 was inflated by about 5% because PER was handicapped by small crops.
+- **Implication for ASL.** ASL trains on whole 80 × 80 slices (crop = FOV, batch 8), the regime that favours PER and hurts SUB.
+  - Prediction: SUB/SUBM trained on 32-pixel crops (batch 32) gains on ASL, and PER does not.
+  - That is a direct test of a recipe/architecture lever on the real data (ASL-CROP, to be pre-registered).
+- **Amendment C3 (pre-registered here, before running).** To isolate pixel scale: U80 with crop 128 and batch 2 (0.8 FOV), PER and SUB, seeds 101–102.
+  - If its ratio is about 1.2 (as at matrix 80), pixel scale does not matter and the FOV fraction is the lever.
+  - If it stays about 1.4, pixel scale matters independently.
