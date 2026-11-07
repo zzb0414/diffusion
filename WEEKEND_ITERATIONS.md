@@ -2969,3 +2969,52 @@ Band transfer at a = 9 (bands of k / k_max; plain averaging = 1):
   - (i) the content itself;
   - (ii) signal-like physiological fluctuation;
   - (iii) learnability from one training subject.
+
+---
+
+## RUN 2026-11-07 — GAP F: one training subject (learnability), and fastMRI-trained models on real ASL
+
+Pre-registered (`Archive/GAP/PREREGISTRATION_F.md`).
+
+**F2 PRIMARY (Holm over 2)** — fastMRI DT (content with coil1 ASL's per-frequency SNR, real ASL noise), training volumes 1 / 4 / 62, PER (A), SUB, SUBM, seeds 101–102; n_eff vs ground truth on 15 test volumes:
+
+- Q1 (SUB/PER, DT n_vol 1) / (SUB/PER, DT n_vol 62), a = 9: 0.607× (90% CI 0.598–0.617; higher on 0/15 volumes), p = 6.1e-05, Holm 0.00012
+- Q2 (SUB/PER, DT n_vol 4) / (SUB/PER, DT n_vol 62), a = 9: 0.893× (90% CI 0.882–0.903; higher on 0/15 volumes), p = 6.1e-05, Holm 0.00012
+
+| n_vol | SUB/PER a = 1 | SUB/PER a = 3 | SUB/PER a = 5 | SUB/PER a = 9 | SUBM/PER a = 9 | n_eff a = 9 PER / SUB / SUBM |
+|---|---|---|---|---|---|---|
+| 62 | 0.964 (0.96–0.97; 1/15) | 1.078 (1.06–1.10; 14/15) | 1.249 (1.22–1.28; 15/15) | 1.457 (1.43–1.49; 15/15) | 1.482 (1.45–1.51; 15/15) | 36.8 / 53.6 / 54.6 |
+| 4 | 0.941 (0.93–0.95; 0/15) | 1.018 (1.00–1.03; 10/15) | 1.127 (1.11–1.15; 15/15) | 1.301 (1.28–1.32; 15/15) | 1.294 (1.27–1.32; 15/15) | 29.6 / 38.5 / 38.3 |
+| 1 | 1.002 (0.99–1.01; 10/15) | 0.870 (0.86–0.88; 0/15) | 0.853 (0.84–0.87; 0/15) | 0.885 (0.87–0.90; 0/15) | 0.762 (0.75–0.78; 0/15) | 23.0 / 20.4 / 17.5 |
+
+**F1 (exploratory): fastMRI-trained models on real ASL 1104c** (split-half n_eff, signal region; cross-fitted selection).
+
+| a | n_eff A asl | n_eff A T | n_eff A DT | n_eff SUB asl | n_eff SUB T | n_eff SUB DT | n_eff SUBM asl | n_eff SUBM T | n_eff SUBM DT | SUB/PER asl | SUB/PER T | SUB/PER DT | SUBM/PER DT |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|---|
+| 1 | 17.9 | 14.1 | 13.7 | 17.9 | 14.1 | 14.0 | 17.3 | 14.6 | 14.0 | 1.001 (0.99–1.01; 20/34) | 0.999 (0.99–1.01; 18/34) | 1.024 (1.02–1.03; 28/34) | 1.023 (1.01–1.03; 27/34) |
+| 2 | 19.6 | 15.3 | 15.7 | 20.4 | 16.2 | 16.3 | 20.0 | 16.8 | 16.4 | 1.040 (1.03–1.05; 33/34) | 1.059 (1.05–1.07; 32/34) | 1.038 (1.03–1.04; 31/34) | 1.040 (1.03–1.05; 27/34) |
+| 3 | 20.7 | 16.3 | 16.9 | 22.0 | 18.1 | 17.9 | 22.1 | 18.4 | 18.1 | 1.066 (1.06–1.08; 32/34) | 1.114 (1.10–1.13; 34/34) | 1.063 (1.05–1.07; 31/34) | 1.074 (1.06–1.09; 32/34) |
+| 5 | 23.3 | 18.1 | 19.1 | 24.6 | 21.5 | 21.5 | 25.2 | 21.9 | 21.7 | 1.057 (1.03–1.09; 27/34) | 1.187 (1.17–1.21; 34/34) | 1.127 (1.11–1.14; 33/34) | 1.141 (1.12–1.16; 33/34) |
+| 7 | 25.4 | 20.3 | 21.0 | 27.0 | 24.7 | 24.6 | 27.8 | 25.0 | 24.9 | 1.062 (1.03–1.09; 27/34) | 1.212 (1.19–1.23; 33/34) | 1.173 (1.15–1.19; 33/34) | 1.186 (1.17–1.21; 33/34) |
+| 9 | 27.2 | 21.5 | 23.1 | 28.9 | 27.2 | 27.4 | 30.0 | 27.5 | 27.7 | 1.062 (1.03–1.09; 28/34) | 1.269 (1.23–1.31; 33/34) | 1.186 (1.16–1.21; 33/34) | 1.200 (1.18–1.22; 33/34) |
+
+fastMRI-trained / ASL-trained, absolute n_eff at a = 9 (90% CI; slices higher):
+
+- A: T 0.788 (0.77–0.81; 0/34); DT 0.848 (0.84–0.86; 1/34)
+- SUB: T 0.941 (0.91–0.97; 9/34); DT 0.947 (0.92–0.98; 9/34)
+- SUBM: T 0.916 (0.89–0.94; 3/34); DT 0.923 (0.90–0.95; 3/34)
+
+### Reading — GAP F (written 2026-11-06, 21:45, after the run)
+- **My prediction FAILS; the pre-registered "learnability" branch holds.** Q1 = 0.607× (0/15 volumes, Holm 1e-4) and SUB/PER at n_vol 1 is 0.885 (≤ 1.15). By the fixed rule, single-subject training can by itself reproduce, and overshoot, ASL's small gain. More training subjects becomes the priority.
+- **Denoise-the-mean is far more data-hungry than per-repetition denoising.** From 62 to 1 training volume, PER n_eff at a = 9 falls 0.63× (36.8 → 23.0), SUB 0.38× (53.6 → 20.4) and SUBM 0.32× (54.6 → 17.5). With 4 volumes, the gain is 1.30 (Q2 = 0.893×). SUBM, the best design with plenty of data, is the worst with one volume.
+- **Why this fits D/E.** The SUB gain comes from exploiting non-Gaussian structure; a structural prior learnt from few images generalizes poorly. A data-starved model falls back towards the linear (Wiener) behaviour or below it: learned / Wiener is 0.77 at n_vol 1, against ASL's 0.92–0.96.
+- **Caveat: where ASL sits on this curve is NOT measured here.** n_vol 1 is 8 images; ASL trains on 68 slices of one subject (two scans). In image count, ASL lies between n_vol 4 (32 images, 4 subjects, gain 1.30) and 62. So if count alone mattered, ASL should show about 1.3. Two readings remain:
+  - subject diversity, not image count, is what matters, and ASL is effectively n_vol 1–2;
+  - ASL content has less structure, candidate (i).
+  The GAP G phase randomization and an ASL-side dose-response are needed to separate them.
+- **F1: a fastMRI prior almost matches ASL's own training data on real ASL.** Absolute n_eff at a = 9 on 1104c:
+  - fastMRI-trained SUB 0.94–0.95 and SUBM 0.92 of the ASL-trained models;
+  - fastMRI-trained PER 0.79–0.85, so it transfers much worse.
+  - The reading rule (≥ 1.03) is not met, so the fastMRI prior is not worth MORE than ASL data.
+  - The fastMRI-trained SUB/PER of 1.19–1.27 on ASL is inflated by that weak PER. It is not evidence that ASL supports a large gain.
+- **Consequence for "next".** The fixed next step, physiological fluctuation (ii), was conditional on (iii) being out; it is not out, and (ii) is already bounded small. Next is an ASL-side dose-response (GAP H, pre-registered separately): does the ASL SUB/PER gain shrink as the ASL training set is subsampled? If it does, the ASL gain is data-limited and should grow with more subjects (the coil2 data plan, and fastMRI pre-training).
