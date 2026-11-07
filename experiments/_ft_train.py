@@ -6,9 +6,9 @@ the SC control). Writes foldall/ft.json.
     python experiments/_ft_train.py --init runs/gap/d/SUB_DT_s101/ckpt/res_003000.pkl --mode sub --fold -1 ...
 """
 import os, sys, json
+import _gr_train as T                              # first: its imports fix the OpenMP load order
 import torch
 import _ft
-import _gr_train as T
 
 if __name__ == "__main__":
     init = None
