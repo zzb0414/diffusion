@@ -70,6 +70,7 @@ def main():
                          "instead of the balanced (slice, m) sampler")
     ap.add_argument("--crop", type=int, default=None, help="ASL-CROP: random square crop per sample (default: whole slice)")
     ap.add_argument("--batch", type=int, default=None, help="ASL-CROP: batch size (default CFG BATCH)")
+    ap.add_argument("--phase-rand", action="store_true", help="GAP G: phase-randomized ASL (experiments/_pr.py)")
     ap.add_argument("--m-dist", default=None, choices=["linear"],
                     help="COIL: with --sub-uniform, draw m with probability proportional to m (MEAN-TAX's SUBM)")
     args = ap.parse_args()
@@ -93,6 +94,9 @@ def main():
     torch.manual_seed(args.seed)
     rng_np = np.random.default_rng(args.seed)
     x, meta, sig = load_datasets(args.datasets)
+    if args.phase_rand:                           # GAP G; sigma_hat is unchanged (Parseval)
+        import _pr
+        x = _pr.apply(x, meta)
     N = x.shape[1]
     folds = cv_folds()
     held = sorted(s for s, k in folds.items() if k == args.fold)       # empty for --fold -1
@@ -145,6 +149,8 @@ def main():
         ckpt_cfg.update(m_dist=args.m_dist)
     if args.crop or args.batch:
         ckpt_cfg.update(crop=args.crop, batch=CFG["BATCH"])
+    if args.phase_rand:
+        ckpt_cfg.update(phase_rand=True)
     if args.noise_norm:
         ckpt_cfg.update(noise_norm=True, sigma_ref=sigma_ref)
     if args.param != "score" or args.blind:
