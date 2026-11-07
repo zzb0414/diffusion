@@ -3120,3 +3120,53 @@ Secondary ratios at frac 0.5, a = 9: SUB 0.992 (0.97–1.02; 10/34); SUBM 0.943 
 - **Next.**
   - GAP I, already queued.
   - Then a transferred prior: fastMRI pre-training followed by ASL fine-tuning (to be pre-registered). F1 showed fastMRI-trained SUB already reaches 0.94 of ASL-trained n_eff with no ASL data at all.
+
+---
+
+## RUN 2026-11-07 — GAP I: noise-stationarized ASL — does the noise non-stationarity cost denoise-the-mean?
+
+Pre-registered (`Archive/GAP/PREREGISTRATION_I.md`). PER, SUB, SUBM trained exactly as ASL-SUBJ / ASL-COIL (dataset 1 + 1104a, seeds 101–102, 3000 iterations, MSE) on noise-stationarized ASL (real repetition mean kept; deviations multiplied by one random k-space phase field per slice: signal structure, noise spectrum and σ̂ kept, noise non-stationarity destroyed); tested on noise-stationarized 1104c. Split-half n_eff, signal region; checkpoint and r cross-fitted over slice folds.
+
+**PRIMARY (Holm over 2):**
+
+- R1 (SUB/PER, noise-stationarized) / (SUB/PER, real), a = 9: 1.154× (90% CI 1.128–1.181; higher on 31/34 slices), p = 2.9e-09, Holm 5.8e-09
+- R2 (SUBM/PER, noise-stationarized) / (SUBM/PER, real), a = 9: 1.121× (90% CI 1.090–1.153; higher on 29/34 slices), p = 1.2e-06, Holm 1.2e-06
+
+| a | SUB/PER real | SUB/PER NS | SUBM/PER real | SUBM/PER NS | R SUB | R SUBM | n_eff real PER / SUB / SUBM | n_eff NS PER / SUB / SUBM |
+|---:|---|---|---|---|---|---|---|---|
+| 1 | 1.001 (0.99–1.01; 20/34) | 1.029 (1.01–1.05; 24/34) | 0.968 (0.95–0.98; 5/34) | 1.015 (1.00–1.03; 23/34) | 1.028 (1.01–1.05; 21/34) | 1.048 (1.03–1.07; 31/34) | 17.9 / 17.9 / 17.3 | 12.4 / 12.8 / 12.6 |
+| 2 | 1.040 (1.03–1.05; 33/34) | 1.048 (1.03–1.07; 26/34) | 1.021 (1.01–1.03; 25/34) | 1.047 (1.03–1.06; 27/34) | 1.008 (0.99–1.02; 23/34) | 1.025 (1.01–1.04; 22/34) | 19.6 / 20.4 / 20.0 | 14.1 / 14.8 / 14.8 |
+| 3 | 1.066 (1.06–1.08; 32/34) | 1.101 (1.08–1.12; 34/34) | 1.068 (1.06–1.08; 31/34) | 1.104 (1.09–1.12; 34/34) | 1.032 (1.02–1.05; 24/34) | 1.034 (1.02–1.05; 23/34) | 20.7 / 22.0 / 22.1 | 15.3 / 16.8 / 16.9 |
+| 5 | 1.057 (1.03–1.09; 27/34) | 1.161 (1.15–1.18; 34/34) | 1.082 (1.06–1.11; 30/34) | 1.166 (1.15–1.18; 34/34) | 1.098 (1.07–1.12; 34/34) | 1.078 (1.06–1.10; 34/34) | 23.3 / 24.6 / 25.2 | 17.4 / 20.2 / 20.3 |
+| 7 | 1.062 (1.03–1.09; 27/34) | 1.197 (1.18–1.21; 34/34) | 1.095 (1.06–1.12; 31/34) | 1.200 (1.18–1.22; 33/34) | 1.127 (1.10–1.16; 34/34) | 1.096 (1.07–1.12; 32/34) | 25.4 / 27.0 / 27.8 | 19.4 / 23.3 / 23.3 |
+| 9 | 1.062 (1.03–1.09; 28/34) | 1.226 (1.20–1.25; 32/34) | 1.103 (1.07–1.13; 31/34) | 1.236 (1.20–1.27; 32/34) | 1.154 (1.13–1.18; 31/34) | 1.121 (1.09–1.15; 29/34) | 27.2 / 28.9 / 30.0 | 21.2 / 26.0 / 26.2 |
+
+Learned / Wiener at a = 9 (Wiener 1.149): noise-stationarized SUB 1.067, SUBM 1.076; real SUB 0.924, SUBM 0.960.
+
+### Reading — GAP I (written 2026-11-07, 04:05, after the run)
+- **Pre-registered branch: R1 ≥ 1.04, so the noise non-stationarity is the cost.**
+  - R1 (SUB) = 1.154× (31/34 slices, Holm 6e-9); R2 (SUBM) = 1.121× (29/34, Holm 1e-6).
+  - SUB/PER at a = 9 rises from 1.062 to **1.226**, and SUBM/PER from 1.103 to 1.236. That is the fastMRI range (T 1.240).
+  - R_I exceeds R_G (1.065): the share (R1_I − 1)/(R1_G − 1) is 2.4. Making only the noise stationary helps MORE than also scrambling the signal.
+  - My expectation (R1 ≈ 1.02–1.05) was too low.
+- **ASL content IS structure-rich enough.** With stationary noise, learned / Wiener is **1.07** (SUB) and 1.08 (SUBM), above the linear optimum. Under G (structure scrambled) it was 0.98, and on real data 0.92–0.96.
+  - So ASL's structure is exploitable, and the networks exploit it once the noise is spatially uniform.
+  - This revises the GAP G reading ("the ASL networks exploit no spatial structure"): they do not on REAL data, because the non-stationary noise masks or misleads it.
+  - Candidate (i), "ASL content has little structure", is out.
+- **Caveat: absolute n_eff is not comparable, and the practical gain is smaller than R.** The signal-region mask is the same under I, because the mean is kept, but the per-repetition input noise variance in that region falls to 0.85× (median over slices; the in-brain excess is spread over the FOV). n_eff is relative to that input. A rough residual-error comparison, input variance ÷ n_eff on ratio-of-means:
+
+  | Design | residual error, stationarized vs real |
+  |---|---|
+  | PER | 1.09× (worse) |
+  | SUB | 0.95× |
+  | SUBM | 0.97× |
+
+  So R combines "SUB a little better" with "PER worse". A σ-map style fix is therefore expected to help SUB/SUBM in absolute terms by a few percent, not 15%. That needs a deployable test.
+- **Revised picture of the ASL / fastMRI gap.**
+  - (1) The gain needs exploitable structure (D/E).
+  - (2) ASL has it, but its spatially non-stationary noise (in-brain physiological excess, `asl-noise-colour-source`) hides it from a model conditioned on one scalar σ (I).
+  - (3) The gain is also data-limited at one subject (H, F2).
+  - Spectrum, noise level, label and pixel scale are not the cause (B, C, D).
+- **Architecture implication.** Condition on, or normalize by, a spatial noise map rather than a scalar σ. Next: GAP K (to be pre-registered).
+  - Deployable spatial pre-whitening: divide each slice by a smooth local noise-std map, estimated from the repetitions available at test time, denoise, then multiply back. Score in ORIGINAL units.
+  - Primaries on absolute n_eff, not ratios.
