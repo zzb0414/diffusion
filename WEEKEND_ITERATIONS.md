@@ -3170,3 +3170,67 @@ Learned / Wiener at a = 9 (Wiener 1.149): noise-stationarized SUB 1.067, SUBM 1.
 - **Architecture implication.** Condition on, or normalize by, a spatial noise map rather than a scalar σ. Next: GAP K (to be pre-registered).
   - Deployable spatial pre-whitening: divide each slice by a smooth local noise-std map, estimated from the repetitions available at test time, denoise, then multiply back. Score in ORIGINAL units.
   - Primaries on absolute n_eff, not ratios.
+
+---
+
+## RUN 2026-11-07 — GAP J: does a fastMRI prior, fine-tuned on ASL, raise ASL performance?
+
+Pre-registered (`Archive/GAP/PREREGISTRATION_J.md`). ASL in unit-noise units (each slice / σ̂; ladder = GAP D's), ASL-SUBJ / ASL-COIL recipe (dataset 1 + 1104a, seeds 101–102, 3000 iterations, MSE, lr 1e-3). FT = initialized from the GAP D DT checkpoint (it 3000, same arm and seed); SC = random init. Tested on 1104c; split-half n_eff, signal region; checkpoint and r cross-fitted over slice folds. ref = the original-units ASL models.
+
+**PRIMARY (Holm over 2):**
+
+- J1 n_eff(SUBM, FT) / n_eff(SUBM, SC), a = 9: 0.612× (90% CI 0.588–0.636; higher on 0/34 slices), p = 1.2e-10, Holm 2.3e-10
+- J2 n_eff(SUB, FT) / n_eff(SUB, SC), a = 9: 0.688× (90% CI 0.666–0.709; higher on 0/34 slices), p = 1.2e-10, Holm 2.3e-10
+
+| a | init | SUB/PER | SUBM/PER | n_eff PER / SUB / SUBM |
+|---:|---|---|---|---|
+| 1 | ref | 1.001 (0.99–1.01; 20/34) | 0.968 (0.95–0.98; 5/34) | 17.9 / 17.9 / 17.3 |
+| 1 | SC | 0.966 (0.96–0.98; 6/34) | 0.986 (0.98–0.99; 8/34) | 17.9 / 17.3 / 17.7 |
+| 1 | FT | 1.054 (1.04–1.07; 30/34) | 1.080 (1.06–1.10; 29/34) | 15.7 / 16.5 / 16.9 |
+| 2 | ref | 1.040 (1.03–1.05; 33/34) | 1.021 (1.01–1.03; 25/34) | 19.6 / 20.4 / 20.0 |
+| 2 | SC | 0.978 (0.96–0.99; 9/34) | 1.012 (1.00–1.02; 22/34) | 20.0 / 19.6 / 20.3 |
+| 2 | FT | 0.982 (0.96–1.01; 17/34) | 0.990 (0.96–1.02; 19/34) | 18.1 / 17.8 / 17.9 |
+| 3 | ref | 1.066 (1.06–1.08; 32/34) | 1.068 (1.06–1.08; 31/34) | 20.7 / 22.0 / 22.1 |
+| 3 | SC | 1.018 (1.01–1.03; 23/34) | 1.036 (1.02–1.05; 24/34) | 21.5 / 21.9 / 22.3 |
+| 3 | FT | 0.980 (0.96–1.00; 20/34) | 0.998 (0.98–1.02; 21/34) | 19.1 / 18.7 / 19.1 |
+| 5 | ref | 1.057 (1.03–1.09; 27/34) | 1.082 (1.06–1.11; 30/34) | 23.3 / 24.6 / 25.2 |
+| 5 | SC | 1.063 (1.05–1.08; 30/34) | 1.089 (1.07–1.11; 29/34) | 23.7 / 25.1 / 25.8 |
+| 5 | FT | 0.932 (0.91–0.96; 9/34) | 0.949 (0.92–0.98; 15/34) | 21.3 / 19.8 / 20.2 |
+| 7 | ref | 1.062 (1.03–1.09; 27/34) | 1.095 (1.06–1.12; 31/34) | 25.4 / 27.0 / 27.8 |
+| 7 | SC | 1.075 (1.06–1.09; 29/34) | 1.108 (1.09–1.13; 31/34) | 25.9 / 27.8 / 28.7 |
+| 7 | FT | 0.854 (0.82–0.89; 3/34) | 0.854 (0.82–0.89; 7/34) | 23.4 / 20.0 / 20.0 |
+| 9 | ref | 1.062 (1.03–1.09; 28/34) | 1.103 (1.07–1.13; 31/34) | 27.2 / 28.9 / 30.0 |
+| 9 | SC | 1.075 (1.06–1.09; 28/34) | 1.123 (1.10–1.15; 30/34) | 27.8 / 29.9 / 31.2 |
+| 9 | FT | 0.804 (0.77–0.84; 0/34) | 0.747 (0.70–0.79; 0/34) | 25.6 / 20.6 / 19.1 |
+
+Absolute n_eff at a = 9 (90% CI; slices higher):
+
+- PER: FT/SC 0.920 (0.91–0.93; 2/34); FT/ref 0.940 (0.92–0.96; 7/34); SC/ref 1.021 (1.01–1.03; 27/34)
+- SUB: FT/SC 0.688 (0.67–0.71; 0/34); FT/ref 0.711 (0.69–0.73; 0/34); SC/ref 1.034 (1.01–1.06; 20/34)
+- SUBM: FT/SC 0.612 (0.59–0.64; 0/34); FT/ref 0.637 (0.61–0.66; 0/34); SC/ref 1.040 (1.02–1.07; 26/34)
+
+### Reading — GAP J (written 2026-11-07, 07:05, after the run)
+- **Pre-registered branch: negative transfer (J ≤ 0.97), and strongly so.** J1 (SUBM) = 0.612× and J2 (SUB) = 0.688× (0/34 slices higher, Holm 2e-10). PER FT/SC is 0.920. My expectation (1.02–1.06) was wrong in sign.
+- **Fine-tuning DESTROYS the fastMRI prior rather than building on it.** Seed-101 trajectories at a = 9 (best r, exploratory look):
+
+  | Model | it 1000 | it 2000 | it 3000 |
+  |---|---|---|---|
+  | FT SUB | 20.4 | 15.7 | 11.7 |
+  | FT SUBM | 19.4 | 13.0 | 9.2 |
+  | zero-shot fastMRI DT SUB (GAP F1, no ASL training) | 27.5 | | |
+
+  After 1000 ASL iterations, FT is already far below where it started. A plausible mechanism: lr 1e-3 with a fresh Adam state throws the converged weights out of their basin, and the few ASL images then pull them into a worse one than random init reaches. This is not tested.
+- **A separate, unplanned finding: all ASL models degrade late in training, and unit-noise training most of all.** Seed 101, a = 9, best r:
+
+  | Model | it 1000 | it 2000 | it 3000 |
+  |---|---|---|---|
+  | reference SUB | 27.6 | 29.1 | 26.4 |
+  | reference SUBM | 27.9 | 30.1 | 26.4 |
+  | SC SUB | 30.4 | 24.8 | 16.7 |
+  | SC SUBM | **32.1** | 23.1 | 15.8 |
+
+  SC SUBM at iteration 1000 is the highest single n_eff seen on real ASL at a = 9. Cross-fitted selection picks it, giving SC/ref = 1.040 for SUBM and 1.034 for SUB (secondary). The gain is not a units effect: it is about checkpoint choice, under a training budget that overfits 68 images.
+- **Implications.**
+  - (1) Naive fine-tuning is not the way to bring in a fastMRI prior; zero-shot was better.
+  - (2) The 3000-iteration ASL recipe is past its optimum. Checkpoint selection matters, and ASL design comparisons are sensitive to it. The cross-fitted selection protects the comparisons, but earlier checkpoints may hold more.
+- **Follow-up (EXPLORATORY, evaluation only, `runs/gap/queue_j2.sh` after K):** score the saved 500 and 1500 checkpoints of FT, SC and the references, to map the trajectory. Not pre-registered; it will be reported as exploratory.
