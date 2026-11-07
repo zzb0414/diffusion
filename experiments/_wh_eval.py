@@ -6,8 +6,8 @@ estimator (``_gr_eval.score_slice``): each slice's own map whitens the model inp
     python experiments/_wh_eval.py --run runs/gap/k/SUB_s101 --iter 3000 --mode sub --datasets 6 --out runs/gap/k/SUB_s101/eval_it3000
 """
 import os, csv, json, argparse
+import _gr_eval as G                                          # first (OpenMP load order); sets sys.path / cwd to the repo
 import torch
-import _gr_eval as G                                          # sets sys.path / cwd to the repo
 from _data import load_datasets, cv_folds
 from _ratio_core import RATIOS
 import _wh
