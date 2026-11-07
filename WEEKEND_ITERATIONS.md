@@ -3018,3 +3018,44 @@ fastMRI-trained / ASL-trained, absolute n_eff at a = 9 (90% CI; slices higher):
   - The reading rule (≥ 1.03) is not met, so the fastMRI prior is not worth MORE than ASL data.
   - The fastMRI-trained SUB/PER of 1.19–1.27 on ASL is inflated by that weak PER. It is not evidence that ASL supports a large gain.
 - **Consequence for "next".** The fixed next step, physiological fluctuation (ii), was conditional on (iii) being out; it is not out, and (ii) is already bounded small. Next is an ASL-side dose-response (GAP H, pre-registered separately): does the ASL SUB/PER gain shrink as the ASL training set is subsampled? If it does, the ASL gain is data-limited and should grow with more subjects (the coil2 data plan, and fastMRI pre-training).
+
+---
+
+## RUN 2026-11-07 — GAP G: phase-randomized ASL — do the ASL networks use ASL's spatial structure?
+
+Pre-registered (`Archive/GAP/PREREGISTRATION_G.md`). PER, SUB, SUBM trained exactly as ASL-SUBJ / ASL-COIL (dataset 1 + 1104a, seeds 101–102, 3000 iterations, MSE) on phase-randomized ASL (one random k-space phase field per slice, shared by its repetitions: spectra and σ̂ unchanged, spatial structure destroyed); tested on phase-randomized 1104c. Split-half n_eff, signal region; checkpoint and r cross-fitted over slice folds.
+
+**PRIMARY (Holm over 2):**
+
+- R1 (SUB/PER, phase-randomized) / (SUB/PER, real), a = 9: 1.065× (90% CI 1.042–1.089; higher on 27/34 slices), p = 3.2e-05, Holm 6.3e-05
+- R2 (SUBM/PER, phase-randomized) / (SUBM/PER, real), a = 9: 1.035× (90% CI 1.013–1.055; higher on 23/34 slices), p = 0.0091, Holm 0.0091
+
+| a | SUB/PER real | SUB/PER PR | SUBM/PER real | SUBM/PER PR | R SUB | R SUBM | n_eff real PER / SUB / SUBM | n_eff PR PER / SUB / SUBM |
+|---:|---|---|---|---|---|---|---|---|
+| 1 | 1.001 (0.99–1.01; 20/34) | 1.036 (1.02–1.05; 28/34) | 0.968 (0.95–0.98; 5/34) | 1.037 (1.02–1.05; 28/34) | 1.035 (1.02–1.05; 28/34) | 1.072 (1.06–1.09; 32/34) | 17.9 / 17.9 / 17.3 | 17.5 / 18.1 / 18.1 |
+| 2 | 1.040 (1.03–1.05; 33/34) | 1.076 (1.06–1.09; 27/34) | 1.021 (1.01–1.03; 25/34) | 1.074 (1.05–1.09; 27/34) | 1.035 (1.02–1.05; 24/34) | 1.052 (1.04–1.06; 29/34) | 19.6 / 20.4 / 20.0 | 19.6 / 21.1 / 21.1 |
+| 3 | 1.066 (1.06–1.08; 32/34) | 1.088 (1.06–1.11; 26/34) | 1.068 (1.06–1.08; 31/34) | 1.098 (1.07–1.12; 27/34) | 1.021 (1.00–1.04; 23/34) | 1.028 (1.01–1.05; 23/34) | 20.7 / 22.0 / 22.1 | 21.2 / 23.1 / 23.3 |
+| 5 | 1.057 (1.03–1.09; 27/34) | 1.117 (1.08–1.15; 30/34) | 1.082 (1.06–1.11; 30/34) | 1.126 (1.09–1.16; 31/34) | 1.057 (1.04–1.08; 29/34) | 1.041 (1.03–1.06; 26/34) | 23.3 / 24.6 / 25.2 | 23.6 / 26.3 / 26.6 |
+| 7 | 1.062 (1.03–1.09; 27/34) | 1.129 (1.09–1.16; 31/34) | 1.095 (1.06–1.12; 31/34) | 1.140 (1.11–1.17; 31/34) | 1.064 (1.04–1.09; 30/34) | 1.041 (1.03–1.06; 27/34) | 25.4 / 27.0 / 27.8 | 25.7 / 29.0 / 29.3 |
+| 9 | 1.062 (1.03–1.09; 28/34) | 1.131 (1.09–1.17; 30/34) | 1.103 (1.07–1.13; 31/34) | 1.141 (1.10–1.18; 31/34) | 1.065 (1.04–1.09; 27/34) | 1.035 (1.01–1.06; 23/34) | 27.2 / 28.9 / 30.0 | 27.7 / 31.3 / 31.6 |
+
+Learned / Wiener at a = 9 (Wiener 1.149): phase-randomized SUB 0.984, SUBM 0.993; real SUB 0.924, SUBM 0.960.
+
+### Reading — GAP G (written 2026-11-06, 23:15, after the run)
+- **Pre-registered branch: R > 1.03.** R1 (SUB) = 1.065× (27/34 slices, Holm 6e-5); R2 (SUBM) = 1.035× (23/34, Holm 0.009). My expectation (1.03–1.08) held.
+- **Destroying ASL's spatial organization HELPS denoise-the-mean.**
+  - SUB/PER rises from 1.062 to 1.131, and SUBM/PER from 1.103 to 1.141.
+  - PER is essentially unchanged (n_eff 27.2 → 27.7); the change is in SUB (28.9 → 31.3) and SUBM (30.0 → 31.6).
+  - Learned / Wiener goes from 0.92–0.96 (real) to 0.98–0.99 (phase-randomized), the same as fastMRI random-phase content (EW, 0.98–0.99).
+- **What this establishes.**
+  - (a) The ASL networks exploit no spatial structure in ASL for the SUB gain. Without it they reach the linear optimum, as on any Gaussian-like content.
+  - (b) Real ASL's spatial organization costs SUB 4–7% below that optimum.
+  - So "ASL behaves like Gaussian content" is slightly too kind: it behaves WORSE than its own Gaussianized version.
+- **The cost is already present at a = 1** (R SUB 1.035, R SUBM 1.072). It is not specific to averaging. On real ASL, SUB-trained models at full σ fall short of PER (SUBM/PER 0.968 at a = 1), and phase randomization removes that shortfall.
+- **The confound left by G.** The transform destroys two things at once:
+  - the signal's structure;
+  - the spatial non-stationarity of the noise (in-brain coarse physiological excess, see `asl-noise-colour-source`), which gets spread over the FOV.
+  G cannot tell which of the two costs SUB. The pre-registered implication was "model the non-stationary noise (a σ map)". That holds only if the noise half is the cause, which needs a direct test.
+- **Next: GAP I (pre-registered separately).** Stationarize only the noise. Keep each slice's real mean m and phase-randomize only the deviations: x_r' = m + U(x_r − m), with one fixed random-phase unitary U per slice.
+  - If R_I ≈ R_G: non-stationary noise is the cost, and a σ map is the fix.
+  - If R_I ≈ 1: the signal's structure misleads SUB. The fix then lies in the prior and the data (more subjects, GAP H).
