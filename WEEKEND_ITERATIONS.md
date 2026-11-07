@@ -3059,3 +3059,64 @@ Learned / Wiener at a = 9 (Wiener 1.149): phase-randomized SUB 0.984, SUBM 0.993
 - **Next: GAP I (pre-registered separately).** Stationarize only the noise. Keep each slice's real mean m and phase-randomize only the deviations: x_r' = m + U(x_r − m), with one fixed random-phase unitary U per slice.
   - If R_I ≈ R_G: non-stationary noise is the cost, and a σ map is the fix.
   - If R_I ≈ 1: the signal's structure misleads SUB. The fix then lies in the prior and the data (more subjects, GAP H).
+
+---
+
+## RUN 2026-11-07 — GAP H: is the ASL denoise-the-mean gain data-limited? (training-set dose-response)
+
+Pre-registered (`Archive/GAP/PREREGISTRATION_H.md`). PER, SUB, SUBM trained exactly as ASL-SUBJ / ASL-COIL (dataset 1 + 1104a, seeds 101–102, 3000 iterations, MSE) on a nested fixed subset of slice indices: frac 0.25 = 8 indices (16 images), frac 0.5 = 17 (34 images), frac 1 = 34 (68 images, the references). Tested on 1104c; split-half n_eff, signal region; checkpoint and r cross-fitted over slice folds.
+
+**PRIMARY (Holm over 2):**
+
+- H1 (SUB/PER, frac 0.25) / (SUB/PER, frac 1), a = 9: 0.940× (90% CI 0.916–0.968; higher on 4/34 slices), p = 7.4e-05, Holm 7.4e-05
+- H2 (SUBM/PER, frac 0.25) / (SUBM/PER, frac 1), a = 9: 0.906× (90% CI 0.886–0.927; higher on 2/34 slices), p = 6.2e-08, Holm 1.2e-07
+
+| a | frac | SUB/PER | SUBM/PER | n_eff PER / SUB / SUBM |
+|---:|---|---|---|---|
+| 1 | 1 | 1.001 (0.99–1.01; 20/34) | 0.968 (0.95–0.98; 5/34) | 17.9 / 17.9 / 17.3 |
+| 1 | 0.5 | 1.008 (1.00–1.02; 14/34) | 1.006 (1.00–1.02; 17/34) | 17.1 / 17.2 / 17.1 |
+| 1 | 0.25 | 0.998 (0.98–1.01; 14/34) | 0.988 (0.97–1.00; 15/34) | 16.2 / 16.2 / 16.0 |
+| 2 | 1 | 1.040 (1.03–1.05; 33/34) | 1.021 (1.01–1.03; 25/34) | 19.6 / 20.4 / 20.0 |
+| 2 | 0.5 | 1.005 (0.98–1.03; 25/34) | 1.023 (1.02–1.03; 32/34) | 19.2 / 19.3 / 19.7 |
+| 2 | 0.25 | 1.006 (0.98–1.03; 22/34) | 1.017 (0.98–1.05; 25/34) | 18.3 / 18.4 / 18.6 |
+| 3 | 1 | 1.066 (1.06–1.08; 32/34) | 1.068 (1.06–1.08; 31/34) | 20.7 / 22.0 / 22.1 |
+| 3 | 0.5 | 1.003 (0.96–1.04; 31/34) | 1.010 (0.97–1.04; 30/34) | 20.8 / 20.9 / 21.0 |
+| 3 | 0.25 | 1.029 (0.99–1.06; 28/34) | 1.038 (0.99–1.08; 29/34) | 19.4 / 20.0 / 20.1 |
+| 5 | 1 | 1.057 (1.03–1.09; 27/34) | 1.082 (1.06–1.11; 30/34) | 23.3 / 24.6 / 25.2 |
+| 5 | 0.5 | 1.008 (0.97–1.04; 26/34) | 1.009 (0.96–1.05; 27/34) | 23.2 / 23.4 / 23.4 |
+| 5 | 0.25 | 1.027 (0.98–1.08; 25/34) | 1.031 (0.98–1.08; 25/34) | 21.5 / 22.1 / 22.1 |
+| 7 | 1 | 1.062 (1.03–1.09; 27/34) | 1.095 (1.06–1.12; 31/34) | 25.4 / 27.0 / 27.8 |
+| 7 | 0.5 | 1.029 (0.99–1.06; 28/34) | 1.020 (0.98–1.06; 28/34) | 25.2 / 25.9 / 25.7 |
+| 7 | 0.25 | 1.021 (0.97–1.07; 26/34) | 1.026 (0.97–1.08; 23/34) | 23.3 / 23.8 / 24.0 |
+| 9 | 1 | 1.062 (1.03–1.09; 28/34) | 1.103 (1.07–1.13; 31/34) | 27.2 / 28.9 / 30.0 |
+| 9 | 0.5 | 1.053 (1.02–1.08; 31/34) | 1.040 (1.00–1.07; 29/34) | 27.0 / 28.4 / 28.1 |
+| 9 | 0.25 | 0.999 (0.95–1.04; 24/34) | 1.000 (0.95–1.04; 24/34) | 25.6 / 25.6 / 25.6 |
+
+Absolute n_eff at a = 9, subsampled / frac 1 (90% CI; slices higher):
+
+- PER: frac 0.5 0.991 (0.99–1.00; 15/34); frac 0.25 0.941 (0.92–0.96; 9/34)
+- SUB: frac 0.5 0.983 (0.96–1.01; 6/34); frac 0.25 0.885 (0.86–0.91; 4/34)
+- SUBM: frac 0.5 0.935 (0.92–0.95; 3/34); frac 0.25 0.853 (0.84–0.87; 1/34)
+
+Secondary ratios at frac 0.5, a = 9: SUB 0.992 (0.97–1.02; 10/34); SUBM 0.943 (0.93–0.96; 5/34).
+
+### Reading — GAP H (written 2026-11-07, 02:20, after the run)
+- **Pre-registered branch: data-limited.** H1 (SUB) = 0.940× (90% CI 0.916–0.968; 4/34 slices higher; Holm 7e-5). H2 (SUBM) = 0.906× (0.886–0.927; 2/34; Holm 1e-7). Both are ≤ 0.95 with the CI excluding 1. My expectation (0.95–1.0, "little left to lose") was slightly too pessimistic.
+- **With a quarter of the slices (16 images), the gain vanishes.** SUB/PER and SUBM/PER at a = 9 are both 1.000, and all three designs reach n_eff 25.6.
+- **The curve is steepest for SUBM, as in F2 on fastMRI.** Absolute n_eff at a = 9, relative to the full set:
+
+  | Design | half the slices | a quarter |
+  |---|---|---|
+  | PER | 0.99 | 0.94 |
+  | SUB | 0.98 | 0.89 |
+  | SUBM | 0.94 | 0.85 |
+
+  At half the slices, SUB's ratio is flat (0.992) but SUBM's already drops (0.943). The design that wins with most data is the most data-hungry. In the pooled 68-image set, SUBM's advantage over SUB only appears at the full size.
+- **What this means.**
+  - ASL's denoise-the-mean gain is NOT saturated at one training subject. It grew from 1.00 to 1.06–1.10 between 16 and 68 images and is still rising, so more subjects or scans should raise it.
+  - This agrees with F2: on fastMRI DT the gain also rises steeply with training volumes.
+  - The size of the future gain cannot be extrapolated from three points, and the H points mix image count with within-subject redundancy (the two scans share slice indices).
+- **How G and H fit.** G says the current models use no ASL structure and are hurt by real ASL's spatial organization (or noise; GAP I decides). H says the SUB advantage is data-limited. A consistent picture: with one subject, the network cannot learn a reliable structural prior for ASL. What it learns from real structure partly misleads it, so it does worse than on scrambled data. More data, or a transferred prior, are the levers.
+- **Next.**
+  - GAP I, already queued.
+  - Then a transferred prior: fastMRI pre-training followed by ASL fine-tuning (to be pre-registered). F1 showed fastMRI-trained SUB already reaches 0.94 of ASL-trained n_eff with no ASL data at all.
