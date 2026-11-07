@@ -3330,3 +3330,30 @@ Zero-shot fastMRI DT models (GAP F1, no ASL training), a = 9, best r, fastMRI it
   1. The pre-registered reports select the checkpoint from {1000, 2000, 3000} with cross-fitting. The reference peaks fall inside that grid, so earlier ratios are not materially biased, although ratios that involve SC/FT at fixed late checkpoints would be.
   2. **Early stopping is worth ~5–15% at a = 9 for the references and much more for faster recipes.** Split-half n_eff is label-free, so it gives a deployable stopping/validation criterion on held-out noisy repetitions, with no clean reference needed.
   3. The SC peak (31.2 against 30.1 for the reference SUBM peak) is the best number on ASL so far. Being the oracle best-r and best checkpoint, it overstates what is reliably achievable. Its margin over the reference is small and should be tested pre-registered (cross-fitted, denser checkpoints) before relying on it.
+
+---
+
+## RUN 2026-11-07 — GAP K2: leakage control — whitening gain with a map built from the model's own input half
+
+Pre-registered (`Archive/GAP/PREREGISTRATION_K2.md`). Same GAP K models and scoring; for every A/B split the model's noise map is built from the A-half repetitions only. Signal region, checkpoint and r cross-fitted over slice folds.
+
+**PRIMARY (Holm over 2):**
+
+- K2a n_eff(SUBM, whitened, clean map) / n_eff(SUBM, real), a = 9: 1.030× (90% CI 1.019–1.040; higher on 29/34 slices), p = 1.9e-05, Holm 1.9e-05
+- K2b n_eff(SUB, whitened, clean map) / n_eff(SUB, real), a = 9: 1.036× (90% CI 1.029–1.044; higher on 30/34 slices), p = 1e-08, Holm 2e-08
+
+| model | a | clean / real | leaky (GAP K) / real | clean / leaky |
+|---|---:|---|---|---|
+| SUB | 5 | 1.018 (1.014–1.023; 30/34) | 1.019 (1.014–1.023; 30/34) | 1.000 (0.999–1.000; 15/34) |
+| SUB | 7 | 1.028 (1.021–1.034; 29/34) | 1.028 (1.022–1.035; 29/34) | 1.000 (0.999–1.000; 10/34) |
+| SUB | 9 | 1.036 (1.028–1.044; 30/34) | 1.037 (1.029–1.045; 30/34) | 0.999 (0.999–1.000; 7/34) |
+| SUBM | 5 | 1.016 (1.008–1.024; 26/34) | 1.017 (1.009–1.024; 26/34) | 0.999 (0.999–1.000; 13/34) |
+| SUBM | 7 | 1.023 (1.014–1.031; 28/34) | 1.023 (1.015–1.032; 28/34) | 0.999 (0.999–1.000; 12/34) |
+| SUBM | 9 | 1.030 (1.019–1.040; 29/34) | 1.030 (1.020–1.041; 29/34) | 0.999 (0.999–1.000; 10/34) |
+
+### Reading — GAP K2 (against PREREGISTRATION_K2)
+
+- **Verdict: the GAP K gain is real, not leakage.** Both primaries pass the "≥ 1.02, CI excluding 1" rule: K2a (SUBM) = 1.030 (1.019–1.040, 29/34 slices) and K2b (SUB) = 1.036 (1.029–1.044, 30/34), both Holm p < 1e-4.
+- **Clean / leaky is 0.999–1.000 at a = 5, 7 and 9,** matching my expectation (0.995–1.0). The full-map leakage inflated K by ≤ 0.1%.
+- **The gain grows with a** (SUB 1.018 → 1.028 → 1.036 at a = 5 → 7 → 9), even though the A-half map is noisier at smaller a. The relevant variable is the strength of the structure exploited across repetitions, not the map quality.
+- **Consequence:** a per-slice smooth noise map, estimated only from the repetitions being denoised, is a deployable, leakage-free input normalization for SUB/SUBM. It gives +3–4% absolute n_eff at a = 9, with no change to architecture or training code beyond the loader.
