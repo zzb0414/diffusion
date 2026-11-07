@@ -2886,3 +2886,86 @@ Ratios (90% CI; slices higher):
   - So both levers seem to buy the same thing, a better denoiser at high m (low input noise), and stacking them overshoots. This is a hypothesis, not yet tested.
 - **The application comparison is unchanged.** The best ASL design is still SUBM on whole slices: 1.103× PER at a = 9. SUB-crop reaches about the same level (1.037 × 1.062 ≈ 1.10).
 - **What carries over from fastMRI.** The recipe dependence of the SUB/PER ratio is real on ASL, so the comparison should report each design at its own recipe. But the best recipe depends on the subset weighting, so the fastMRI-derived "crop 0.4 FOV" rule cannot be adopted as a default.
+
+---
+
+## PLAN 2026-11-06 (weekend) — where does the ASL / fastMRI gap come from?
+
+The user asked for a weekend exploring where the ASL / fastMRI performance gap comes from. Working hypothesis after GAP B, C and ASL-CROP: the gap is spectral. With each design at its best recipe, the learned / Wiener factor is about 0.98 on both datasets.
+
+- **Already consistent, from the pre-run check in `Archive/GAP/PREREGISTRATION_D.md`.** The Wiener ratio with fastMRI content predicts GAP B's noise result: T/W = 1.307 / 1.273 = 1.027, against 1.029 measured.
+- **Running now: GAP D/E** (`runs/gap/queue_d.sh`).
+  - D: fastMRI content filtered to ASL's per-frequency SNR. Does it reproduce ASL's gain?
+  - E: the same spectrum with random phase. Does image structure matter?
+- **Next, chosen from the D/E result:**
+  - **If D closes the gap:** a cross-dataset check that the Wiener ratio predicts the learned SUB/PER from the spectrum alone, across every condition run so far. Then which band of the spectrum carries the gap, a band-swap analysis that is linear-theory first and needs training only if it is ambiguous.
+  - **If D does not close it:** find which property of ASL content beyond its spectrum matters. Candidates are the non-stationary signal (brain-only perfusion against a background) and the per-slice SNR spread.
+
+---
+
+## RUN 2026-11-07 — GAP D/E: is ASL's small denoise-the-mean gain set by its signal-to-noise spectrum?
+
+Pre-registered (`Archive/GAP/PREREGISTRATION_D.md`). fastMRI AXT2 at matrix 80, σ = 1 per channel, 62 training volumes, PER (arm A), SUB, SUBM, seeds 101–102; checkpoint and r chosen without ground truth; n_eff vs ground truth on 15 test volumes. Content F = fastMRI (GAP B), D = filtered to coil1 ASL's per-frequency SNR for its noise, E = D with random Fourier phase. Noise T = real ASL fields, W = white.
+
+**PRIMARY (Holm over 3):**
+
+- P1 spectrum, ASL noise: (SUB/PER, DT) / (SUB/PER, T), a = 9: 1.175× (90% CI 1.151–1.201; higher on 15/15 volumes), p = 6.1e-05, Holm 0.00018
+- P2 spectrum, white noise: (SUB/PER, DW) / (SUB/PER, W), a = 9: 1.278× (90% CI 1.249–1.307; higher on 15/15 volumes), p = 6.1e-05, Holm 0.00018
+- P3 phase structure: (SUB/PER, EW) / (SUB/PER, DW), a = 9: 0.744× (90% CI 0.720–0.769; higher on 0/15 volumes), p = 6.1e-05, Holm 0.00018
+
+Share of the T → ASL gap closed by DT (log): SUB -1.04 (T 1.240 → DT 1.457; ASL 1.062), SUBM -1.57 (T 1.237 → DT 1.482; ASL 1.103).
+
+SUB / PER and SUBM / PER (90% CI; volumes higher), Wiener and learned / Wiener at a = 9:
+
+| condition | SUB/PER a = 1 | SUB/PER a = 3 | SUB/PER a = 5 | SUB/PER a = 9 | SUBM/PER a = 9 | Wiener a = 9 | SUB learned/W | SUBM learned/W |
+|---|---|---|---|---|---|---:|---:|---:|
+| T | 0.910 (0.90–0.92; 0/15) | 0.974 (0.95–0.99; 4/15) | 1.077 (1.05–1.10; 14/15) | 1.240 (1.21–1.26; 15/15) | 1.237 (1.21–1.26; 15/15) | 1.307 | 0.949 | 0.946 |
+| W | 0.948 (0.94–0.96; 0/15) | 1.059 (1.04–1.07; 14/15) | 1.167 (1.15–1.18; 15/15) | 1.205 (1.18–1.23; 15/15) | 1.246 (1.22–1.27; 15/15) | 1.273 | 0.947 | 0.979 |
+| DT | 0.964 (0.96–0.97; 1/15) | 1.078 (1.06–1.10; 14/15) | 1.249 (1.22–1.28; 15/15) | 1.457 (1.43–1.49; 15/15) | 1.482 (1.45–1.51; 15/15) | 1.149 | 1.268 | 1.290 |
+| DW | 0.967 (0.96–0.97; 0/15) | 1.164 (1.15–1.18; 15/15) | 1.346 (1.32–1.37; 15/15) | 1.540 (1.50–1.58; 15/15) | 1.569 (1.53–1.61; 15/15) | 1.165 | 1.322 | 1.347 |
+| EW | 0.990 (0.99–0.99; 0/15) | 1.043 (1.03–1.05; 15/15) | 1.090 (1.08–1.10; 15/15) | 1.146 (1.13–1.16; 15/15) | 1.155 (1.14–1.17; 15/15) | 1.165 | 0.984 | 0.992 |
+
+n_eff (geometric mean over volumes), PER / SUB / SUBM:
+
+| a | T | W | DT | DW | EW |
+|---:|---|---|---|---|---|
+| 1 | 51.3 / 46.7 / 44.1 | 58.6 / 55.5 / 53.4 | 22.8 / 22.0 / 21.1 | 30.4 / 29.4 / 29.0 | 28.6 / 28.4 / 28.1 |
+| 3 | 63.4 / 61.7 / 61.9 | 71.7 / 75.9 / 73.8 | 29.9 / 32.2 / 32.2 | 38.9 / 45.2 / 44.6 | 33.2 / 34.6 / 34.6 |
+| 5 | 69.0 / 74.2 / 74.4 | 77.9 / 90.9 / 90.0 | 32.4 / 40.5 / 40.9 | 42.5 / 57.2 / 56.9 | 35.9 / 39.1 / 39.2 |
+| 9 | 75.3 / 93.4 / 93.2 | 85.1 / 102.6 / 106.1 | 36.8 / 53.6 / 54.6 | 47.7 / 73.5 / 74.8 | 40.0 / 45.8 / 46.2 |
+
+Band transfer at a = 9 (bands of k / k_max; plain averaging = 1):
+
+| condition | design | 0–.1 | .1–.25 | .25–.5 | .5–.75 | .75–1 |
+|---|---|---:|---:|---:|---:|---:|
+| T | A | 1.01 | 0.61 | 0.32 | 0.12 | 0.08 |
+| T | SUB | 0.98 | 0.82 | 0.62 | 0.30 | 0.13 |
+| T | SUBM | 0.96 | 0.81 | 0.61 | 0.30 | 0.11 |
+| W | A | 1.00 | 0.65 | 0.36 | 0.15 | 0.09 |
+| W | SUB | 0.99 | 0.86 | 0.69 | 0.40 | 0.21 |
+| W | SUBM | 0.99 | 0.87 | 0.69 | 0.39 | 0.19 |
+| DT | A | 1.02 | 0.80 | 0.58 | 0.43 | 0.33 |
+| DT | SUB | 0.97 | 0.87 | 0.80 | 0.67 | 0.51 |
+| DT | SUBM | 0.95 | 0.88 | 0.81 | 0.67 | 0.51 |
+| DW | A | 0.95 | 0.77 | 0.60 | 0.42 | 0.31 |
+| DW | SUB | 0.98 | 0.89 | 0.84 | 0.72 | 0.58 |
+| DW | SUBM | 0.98 | 0.90 | 0.83 | 0.71 | 0.56 |
+| EW | A | 0.75 | 0.38 | 0.23 | 0.20 | 0.19 |
+| EW | SUB | 0.95 | 0.75 | 0.42 | 0.27 | 0.19 |
+| EW | SUBM | 0.95 | 0.74 | 0.42 | 0.26 | 0.18 |
+
+### Reading — GAP D/E (written 2026-11-06, 19:45, after the run)
+- **The spectral hypothesis FAILS, in the opposite direction.**
+  - Giving fastMRI content coil1 ASL's per-frequency SNR raises SUB/PER from 1.240 (T) to **1.457 (DT)**. That is P1 = 1.175×, 15/15 volumes, Holm 2e-4. The share of the gap closed is −1.04: the gap widens.
+  - Under white noise the rise is larger: DW 1.540 against W 1.205.
+  - The Wiener prediction for DT is 1.149, the same as ASL's. The networks beat it by 27–35% (learned / Wiener 1.27 for SUB, 1.29 for SUBM).
+- **Phase structure is what drives the learned gain.** With DW's spectrum but random phase (EW), SUB/PER is 1.146 (P3 = 0.744×, 0/15 volumes). There learned / Wiener is 0.98–0.99: on Gaussian-like content, both designs reach the linear optimum and no more.
+- **ASL sits with EW, not with DT.** Its learned / Wiener is 0.92 (SUB) and 0.96 (SUBM). So the ASL gap is NOT spectral. Content with ASL's spectrum but anatomical structure gives a large gain; ASL itself behaves as if it had no exploitable structure.
+- **Correction to earlier statements.** "About 68% of the gap is spectral" (GAP C0) was an accounting split of measured ratios against the Wiener ratio, not a cause. D/E shows the Wiener ratio does not predict the learned ratio once structure is present: DT 1.457 against 1.149.
+- **Mechanism, in line with the band transfer.** On DT, SUB keeps 0.67–0.80 of mid- and high-band detail, against PER's 0.43–0.58. On EW, both keep about 0.2–0.4.
+  - Denoising the mean pays off when the mean's SNR crosses a detection threshold for sparse structure (edges) that a single copy's SNR does not.
+  - Gaussian-like content has no such threshold, so the linear limit applies.
+- **What this means for architecture.** The gain from denoising the mean comes from exploiting non-Gaussian image structure. Spectrum-only levers (noise colour, label calibration, pixel scale) were all null, and that is now explained. ASL's question becomes: why does the network find no exploitable structure in ASL? Candidates, tested in GAP F:
+  - (i) the content itself;
+  - (ii) signal-like physiological fluctuation;
+  - (iii) learnability from one training subject.
