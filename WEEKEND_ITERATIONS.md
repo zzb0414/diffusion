@@ -3281,3 +3281,52 @@ Learned / Wiener at a = 9 (Wiener 1.149, real-data spectra): whitened SUB 0.964,
   - Learned / Wiener at a = 9 rises to 0.96 (SUB) and 0.99 (SUBM). The earlier values were 0.92–0.96 (approximate, real-data Wiener reference).
 - **Caveat (disclosed in the prereg).** The test-time map uses all 10 repetitions, including the half the split-half estimator holds out. The map is heavily smoothed and PER does not gain, which argues against leakage inflating the result, but leakage is not excluded. A cleaner check would build the map from the held-in half only.
 - **Pre-registered follow-up:** (1) adopt per-slice noise-map normalization as the input convention for SUB/SUBM; (2) as the architectural step, test a learned σ-map conditioning channel that can also represent the coarse-coloured residual.
+
+---
+
+## RUN 2026-11-07 — GAP J2 (EXPLORATORY): checkpoint trajectory of fastMRI-initialized vs random-init ASL models
+
+Not pre-registered; written after the GAP J reading. Geometric-mean n_eff over 34 slices of 1104c (signal region); 'best' = best single r (oracle, optimistic). Seed-mean of 101 and 102.
+
+| arm | model | a | it 500 r0 / best | it 1000 r0 / best | it 1500 r0 / best | it 2000 r0 / best | it 3000 r0 / best |
+|---|---|---:|---|---|---|---|---|
+| PER | ref | 1 | 15.6 / 15.6 | 17.1 / 17.1 | 17.5 / 17.5 | 17.9 / 17.9 | 16.3 / 16.3 |
+| PER | ref | 9 | 20.9 / 26.8 | 20.2 / 27.3 | 19.7 / 27.2 | 20.1 / 27.0 | 18.1 / 25.8 |
+| PER | SC | 1 | 17.5 / 17.5 | 17.8 / 17.9 | 17.2 / 17.2 | 16.2 / 16.4 | 13.8 / 14.3 |
+| PER | SC | 9 | 21.0 / 27.4 | 20.9 / 27.9 | 19.5 / 27.1 | 19.0 / 26.3 | 17.0 / 24.7 |
+| PER | FT | 1 | 17.5 / 17.5 | 15.8 / 15.8 | 13.9 / 14.0 | 12.9 / 13.0 | 10.1 / 10.8 |
+| PER | FT | 9 | 20.0 / 26.7 | 18.2 / 25.6 | 16.3 / 24.0 | 15.6 / 23.1 | 12.8 / 20.6 |
+| SUB | ref | 1 | 15.4 / 15.4 | 17.1 / 17.1 | 16.9 / 17.2 | 17.9 / 17.9 | 16.8 / 16.8 |
+| SUB | ref | 9 | 21.4 / 21.4 | 27.5 / 27.5 | 27.9 / 28.4 | 28.2 / 28.9 | 24.7 / 26.7 |
+| SUB | SC | 1 | 16.8 / 16.8 | 17.3 / 17.3 | 17.5 / 17.5 | 17.4 / 17.4 | 15.1 / 15.1 |
+| SUB | SC | 9 | 28.7 / 28.7 | 29.9 / 29.9 | 27.8 / 27.8 | 23.8 / 24.2 | 10.9 / 16.3 |
+| SUB | FT | 1 | 17.2 / 17.2 | 16.5 / 16.5 | 15.2 / 15.2 | 14.2 / 14.4 | 12.0 / 12.4 |
+| SUB | FT | 9 | 26.2 / 26.5 | 18.1 / 20.6 | 10.7 / 16.5 | 7.1 / 15.3 | 3.3 / 11.3 |
+| SUBM | ref | 1 | 14.8 / 14.8 | 16.7 / 16.7 | 17.4 / 17.4 | 17.3 / 17.3 | 16.7 / 16.7 |
+| SUBM | ref | 9 | 21.3 / 21.3 | 27.8 / 27.8 | 28.9 / 29.2 | 29.1 / 30.1 | 22.7 / 25.8 |
+| SUBM | SC | 1 | 16.8 / 16.8 | 17.7 / 17.7 | 17.3 / 17.3 | 16.3 / 16.6 | 15.1 / 15.1 |
+| SUBM | SC | 9 | 29.9 / 29.9 | 31.2 / 31.2 | 27.4 / 27.7 | 20.1 / 22.0 | 7.5 / 15.2 |
+| SUBM | FT | 1 | 17.1 / 17.1 | 16.9 / 16.9 | 15.1 / 15.1 | 14.1 / 14.4 | 13.2 / 13.3 |
+| SUBM | FT | 9 | 24.8 / 25.6 | 14.8 / 19.1 | 7.1 / 14.6 | 4.3 / 12.5 | 2.2 / 9.1 |
+
+Zero-shot fastMRI DT models (GAP F1, no ASL training), a = 9, best r, fastMRI it 1000 / 2000 / 3000: PER 23.1 / 22.6 / 22.0; SUB 27.4 / 27.3 / 25.5; SUBM 27.7 / 27.2 / 26.0.
+
+### Reading — GAP J2 (exploratory, not pre-registered; oracle best-r, uncross-fitted, so treat as descriptive)
+
+- **Every ASL model overfits within the 3000-iteration budget.** It peaks and then declines, more steeply at a = 9 than at a = 1, and more steeply for the designs that exploit structure across repetitions:
+
+  | Model at a = 9 (best r) | Peak | End (it 3000) |
+  |---|---|---|
+  | Reference SUBM | 30.1 (it 2000) | 25.8 |
+  | Reference SUB | 28.9 (it 2000) | 26.7 |
+  | Reference PER | 27.3 (it 1000) | 25.8 |
+  | SC SUBM (σ_max 5, unit-σ) | 31.2 (it 1000) | 15.2 |
+  | SC SUB | 29.9 (it 1000) | 16.3 |
+
+  For SC, the r0 vs best-r gap opens late (SUB at it 3000: 10.9 vs 16.3). The late Tweedie estimate is badly biased, and only blending back the input rescues it.
+- **Fine-tuning from fastMRI never beats zero-shot fastMRI.** FT peaks at iteration 500 (SUB 26.5, SUBM 25.6), below zero-shot (27.4 / 27.7), then collapses to 9–11 at a = 9. This confirms the GAP J reading: ASL training removes the prior faster than it adds ASL-specific structure.
+- **Interpretation.** This is the same data limit as in GAP H, seen along training time instead of training-set size. With ~2 subjects of training data, the model starts fitting the noise realizations and the slice-specific excess structure. The SC recipe learns faster and overfits faster.
+- **Consequences.**
+  1. The pre-registered reports select the checkpoint from {1000, 2000, 3000} with cross-fitting. The reference peaks fall inside that grid, so earlier ratios are not materially biased, although ratios that involve SC/FT at fixed late checkpoints would be.
+  2. **Early stopping is worth ~5–15% at a = 9 for the references and much more for faster recipes.** Split-half n_eff is label-free, so it gives a deployable stopping/validation criterion on held-out noisy repetitions, with no clean reference needed.
+  3. The SC peak (31.2 against 30.1 for the reference SUBM peak) is the best number on ASL so far. Being the oracle best-r and best checkpoint, it overstates what is reliably achievable. Its margin over the reference is small and should be tested pre-registered (cross-fitted, denser checkpoints) before relying on it.
