@@ -3234,3 +3234,50 @@ Absolute n_eff at a = 9 (90% CI; slices higher):
   - (1) Naive fine-tuning is not the way to bring in a fastMRI prior; zero-shot was better.
   - (2) The 3000-iteration ASL recipe is past its optimum. Checkpoint selection matters, and ASL design comparisons are sensitive to it. The cross-fitted selection protects the comparisons, but earlier checkpoints may hold more.
 - **Follow-up (EXPLORATORY, evaluation only, `runs/gap/queue_j2.sh` after K):** score the saved 500 and 1500 checkpoints of FT, SC and the references, to map the trajectory. Not pre-registered; it will be reported as exploratory.
+
+---
+
+## RUN 2026-11-07 — GAP K: does spatial pre-whitening (a noise map) raise ASL performance?
+
+Pre-registered (`Archive/GAP/PREREGISTRATION_K.md`). PER, SUB, SUBM trained exactly as ASL-SUBJ / ASL-COIL (dataset 1 + 1104a, seeds 101–102, 3000 iterations, MSE) on spatially pre-whitened ASL (each slice / its own smooth noise-std map, Gaussian 4 px, mean-square 1); scored on ORIGINAL-units 1104c (input / map, output × map). Split-half n_eff, signal region; checkpoint and r cross-fitted over slice folds.
+
+**PRIMARY (Holm over 2):**
+
+- K1 n_eff(SUBM, whitened) / n_eff(SUBM, real), a = 9: 1.030× (90% CI 1.020–1.040; higher on 29/34 slices), p = 1.7e-05, Holm 1.7e-05
+- K2 n_eff(SUB, whitened) / n_eff(SUB, real), a = 9: 1.037× (90% CI 1.029–1.045; higher on 30/34 slices), p = 1e-08, Holm 2e-08
+
+| a | model | SUB/PER | SUBM/PER | n_eff PER / SUB / SUBM |
+|---:|---|---|---|---|
+| 1 | real | 1.001 (0.99–1.01; 20/34) | 0.968 (0.95–0.98; 5/34) | 17.9 / 17.9 / 17.3 |
+| 1 | whitened | 1.019 (1.01–1.03; 25/34) | 0.987 (0.97–1.00; 19/34) | 17.6 / 18.0 / 17.4 |
+| 2 | real | 1.040 (1.03–1.05; 33/34) | 1.021 (1.01–1.03; 25/34) | 19.6 / 20.4 / 20.0 |
+| 2 | whitened | 1.034 (1.02–1.04; 29/34) | 1.062 (1.05–1.08; 32/34) | 19.2 / 19.8 / 20.4 |
+| 3 | real | 1.066 (1.06–1.08; 32/34) | 1.068 (1.06–1.08; 31/34) | 20.7 / 22.0 / 22.1 |
+| 3 | whitened | 1.071 (1.06–1.08; 32/34) | 1.089 (1.08–1.10; 33/34) | 20.5 / 21.9 / 22.3 |
+| 5 | real | 1.057 (1.03–1.09; 27/34) | 1.082 (1.06–1.11; 30/34) | 23.3 / 24.6 / 25.2 |
+| 5 | whitened | 1.089 (1.06–1.12; 29/34) | 1.113 (1.09–1.14; 31/34) | 23.0 / 25.1 / 25.6 |
+| 7 | real | 1.062 (1.03–1.09; 27/34) | 1.095 (1.06–1.12; 31/34) | 25.4 / 27.0 / 27.8 |
+| 7 | whitened | 1.099 (1.06–1.13; 29/34) | 1.128 (1.09–1.16; 32/34) | 25.2 / 27.7 / 28.5 |
+| 9 | real | 1.062 (1.03–1.09; 28/34) | 1.103 (1.07–1.13; 31/34) | 27.2 / 28.9 / 30.0 |
+| 9 | whitened | 1.108 (1.07–1.14; 30/34) | 1.142 (1.11–1.17; 31/34) | 27.1 / 30.0 / 30.9 |
+
+Absolute n_eff, whitened / real (90% CI; slices higher):
+
+- PER: a = 1 0.984 (0.98–0.99; 8/34); a = 9 0.994 (0.99–1.00; 11/34)
+- SUB: a = 1 1.002 (1.00–1.01; 14/34); a = 9 1.037 (1.03–1.05; 30/34)
+- SUBM: a = 1 1.003 (1.00–1.01; 20/34); a = 9 1.030 (1.02–1.04; 29/34)
+
+Learned / Wiener at a = 9 (Wiener 1.149, real-data spectra): whitened SUB 0.964, SUBM 0.994.
+
+### Reading — GAP K (against PREREGISTRATION_K)
+
+- **Verdict: deployable, with a modest gain.** Both primaries pass the pre-registered "≥ 1.03, CI excludes 1" rule. K2 (SUB) = 1.037 (1.029–1.045, 30/34 slices) and K1 (SUBM) = 1.030 (1.020–1.040, 29/34), both Holm p < 1e-4. K1 sits exactly on the boundary, so it counts as a pass but a marginal one. The gain landed inside my stated expectation (1.00–1.04) and matches the GAP I residual-error estimate (n_eff about 1.03–1.05×).
+- **The gain is where theory puts it.** Whitening helps only the designs that exploit structure across repetitions, and only at large a:
+  - SUB and SUBM: about 1.00 at a = 1, rising to 1.03–1.04 at a = 9.
+  - PER is slightly worse: 0.984 at a = 1 and 0.994 at a = 9.
+  - So SUB/PER at a = 9 rises from 1.062 to 1.108, and SUBM/PER from 1.103 to 1.142. That recovers roughly 40–45% of the SUB/PER gap that GAP I opened (1.226, in non-comparable units).
+- **Interpretation.**
+  - A smooth variance envelope captures a real part of the non-stationarity cost, though not all of it. A smooth gain map cannot reach the remainder; that remainder is consistent with the coarse, spatially correlated physiological excess (memory: noise colour).
+  - Learned / Wiener at a = 9 rises to 0.96 (SUB) and 0.99 (SUBM). The earlier values were 0.92–0.96 (approximate, real-data Wiener reference).
+- **Caveat (disclosed in the prereg).** The test-time map uses all 10 repetitions, including the half the split-half estimator holds out. The map is heavily smoothed and PER does not gain, which argues against leakage inflating the result, but leakage is not excluded. A cleaner check would build the map from the held-in half only.
+- **Pre-registered follow-up:** (1) adopt per-slice noise-map normalization as the input convention for SUB/SUBM; (2) as the architectural step, test a learned σ-map conditioning channel that can also represent the coarse-coloured residual.
