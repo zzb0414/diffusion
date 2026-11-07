@@ -3357,3 +3357,79 @@ Pre-registered (`Archive/GAP/PREREGISTRATION_K2.md`). Same GAP K models and scor
 - **Clean / leaky is 0.999–1.000 at a = 5, 7 and 9,** matching my expectation (0.995–1.0). The full-map leakage inflated K by ≤ 0.1%.
 - **The gain grows with a** (SUB 1.018 → 1.028 → 1.036 at a = 5 → 7 → 9), even though the A-half map is noisier at smaller a. The relevant variable is the strength of the structure exploited across repetitions, not the map quality.
 - **Consequence:** a per-slice smooth noise map, estimated only from the repetitions being denoised, is a deployable, leakage-free input normalization for SUB/SUBM. It gives +3–4% absolute n_eff at a = 9, with no change to architecture or training code beyond the loader.
+
+---
+
+## RUN 2026-11-07 — GAP L: SC vs reference recipe, both early-stopped (fresh seeds)
+
+Pre-registered (`Archive/GAP/PREREGISTRATION_L.md`). SC (`_ft_train.py`, no init) vs reference (`_gr_train.py`), datasets 1 + 1104a, seeds 103–104, 3000 iterations; 1104c, signal region; checkpoint and r cross-fitted over slice folds.
+
+**PRIMARY (Holm over 2, 6-checkpoint grid):**
+
+- L1 n_eff(SC SUBM) / n_eff(ref SUBM), a = 9: 1.001× (90% CI 0.980–1.025; higher on 13/34 slices), p = 0.18, Holm 0.34
+- L2 n_eff(SC SUB) / n_eff(ref SUB), a = 9: 1.020× (90% CI 0.998–1.045; higher on 20/34 slices), p = 0.17, Holm 0.34
+
+| arm | a | SC / ref (6-grid) | SC / ref (3-grid) | SC / ref (it 3000 only) | SC 6/3-grid | ref 6/3-grid | n_eff SC / ref (6-grid) |
+|---|---:|---|---|---|---|---|---|
+| SUBM | 1 | 1.022 (1.012–1.033; 23/34) | 1.012 (1.002–1.024; 18/34) | 0.883 (0.864–0.903; 2/34) | 1.010 (1.005–1.015; 26/34) | 1.000 (0.995–1.005; 14/34) | 17.6 / 17.3 |
+| SUBM | 9 | 1.001 (0.979–1.025; 13/34) | 0.985 (0.966–1.006; 10/34) | 0.621 (0.600–0.643; 0/34) | 1.025 (1.011–1.040; 20/34) | 1.009 (1.003–1.016; 24/34) | 30.3 / 30.3 |
+| SUB | 1 | 0.982 (0.974–0.991; 10/34) | 0.994 (0.985–1.004; 15/34) | 0.854 (0.837–0.870; 0/34) | 1.014 (1.005–1.024; 20/34) | 1.027 (1.021–1.033; 31/34) | 17.6 / 17.9 |
+| SUB | 9 | 1.020 (0.998–1.045; 20/34) | 1.020 (0.998–1.044; 21/34) | 0.585 (0.560–0.610; 0/34) | 1.000 (1.000–1.000; 0/34) | 0.999 (0.996–1.003; 11/34) | 30.4 / 29.7 |
+
+Cross-fitted checkpoint chosen (fold 0 shown per seed), a = 9: SCSUBM s103 it 500; SCSUBM s104 it 1000; refSUBM s103 it 1500; refSUBM s104 it 2000; SCSUB s103 it 1000; SCSUB s104 it 1000; refSUB s103 it 1500; refSUB s104 it 2000
+
+### Reading — GAP L (against PREREGISTRATION_L)
+
+- **Verdict: the recipes are equivalent once early-stopped; the reference recipe stays.**
+  - L1 (SUBM) = 1.001 (0.980–1.025, 13/34 slices).
+  - L2 (SUB) = 1.020 (0.998–1.045, 20/34).
+  - Holm p = 0.34 for both.
+  - L2's point estimate sits on the 1.02 boundary but its CI includes 1, so it falls in the "(0.98, 1.02) → equivalent" branch.
+  - The J2 SC advantage (31.2 vs 30.1, oracle selection, seeds 101–102) was selection optimism and does not replicate on fresh seeds with cross-fitting. Both recipes give SUBM ≈ 30.3 at a = 9.
+- **Early stopping is necessary, but a dense grid adds little.**
+  - Not stopping is costly for SC: SC / ref at a fixed iteration 3000 is 0.59–0.62 at a = 9.
+  - The 6-checkpoint grid adds 0–2.5% over {1000, 2000, 3000} (SC SUBM 1.025, ref SUBM 1.009, SUB ≈ 1.00).
+  - Cross-fitting picks iterations 500–1000 for SC and 1500–2000 for ref, which confirms the J2 picture of early peaks.
+- **Consequence.**
+  - Keep the reference recipe; it is more forgiving of the stopping point.
+  - Select the checkpoint by split-half n_eff on held-out noisy repetitions, which is label-free and deployable.
+  - The earlier 3-grid reports are not materially biased (≤ 1% for ref).
+
+---
+
+## WEEKEND SUMMARY 2026-11-07 — where does the ASL vs fastMRI denoise-the-mean gap come from? (GAP A–L)
+
+Question: why is SUB/PER at a = 9 about 1.06–1.10 on ASL, but 1.2–1.5 on fastMRI? Every step was pre-registered, except J2, which was exploratory. Each conclusion is in that step's Reading above.
+
+### Where the gap comes from
+
+| Source | Share / effect | Evidence |
+|---|---|---|
+| **Coarser matrix** (fastMRI 160 → 80) | About 60% of the gap (log ratio). It is spectral: the Wiener ceiling falls from 1.42 to 1.27, while the learned / Wiener factor stays ≈ 0.98. | B, C |
+| **Non-stationary in-brain noise** (a model given one scalar σ) | The main ASL-specific cost. Making only the noise stationary raises SUB/PER from 1.06 to 1.23, and learned / Wiener from 0.92 to 1.07. | G, I |
+| **Small training set** | The gain grows with data. A quarter of the slices gives SUB/PER = 1.00, and one fastMRI volume gives 0.885. All ASL models overfit within 3000 iterations. | F, H, J2, L |
+| Not the cause | Noise label (A), noise level/kind (B), pixel scale (C3), signal-to-noise spectrum alone (D). ASL's structure is exploitable (I). | A–D, G, I |
+
+### What helps on ASL (deployable)
+
+1. **Per-slice noise-map normalization** (smooth repetition-variance map, from the repetitions being denoised only).
+   - +3.6% (SUB) and +3.0% (SUBM) absolute n_eff at a = 9, leakage-free (K, K2).
+   - Recovers about 40% of what perfect noise stationarization (I) would give.
+   - Needs only a loader change.
+2. **Early stopping by split-half n_eff** on held-out noisy repetitions (label-free).
+   - Necessary: without stopping, the fast recipe loses ~40% (L).
+   - With stopping, the SC and reference recipes are equivalent (L1 1.001, L2 1.020, CIs include 1). Keep the reference recipe.
+
+### What does not help
+
+- **Fine-tuning from a fastMRI prior** gives strong negative transfer (J1 0.61, J2 0.69). It never beats using the fastMRI model as-is (zero-shot: SUB 27.4 vs fine-tuned peak 26.5) (J, J2).
+- **Denser checkpoint grids** add ≤ 2.5% over {1000, 2000, 3000} (L).
+
+### Decisions for you
+
+1. **Architecture.** Adopt noise-map normalization as the input convention. The next step is a **noise-map conditioning channel**, an extra input that can also represent the coarse, coloured part of the noise that a scalar gain cannot (I − K leaves roughly 60% of the stationarization gain unrecovered).
+   - This changes `loss_multireal` noise synthesis and `denoise_to`, so it is not started without your approval.
+2. **Data.** Data volume is the second lever (H, J2). This supports collecting more coil2 data before training coil2 models, as you planned.
+3. **Article.** The intuition → theory → empirical loop is complete for "matrix + noise non-stationarity + data". Want me to draft a RESEARCH_NOTES entry? (Not edited without asking.)
+
+All code and text are committed on `dev`; nothing has been pushed and no figures or CSVs are committed.
