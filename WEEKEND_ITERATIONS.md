@@ -3433,3 +3433,74 @@ Question: why is SUB/PER at a = 9 about 1.06–1.10 on ASL, but 1.2–1.5 on fas
 3. **Article.** The intuition → theory → empirical loop is complete for "matrix + noise non-stationarity + data". Want me to draft a RESEARCH_NOTES entry? (Not edited without asking.)
 
 All code and text are committed on `dev`; nothing has been pushed and no figures or CSVs are committed.
+
+---
+
+## RUN 2026-11-09 — GAP-M: does uneven noise cost denoise-the-mean only when its strength follows the signal?
+
+Pre-registered (`Archive/GAP/PREREGISTRATION_M.md`). Content D (fastMRI at ASL's per-frequency SNR), matrix 80, σ = 1, 62 training volumes, PER (arm A), SUB, SUBM, seeds 101–102; checkpoint and r chosen without ground truth; n_eff vs ground truth on 15 test volumes (relative to σ = 1). Noise: DW white (GAP-D); DL white × an envelope following the image's own signal region (in/out variance 1.37, as ASL); DS the same envelope shifted half the FOV; DLw = DL with a per-image noise map (input / map, output × map).
+
+**PRIMARY (Holm over 2):**
+
+- M1 co-located unevenness: (SUB/PER, DL) / (SUB/PER, DW), a = 9: 0.990× (90% CI 0.988–0.993; higher on 1/15 volumes), p = 0.00012, Holm 0.00024
+- M2 co-location specifically: (SUB/PER, DL) / (SUB/PER, DS), a = 9: 0.989× (90% CI 0.983–0.995; higher on 3/15 volumes), p = 0.01, Holm 0.01
+
+Secondary (90% CI; volumes higher):
+
+- SUBM: (SUBM/PER, DL)/(DW) 0.975 (0.97–0.98; 0/15); (DL)/(DS) 0.952 (0.95–0.96; 0/15)
+- Remedy, SUB/PER: (DLw)/(DL) 0.964 (0.96–0.97; 0/15); SUBM/PER 1.003 (1.00–1.01; 9/15)
+- Remedy, absolute n_eff DLw / DL at a = 9: A 0.980 (0.98–0.98; 0/15); SUB 0.945 (0.94–0.95; 0/15); SUBM 0.983 (0.98–0.99; 0/15)
+- Absolute n_eff at a = 9, DL / DW: A 0.951 (0.95–0.95; 0/15); SUB 0.942 (0.94–0.95; 0/15); SUBM 0.928 (0.93–0.93; 0/15) — DS / DW: A 1.026 (1.02–1.03; 15/15); SUB 1.027 (1.02–1.03; 15/15); SUBM 1.051 (1.04–1.06; 15/15) (DL has more noise in the head, so it is lower by construction)
+- Log share of the DW → ASL gap reproduced by DL: SUB 0.03 (DW 1.540 → DL 1.525; ASL 1.062), SUBM 0.07 (DW 1.569 → DL 1.530; ASL 1.103)
+
+| condition | SUB/PER a = 1 | SUB/PER a = 3 | SUB/PER a = 5 | SUB/PER a = 9 | SUBM/PER a = 9 | n_eff a = 9 PER / SUB / SUBM |
+|---|---|---|---|---|---|---|
+| DW | 0.967 (0.96–0.97; 0/15) | 1.164 (1.15–1.18; 15/15) | 1.346 (1.32–1.37; 15/15) | 1.540 (1.50–1.58; 15/15) | 1.569 (1.53–1.61; 15/15) | 47.7 / 73.5 / 74.8 |
+| DL | 0.967 (0.96–0.97; 0/15) | 1.114 (1.10–1.13; 15/15) | 1.289 (1.26–1.32; 15/15) | 1.525 (1.49–1.56; 15/15) | 1.530 (1.49–1.57; 15/15) | 45.4 / 69.2 / 69.4 |
+| DS | 0.960 (0.95–0.97; 0/15) | 1.155 (1.14–1.17; 15/15) | 1.351 (1.32–1.39; 15/15) | 1.542 (1.50–1.59; 15/15) | 1.607 (1.56–1.66; 15/15) | 48.9 / 75.5 / 78.7 |
+| DLw | 0.970 (0.96–0.97; 0/15) | 1.118 (1.10–1.13; 15/15) | 1.295 (1.27–1.32; 15/15) | 1.470 (1.44–1.51; 15/15) | 1.535 (1.50–1.57; 15/15) | 44.5 / 65.4 / 68.2 |
+
+Band transfer at a = 9 (bands of k / k_max):
+
+| condition | design | 0–.1 | .1–.25 | .25–.5 | .5–.75 | .75–1 |
+|---|---|---:|---:|---:|---:|---:|
+| DW | A | 0.95 | 0.77 | 0.60 | 0.42 | 0.31 |
+| DW | SUB | 0.98 | 0.89 | 0.84 | 0.72 | 0.58 |
+| DW | SUBM | 0.98 | 0.90 | 0.83 | 0.71 | 0.56 |
+| DL | A | 0.97 | 0.77 | 0.59 | 0.41 | 0.29 |
+| DL | SUB | 0.99 | 0.89 | 0.83 | 0.71 | 0.55 |
+| DL | SUBM | 0.99 | 0.88 | 0.81 | 0.69 | 0.53 |
+| DS | A | 0.96 | 0.77 | 0.61 | 0.44 | 0.32 |
+| DS | SUB | 0.98 | 0.89 | 0.84 | 0.74 | 0.60 |
+| DS | SUBM | 0.99 | 0.91 | 0.85 | 0.74 | 0.59 |
+| DLw | A | 0.95 | 0.77 | 0.59 | 0.41 | 0.30 |
+| DLw | SUB | 0.98 | 0.89 | 0.82 | 0.67 | 0.53 |
+| DLw | SUBM | 0.99 | 0.88 | 0.82 | 0.70 | 0.54 |
+
+### Reading — GAP-M (against PREREGISTRATION_M; written 2026-11-09, after the run)
+- **Pre-registered branch: M1 ≥ 0.98, so unevenness of ASL's magnitude does NOT cost the gain on fastMRI content.**
+  - M1 = 0.990× (CI 0.988–0.993) and M2 = 0.989× (0.983–0.995). Both are significant after Holm correction, but practically small, about 1%.
+  - DL reproduces 3% of the DW → ASL gap in log terms for SUB, and 7% for SUBM.
+  - My expectation (M1 0.90–0.96) was too high.
+  - By the fixed rule: GAP-I's effect is ASL-specific, S3 must not rest on uneven noise, and the noise channel is deprioritized.
+- **The remedy does not recover anything; on fastMRI it hurts.**
+  - DLw / DL absolute n_eff at a = 9: PER 0.980, SUB 0.945, SUBM 0.983 (0/15 volumes higher for each). SUB/PER 0.964.
+  - On ASL the same map gave SUB +3.6%, leakage-free (GAP-K2).
+  - So the noise map is not a generic fix for co-located unevenness. Whatever it helps on ASL is something DL does not model. Candidates: the excess's coarse spatial correlation, its variation across repetitions and slices, or the data-limited regime (next point).
+- **Important caveat: GAP-M ran with abundant data (62 volumes).**
+  - DL's envelope is a smooth, deterministic function of the image, so a model trained on 62 volumes can learn to expect it.
+  - ASL trains on about 1–2 subjects (GAP-F/H: data-limited).
+  - GAP-M therefore does not exclude a **data × unevenness interaction**, where uneven noise costs only when the prior is data-starved.
+- **SUBM and intermediate a are more sensitive (exploratory).**
+  - SUBM: DL/DW 0.975, DL/DS 0.952.
+  - SUB/PER at a = 3 and a = 5 drops 4% under DL (1.164 → 1.114, 1.346 → 1.289), against 1% at a = 9.
+  - Still small against the gap.
+- **What else could explain GAP-I (1.062 → 1.226), now that co-location alone is out on fastMRI?**
+  - (a) Stationarizing lowered the in-region noise to 0.85× (GAP-I caveat), which is a higher effective SNR. The SUB gain rises with SNR (MEAN-SNR).
+  - (b) Properties of the real excess that DL lacks (above).
+  - (c) The data × unevenness interaction.
+- **Consequence for the S3 plan.**
+  - Data remains the leading explanation.
+  - GAP-N (diversity at a fixed image count) keeps its place.
+  - GAP-O should cross training data (62 vs few volumes) with noise (DW vs DL), so that it tests (c) directly instead of simply adding factors.
+  - Noise-map normalization stays an ASL-only, ○-tier observation; no mechanism is claimed.
