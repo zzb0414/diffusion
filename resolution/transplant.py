@@ -19,7 +19,7 @@ import data as D
 
 SIG = 1.0                       # per-channel noise std; white noise at matrix 80 then has fastMRI S_K = 2's per-band SNR
 M = 80
-KINDS = ("W", "G", "T")
+KINDS = ("W", "G", "T", "L", "S")      # L, S: GAP-M (appended; seeds of W/G/T unchanged)
 ASL = os.path.join(D.REPO, "..", "asl_for_diffusion", "coil1")
 POOL = {"train": ("ds1_20260924", "1104a_20261104"), "test": ("1104c_20261104",)}   # asl_for_diffusion/manifest.json
 SEED = 20261105
@@ -48,8 +48,10 @@ def pool(split):
     return _pool[split]
 
 
-def fields(split, i, kind, n=D.N):
-    """(n, 80, 80) complex64 noise for image i of the split."""
+def fields(split, i, kind, n=D.N, clean=None):
+    """(n, 80, 80) complex64 noise for image i of the split. L / S (GAP-M) need the clean image."""
+    if kind in ("L", "S"):
+        return (fields(split, i, "W", n) * envelope(clean, kind)).astype(np.complex64)
     rng = np.random.default_rng(SEED + 1000003 * D.SPLIT_ID[split] + 7 * i + KINDS.index(kind))
     if kind == "T":
         f, _ = pool(split)
@@ -121,8 +123,42 @@ def content(x320, split, i, kind, noise):
     c = clean(x320)
     if kind == "F":
         return c
-    K = np.fft.fft2(c, norm="ortho") * filt(noise)
+    K = np.fft.fft2(c, norm="ortho") * filt("W" if noise in ("L", "S") else noise)
     if kind == "E":
         rng = np.random.default_rng(SEED + 17 + 1000003 * D.SPLIT_ID[split] + 7 * i)
         K = np.abs(K) * np.exp(2j * np.pi * rng.random(K.shape))
     return np.fft.ifft2(K, norm="ortho").astype(np.complex64)
+
+
+# ---- GAP-M (Archive/GAP/PREREGISTRATION_M.md): spatially uneven noise, co-located with the signal or not ------------
+RHO = 1.5          # variance excess before smoothing; gives an in/out region variance ratio of 1.369 (median, 60 train images) = ASL 1104c 1.371
+ENV_SMOOTH, SHIFT = 4.0, M // 2
+
+
+def region(clean):
+    """Signal region as the ASL estimator defines it: gaussian(|x|, 3) > median."""
+    from scipy.ndimage import gaussian_filter
+    g = gaussian_filter(np.abs(clean), 3.0)
+    return g > np.median(g)
+
+
+def envelope(clean, kind):
+    """(80, 80) noise-std envelope, mean square 1 (sigma label stays SIG). L: variance 1 + (RHO - 1) x smoothed signal
+    region of the image itself (ASL-like in-brain excess); S: the same envelope rolled by half the FOV (same shape and
+    scale, not co-located)."""
+    from scipy.ndimage import gaussian_filter
+    e2 = 1.0 + (RHO - 1.0) * gaussian_filter(region(clean).astype(float), ENV_SMOOTH, mode="nearest")
+    e2 = e2 / e2.mean()
+    if kind == "S":
+        e2 = np.roll(e2, SHIFT, axis=-1)
+    return np.sqrt(e2)
+
+
+def wmap(y):
+    """GAP-M remedy (GAP-K's formula): (N, 80, 80) complex copies -> (80, 80) noise-std map, mean square 1: per-pixel
+    variance over copies (per channel), Gaussian ENV_SMOOTH px (mode nearest), normalized, square root."""
+    from scipy.ndimage import gaussian_filter
+    y = np.asarray(y, np.complex128)
+    v = (np.abs(y - y.mean(0)) ** 2).sum(0) / (len(y) - 1) / 2
+    v = gaussian_filter(v, ENV_SMOOTH, mode="nearest")
+    return np.sqrt(v / v.mean())
