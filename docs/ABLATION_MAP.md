@@ -23,7 +23,7 @@ are written GAP-B, GAP-C, …; claims keep their bare IDs (C1–C9). Selected ar
 | Fallback for per-repetition outputs | Dial r set by averaging depth, closed-form r*(a) | CV_RATIO, AR_HEADROOM, NAT | Fixed r = 1/3 gives only 0.19–0.31× of r*(a) for single maps; r chosen without ground truth ≈ oracle | ★ |
 | Evaluation and selection | Split-half n_eff, no ground truth; cross-fitted r, checkpoint and early stopping | NAT, RES, GAP-L | Unbiased within 1% (NAT) and 0.1% (RES); early stopping is required | ★ |
 | Training patches | Whole slices for SUBM | ASL-CROP | SUBM on crops 0.947× | ○ |
-| Input normalization | Per-slice noise map | GAP-K, GAP-K2 | +3.6% (SUB), +3.0% (SUBM) at a = 9, leakage-free | ○ (new) |
+| Input normalization | Per-slice noise map (optional, ASL-only) | GAP-K, GAP-K2, GAP-M | ASL: +3.6% (SUB), +3.0% (SUBM) at a = 9, leakage-free. fastMRI with co-located uneven noise: −5.5% (SUB), so not a generic fix; no mechanism claimed | ○ |
 
 **Negative results that rule out alternatives** (all ○): fastMRI pretraining then fine-tuning (GAP-J, 0.61–0.69×), voxel-size conditioning (RES), dihedral augmentation (confounded, recipe note 6), Noise2Score-style decoding without pairs (BASE).
 
@@ -44,12 +44,12 @@ The quantity is SUB/PER at a = 9. Real ASL (1104c, unseen subject) gives 1.062 (
 | Matrix / pixel scale | GAP-B, GAP-C | On fastMRI content, matrix 160 → 80 lowers the gain from 1.46 to 1.21 (spectral); pixel scale is not a lever | ★ | Doesn't carry to ASL-spectrum content (next row) |
 | Signal spectrum | GAP-D/E | fastMRI content filtered to ASL's per-frequency SNR (D) supports 1.457 (real ASL noise) / 1.540 (white); without phase structure (E) only 1.146 | ★ | **The closest fastMRI analogue (DT, 1.457) is still far from ASL (1.062)** |
 | Training data | GAP-F, GAP-H | fastMRI DT: 62 → 4 → 1 volumes gives 1.457 → 1.301 → 0.885; ASL with ¼ of its slices: 1.00 | ★ | Image count vs subject diversity untested |
-| Uneven noise | GAP-I, GAP-K, GAP-K2 (GAP-G confounded) | Uniform noise on ASL: 1.062 → 1.226; a smooth map recovers about 30% of that | ★ | Contradicts GAP-B (real ASL noise on fastMRI didn't shrink the gain); co-location hypothesis untested |
+| Uneven noise | GAP-I, GAP-K, GAP-K2, GAP-M (GAP-G confounded) | Uniform noise on ASL: 1.062 → 1.226; a smooth map recovers about 30% of that. On fastMRI with 62 volumes, ASL-sized co-located unevenness costs only 1% (M1 0.990; 3% of the gap) | ○ (was ★) | Not the cause with abundant data. Open: data × unevenness interaction (GAP-O), GAP-I's 0.85× in-region noise (SNR) |
 | Prior transfer, overfitting | GAP-J, GAP-J2, GAP-L | Fine-tuning hurts; early stopping is required | ○ | — |
 
 **fastMRI tests that lock down S3** (pre-registered one at a time, run in order):
-1. **GAP-M (co-location):** does uneven noise cost the gain only when its strength follows the signal? With a remedy arm (noise map).
+1. **GAP-M (co-location), done 2026-11-09:** no. M1 = 0.990, and the noise-map remedy hurts on fastMRI (SUB 0.945×).
 2. **GAP-N (diversity):** at a fixed image count, do fewer subjects cost the gain?
-3. **GAP-O (composition):** do the confirmed factors together reproduce ASL's 1.06 starting from DW's 1.54?
+3. **GAP-O (composition / interaction):** training data (62 vs few volumes) × noise (DW vs DL). Does uneven noise cost only when data are scarce, and do the factors together reproduce ASL's 1.06 starting from DW's 1.54?
 
 Together these tell us what to do when more ASL data arrive: how much data and how many subjects, and whether a noise-map normalization or channel is needed.
