@@ -3275,7 +3275,7 @@ Learned / Wiener at a = 9 (Wiener 1.149, real-data spectra): whitened SUB 0.964,
 - **The gain is where theory puts it.** Whitening helps only the designs that exploit structure across repetitions, and only at large a:
   - SUB and SUBM: about 1.00 at a = 1, rising to 1.03–1.04 at a = 9.
   - PER is slightly worse: 0.984 at a = 1 and 0.994 at a = 9.
-  - So SUB/PER at a = 9 rises from 1.062 to 1.108, and SUBM/PER from 1.103 to 1.142. That recovers roughly 40–45% of the SUB/PER gap that GAP I opened (1.226, in non-comparable units).
+  - So SUB/PER at a = 9 rises from 1.062 to 1.108, and SUBM/PER from 1.103 to 1.142. That recovers about 30% (log ratio; SUB 0.30, SUBM 0.31) of the SUB/PER gain that GAP I opened (1.226 / 1.236, in non-comparable units). [Corrected 2026-11-09: first written as 40–45%, an arithmetic error.]
 - **Interpretation.**
   - A smooth variance envelope captures a real part of the non-stationarity cost, though not all of it. A smooth gain map cannot reach the remainder; that remainder is consistent with the coarse, spatially correlated physiological excess (memory: noise colour).
   - Learned / Wiener at a = 9 rises to 0.96 (SUB) and 0.99 (SUBM). The earlier values were 0.92–0.96 (approximate, real-data Wiener reference).
@@ -3414,7 +3414,7 @@ Question: why is SUB/PER at a = 9 about 1.06–1.10 on ASL, but 1.2–1.5 on fas
 
 1. **Per-slice noise-map normalization** (smooth repetition-variance map, from the repetitions being denoised only).
    - +3.6% (SUB) and +3.0% (SUBM) absolute n_eff at a = 9, leakage-free (K, K2).
-   - Recovers about 40% of what perfect noise stationarization (I) would give.
+   - Recovers about 30% (log ratio; corrected from 40%) of what perfect noise stationarization (I) would give.
    - Needs only a loader change.
 2. **Early stopping by split-half n_eff** on held-out noisy repetitions (label-free).
    - Necessary: without stopping, the fast recipe loses ~40% (L).
@@ -3427,7 +3427,7 @@ Question: why is SUB/PER at a = 9 about 1.06–1.10 on ASL, but 1.2–1.5 on fas
 
 ### Decisions for you
 
-1. **Architecture.** Adopt noise-map normalization as the input convention. The next step is a **noise-map conditioning channel**, an extra input that can also represent the coarse, coloured part of the noise that a scalar gain cannot (I − K leaves roughly 60% of the stationarization gain unrecovered).
+1. **Architecture.** Adopt noise-map normalization as the input convention. The next step is a **noise-map conditioning channel**, an extra input that can also represent the coarse, coloured part of the noise that a scalar gain cannot (I − K leaves about 70% of the stationarization gain unrecovered; corrected from 60%).
    - This changes `loss_multireal` noise synthesis and `denoise_to`, so it is not started without your approval.
 2. **Data.** Data volume is the second lever (H, J2). This supports collecting more coil2 data before training coil2 models, as you planned.
 3. **Article.** The intuition → theory → empirical loop is complete for "matrix + noise non-stationarity + data". Want me to draft a RESEARCH_NOTES entry? (Not edited without asking.)
