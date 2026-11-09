@@ -51,6 +51,7 @@ def main():
     ap.add_argument("--grid", type=int, default=TP.M, choices=(TP.M, 160), help="GAP C2: 160 = matrix-80 content on a 160 grid")
     ap.add_argument("--content", default="F", choices=TP.CONTENTS, help="GAP D/E: D = ASL-SNR-spectrum content, E = D random phase")
     ap.add_argument("--whiten", action="store_true", help="GAP-M: divide each image's copies by their own noise map (TP.wmap)")
+    ap.add_argument("--one-slice", action="store_true", help="GAP-N: one slice per volume, position v mod NSL (original indices kept)")
     args = ap.parse_args()
     os.chdir(D.REPO)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -59,8 +60,11 @@ def main():
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     spec = Mo.ARMS[args.arm]
     x, vol = D.load_clean("train")
-    x = x[vol < args.n_vol]
-    Y = torch.from_numpy(np.stack([_noisy(TP.content(xi, "train", i, args.content, args.noise), "train", i, args.noise, args.whiten) for i, xi in enumerate(x)])).to(dev)
+    keep = np.flatnonzero(vol < args.n_vol)                                                       # a prefix: indices = positions
+    if args.one_slice:                                                                            # GAP-N
+        keep = np.array([i for i in keep if (i - np.flatnonzero(vol == vol[i])[0]) == vol[i] % D.NSL])
+    x = x[keep]
+    Y = torch.from_numpy(np.stack([_noisy(TP.content(x[j], "train", i, args.content, args.noise), "train", i, args.noise, args.whiten) for j, i in enumerate(keep)])).to(dev)
     net, m = build(args.arm, dev)
     opt = torch.optim.Adam(net.parameters(), lr=CFG["LR"])
     ckpt_cfg = dict(arm=args.arm, noise=args.noise, seed=args.seed, M=TP.M, sig=TP.SIG, sigma_min=float(m.dsm.sigmas[0]),
@@ -72,6 +76,8 @@ def main():
         ckpt_cfg.update(content=args.content)
     if args.whiten:                                                                               # GAP-M
         ckpt_cfg.update(whiten=True)
+    if args.one_slice:                                                                            # GAP-N
+        ckpt_cfg.update(one_slice=True, train_indices=keep.tolist())
     json.dump(dict(cfg=CFG, ckpt_cfg=ckpt_cfg, n_train_images=len(x)), open(os.path.join(args.outdir, "config.json"), "w"), indent=2)
     log = open(os.path.join(args.outdir, "train.log"), "a", encoding="utf-8")
     with open(os.path.join(args.outdir, "train.csv"), "w", newline="") as f:
